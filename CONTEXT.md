@@ -48,3 +48,7 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 - Spec-first: `.cursor/skills/spec-driven-dev`
 - Review: `.cursor/skills/pr-review` before merge
+
+## Merge gate
+
+`main` requires CI checks: test, linux-amd64/arm64, darwin-amd64/arm64, checksums.

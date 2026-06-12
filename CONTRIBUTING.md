@@ -42,6 +42,22 @@ We expect new pull requests to include tests for any affected behavior, and, as
 we follow semantic versioning, we may reserve breaking changes until the next
 major version release.
 
+### Merge requirements (`main`)
+
+Pull requests must pass all **required** CI checks before merge:
+
+| Check | What it validates |
+|-------|-------------------|
+| `test` | `make build-go test vet` |
+| `linux-amd64` / `linux-arm64` | Full embed release binary (Docker) |
+| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) |
+| `checksums` | `dist/checksums.txt` for uploaded binaries |
+
+**PR Persona Review** is advisory (optional); it does not block merge.
+
+Branch protection on `main` enforces these checks. Repo admins can adjust them under
+**Settings → Branches → Branch protection rules**.
+
 ### Development setup
 
 ```bash

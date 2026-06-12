@@ -34,11 +34,12 @@ page. Artifact names:
 
 Verify with `checksums.txt` from the same release. See [install-upgrade.md](install-upgrade.md).
 
-### PR / CI artifacts (pre-release testing)
+### CI artifacts (main branch)
 
-On open pull requests, the **CI** workflow uploads matching binaries as workflow
-artifacts (7-day retention). Download from the PR **Checks** tab → latest **CI**
-run → **Artifacts**.
+After a merge to `main`, download embed binaries from **Actions** → latest **CI**
+run on `main` → **Artifacts** (7-day retention). See [install-upgrade.md](install-upgrade.md).
+
+Pull requests verify embed builds pass but do not publish artifacts.
 
 ### Build from source
 

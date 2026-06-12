@@ -41,6 +41,17 @@ func TestClassifyAPIError(t *testing.T) {
 	}
 }
 
+func TestClassifyPollTimeoutError(t *testing.T) {
+	err := &api.PollTimeoutError{ScanID: "scan-1", BudgetSecs: 300}
+	got := Classify(err)
+	if got.Code != CodeNetwork {
+		t.Fatalf("want CodeNetwork, got %d", got.Code)
+	}
+	if got.Hint == "" {
+		t.Fatal("expected remediation hint")
+	}
+}
+
 func TestClassifyValidationError(t *testing.T) {
 	err := &api.ValidationError{Message: "bad input"}
 	got := Classify(err)

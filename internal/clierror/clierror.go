@@ -151,6 +151,17 @@ func Classify(err error) *Error {
 		return &Error{Code: CodeUsage, Message: valErr.Error(), Cause: err}
 	}
 
+	// Scan poll budget exhausted.
+	var pollErr *api.PollTimeoutError
+	if errors.As(err, &pollErr) {
+		return Network(
+			pollErr.Error(),
+			"Increase the polling budget via AI_DEFENSE_RETRY_COUNT_FOR_SCANNING and/or "+
+				"AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK, then re-run.",
+			err,
+		)
+	}
+
 	// Fall back to uncategorized.
 	return &Error{Code: CodeUnexpected, Message: err.Error(), Cause: err}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	mcpscansdk "github.com/cisco-ai-defense/ai-defense-cli/api/mcpscan"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/output"
 )
@@ -34,7 +35,7 @@ Examples:
   aid-cisco-cli mcp-scan register --repository-url https://github.com/org/repo --name "Repo Server"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if url == "" && repositoryURL == "" {
-				return fmt.Errorf("at least one of --url or --repository-url must be provided")
+				return clierror.Usage("at least one of --url or --repository-url must be provided")
 			}
 
 			apiKey, baseURL, err := cli.ResolveAuth()
@@ -48,7 +49,7 @@ Examples:
 			}
 
 			if cmd.Flags().Changed("scan-enabled") && cmd.Flags().Changed("no-scan-enabled") {
-				return fmt.Errorf("use either --scan-enabled or --no-scan-enabled, not both")
+				return clierror.Usage("use either --scan-enabled or --no-scan-enabled, not both")
 			}
 			if cmd.Flags().Changed("no-scan-enabled") {
 				scanEnabled = !noScanEnabled

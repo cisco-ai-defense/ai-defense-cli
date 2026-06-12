@@ -1,12 +1,15 @@
-# CI: test + full embed release builds on every PR and main push.
-# Workflow artifacts expire after 7 days (upload-artifact retention-days).
+# CI: test + full embed release builds on every PR and main/release push.
+# Embed builds run on all PRs (including forks) to catch breaking changes.
+# Workflow artifacts are uploaded only on push to main or release/* (7-day retention).
 name: CI
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'release/**'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -17,6 +20,8 @@ permissions:
 
 env:
   DOCKER_BUILDKIT: "1"
+  # Publish downloadable artifacts only from trusted branches (not PRs).
+  PUBLISH_ARTIFACTS: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) }}
 
 jobs:
   test:
@@ -51,7 +56,13 @@ jobs:
       - name: Build release binary (embed_python)
         run: make build-release-linux GOARCH=${{ matrix.goarch }}
 
+      - name: Verify release binary
+        run: |
+          test -f dist/aid-cisco-cli-linux-${{ matrix.goarch }}
+          dist/aid-cisco-cli-linux-${{ matrix.goarch }} --version
+
       - name: Upload artifact
+        if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-linux-${{ matrix.goarch }}-${{ github.run_id }}
@@ -76,7 +87,13 @@ jobs:
           make bundle
           make build-release-darwin GOARCH=arm64
 
+      - name: Verify release binary
+        run: |
+          test -f dist/aid-cisco-cli-darwin-arm64
+          dist/aid-cisco-cli-darwin-arm64 --version
+
       - name: Upload artifact
+        if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-darwin-arm64-${{ github.run_id }}
@@ -101,7 +118,13 @@ jobs:
           make bundle
           make build-release-darwin GOARCH=amd64
 
+      - name: Verify release binary
+        run: |
+          test -f dist/aid-cisco-cli-darwin-amd64
+          dist/aid-cisco-cli-darwin-amd64 --version
+
       - name: Upload artifact
+        if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-darwin-amd64-${{ github.run_id }}
@@ -113,7 +136,11 @@ jobs:
     name: checksums
     needs: [build-linux, build-darwin-arm64, build-darwin-amd64]
     runs-on: ubuntu-latest
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    if: >-
+      env.PUBLISH_ARTIFACTS == 'true' &&
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     steps:
       - uses: actions/download-artifact@v8
         with:

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	embeddedpython "github.com/cisco-ai-defense/ai-defense-cli/internal/embedded/python"
 )
 
@@ -59,10 +60,10 @@ func addLLMFlags(cmd *cobra.Command, o *llmOptions) {
 // classification failed", and quietly emit a degraded report.
 func (o llmOptions) validate() error {
 	if o.model == "" {
-		return fmt.Errorf("--llm-model is required (or set AIBOM_LLM_MODEL): the analyzer uses an LLM to classify scanner candidates")
+		return clierror.Usage("--llm-model is required (or set AIBOM_LLM_MODEL): the analyzer uses an LLM to classify scanner candidates")
 	}
 	if !o.hasResolvableCredential() {
-		return fmt.Errorf("no LLM credential found: pass --llm-api-key (or set AIBOM_LLM_API_KEY), " +
+		return clierror.Usage("no LLM credential found: pass --llm-api-key (or set AIBOM_LLM_API_KEY), " +
 			"use --llm-api-base for a local endpoint (e.g. Ollama), " +
 			"set --llm-provider bedrock to use the AWS credential chain, " +
 			"or export the provider's native key (e.g. OPENAI_API_KEY)")
@@ -155,7 +156,11 @@ func generateReport(sources []string, customCatalog string, llm llmOptions) ([]b
 	}
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("aibom analyze failed: %w", err)
+		return nil, clierror.ScanFailed(
+			"aibom analyze failed",
+			"Check LLM credentials and model settings, then retry.",
+			err,
+		)
 	}
 
 	return os.ReadFile(tmpPath)

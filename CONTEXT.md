@@ -51,4 +51,7 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 ## Merge gate
 
-`main` requires CI checks: test, linux-amd64/arm64, darwin-amd64/arm64, checksums.
+PRs require: `test`, `linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`.
+
+`checksums` runs on push to `main` / `release/*` only (artifacts not published on PRs).
+Update branch protection: drop `checksums` from PR required checks if it blocks merges.

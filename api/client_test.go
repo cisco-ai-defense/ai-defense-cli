@@ -21,8 +21,8 @@ func TestNewBaseClient_Defaults(t *testing.T) {
 	if got := c.HTTPClient.Timeout; got != 30*time.Second {
 		t.Errorf("expected API timeout 30s, got %v", got)
 	}
-	if got := c.UploadHTTPClient.Timeout; got != 0 {
-		t.Errorf("expected upload timeout unset (0), got %v", got)
+	if got := c.UploadHTTPClient.Timeout; got != 30*time.Second {
+		t.Errorf("expected default upload timeout 30s, got %v", got)
 	}
 }
 
@@ -194,17 +194,38 @@ func TestValidationError_String(t *testing.T) {
 }
 
 func TestDoRawPUT_UsesUploadHTTPClient(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		time.Sleep(20 * time.Millisecond)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer srv.Close()
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("")),
+			Header:     make(http.Header),
+		}, nil
+	})
 
-	c := NewBaseClient("k", NewConfig(srv.URL))
+	c := NewBaseClient("k", NewConfig("https://example.cisco.com"))
 	c.HTTPClient.Timeout = 1 * time.Millisecond
 	c.UploadHTTPClient.Timeout = 1 * time.Second
+	c.UploadHTTPClient.Transport = transport
 
-	if err := c.DoRawPUT(srv.URL, strings.NewReader("x"), 1); err != nil {
+	if err := c.DoRawPUT("https://uploads.example.com/presigned", strings.NewReader("x"), 1); err != nil {
 		t.Fatalf("DoRawPUT() error = %v", err)
+	}
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestValidateUploadURL(t *testing.T) {
+	c := NewBaseClient("k", NewConfig("https://example.cisco.com"))
+
+	if err := c.DoRawPUT("http://example.com/upload", strings.NewReader("x"), 1); err == nil {
+		t.Fatal("expected error for non-https upload URL")
+	}
+	if err := c.DoRawPUT("https://127.0.0.1/upload", strings.NewReader("x"), 1); err == nil {
+		t.Fatal("expected error for localhost upload URL")
 	}
 }

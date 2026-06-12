@@ -155,7 +155,10 @@ endif
 checksums: ## Generate dist/checksums.txt (sha256)
 	@command -v shasum >/dev/null || (echo "shasum required" && exit 1)
 	@mkdir -p $(DIST_DIR)
-	@cd $(DIST_DIR) && shasum -a 256 aid-cisco-cli-* 2>/dev/null > checksums.txt || true
+	@cd $(DIST_DIR) && \
+		files=$$(ls aid-cisco-cli-* 2>/dev/null) && \
+		test -n "$$files" || (echo "no release binaries in $(DIST_DIR)" && exit 1) && \
+		shasum -a 256 aid-cisco-cli-* > checksums.txt
 	@printf "Wrote $(DIST_DIR)/checksums.txt\n"
 
 clean-dist: ## Remove dist/ release artifacts

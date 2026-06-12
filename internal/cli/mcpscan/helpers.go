@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	mcpscansdk "github.com/cisco-ai-defense/ai-defense-cli/api/mcpscan"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 )
 
 func buildAuthConfig(authType, authHeader, authKey, oauthClientID, oauthClientSecret, oauthServerURL string) (mcpscansdk.AuthConfig, error) {
@@ -15,7 +16,7 @@ func buildAuthConfig(authType, authHeader, authKey, oauthClientID, oauthClientSe
 		return mcpscansdk.AuthConfig{AuthType: mcpscansdk.AuthTypeNoAuth}, nil
 	case "api-key":
 		if authHeader == "" || authKey == "" {
-			return mcpscansdk.AuthConfig{}, fmt.Errorf("--auth-header and --auth-key are required when --auth-type is api-key")
+			return mcpscansdk.AuthConfig{}, clierror.Usage("--auth-header and --auth-key are required when --auth-type is api-key")
 		}
 		return mcpscansdk.AuthConfig{
 			AuthType: mcpscansdk.AuthTypeAPIKey,
@@ -23,7 +24,7 @@ func buildAuthConfig(authType, authHeader, authKey, oauthClientID, oauthClientSe
 		}, nil
 	case "oauth":
 		if oauthClientID == "" || oauthServerURL == "" {
-			return mcpscansdk.AuthConfig{}, fmt.Errorf("--oauth-client-id and --oauth-server-url are required when --auth-type is oauth")
+			return mcpscansdk.AuthConfig{}, clierror.Usage("--oauth-client-id and --oauth-server-url are required when --auth-type is oauth")
 		}
 		return mcpscansdk.AuthConfig{
 			AuthType: mcpscansdk.AuthTypeOAuth,
@@ -34,7 +35,7 @@ func buildAuthConfig(authType, authHeader, authKey, oauthClientID, oauthClientSe
 			},
 		}, nil
 	default:
-		return mcpscansdk.AuthConfig{}, fmt.Errorf("unknown auth type: %s", authType)
+		return mcpscansdk.AuthConfig{}, clierror.Usage(fmt.Sprintf("unknown auth type: %s", authType))
 	}
 }
 
@@ -54,6 +55,6 @@ func parseTransport(transport string) (mcpscansdk.TransportType, error) {
 	case strings.EqualFold(transport, "STREAMABLE"):
 		return mcpscansdk.TransportStreamable, nil
 	default:
-		return "", fmt.Errorf("invalid --transport %q (must be SSE or STREAMABLE)", transport)
+		return "", clierror.Usage(fmt.Sprintf("invalid --transport %q (must be SSE or STREAMABLE)", transport))
 	}
 }

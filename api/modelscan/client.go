@@ -267,7 +267,7 @@ func (c *Client) pollScanCompletion(scanID string) (json.RawMessage, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("scan %s did not complete within %ds", scanID, retryCount*waitSecs)
+	return nil, &api.PollTimeoutError{ScanID: scanID, BudgetSecs: retryCount * waitSecs}
 }
 
 func envIntOrDefault(key string, defaultVal int) int {

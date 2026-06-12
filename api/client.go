@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -36,9 +37,12 @@ func NewBaseClient(apiKey string, config *Config) *BaseClient {
 		timeout = DefaultTimeout
 	}
 
-	uploadHTTPClient := &http.Client{}
-	if config.UploadTimeout > 0 {
-		uploadHTTPClient.Timeout = time.Duration(config.UploadTimeout) * time.Second
+	uploadSecs := config.UploadTimeout
+	if uploadSecs <= 0 {
+		uploadSecs = timeout
+	}
+	uploadHTTPClient := &http.Client{
+		Timeout: time.Duration(uploadSecs) * time.Second,
 	}
 
 	return &BaseClient{
@@ -116,8 +120,12 @@ func (c *BaseClient) DoRequest(method, path string, params url.Values, body inte
 	return json.RawMessage(respBody), nil
 }
 
-// DoRawPUT performs a raw PUT to an arbitrary URL (for presigned uploads).
+// DoRawPUT performs a raw PUT to a presigned upload URL returned by the API.
 func (c *BaseClient) DoRawPUT(uploadURL string, body io.Reader, contentLength int64) error {
+	if err := validateUploadURL(uploadURL); err != nil {
+		return err
+	}
+
 	req, err := http.NewRequest(http.MethodPut, uploadURL, body)
 	if err != nil {
 		return fmt.Errorf("failed to create upload request: %w", err)
@@ -167,4 +175,26 @@ func (c *BaseClient) Put(path string, body interface{}) (json.RawMessage, error)
 // Delete performs a DELETE request.
 func (c *BaseClient) Delete(path string) (json.RawMessage, error) {
 	return c.DoRequest(http.MethodDelete, path, nil, nil)
+}
+
+func validateUploadURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return &ValidationError{Message: "invalid presigned upload URL"}
+	}
+
+	host := u.Hostname()
+	switch host {
+	case "localhost", "127.0.0.1", "::1", "169.254.169.254":
+		return &ValidationError{Message: "presigned upload URL targets a non-public host"}
+	}
+	if strings.HasPrefix(host, "169.254.") {
+		return &ValidationError{Message: "presigned upload URL targets a link-local host"}
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() {
+			return &ValidationError{Message: "presigned upload URL targets a non-public address"}
+		}
+	}
+	return nil
 }

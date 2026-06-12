@@ -43,7 +43,7 @@ Examples:
 			fmt.Fprintln(os.Stderr, "Generating AIBOM...")
 			result, err := generateReport(sources, customCatalog, llm)
 			if err != nil {
-				return fmt.Errorf("AIBOM generation failed: %w", err)
+				return err
 			}
 
 			if outputFile != "" {

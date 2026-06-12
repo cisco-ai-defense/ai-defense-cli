@@ -166,6 +166,9 @@ func extractBundle(dest string) error {
 				return err
 			}
 		case tar.TypeSymlink:
+			if filepath.IsAbs(hdr.Linkname) || strings.Contains(hdr.Linkname, "..") {
+				return fmt.Errorf("illegal symlink in bundle: %q -> %q", hdr.Name, hdr.Linkname)
+			}
 			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				return fmt.Errorf("create parent for symlink %s: %w", hdr.Name, err)
 			}

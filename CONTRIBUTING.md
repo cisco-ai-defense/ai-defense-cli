@@ -49,9 +49,16 @@ Pull requests must pass all **required** CI checks before merge:
 | Check | What it validates |
 |-------|-------------------|
 | `test` | `make build-go test vet` |
-| `linux-amd64` / `linux-arm64` | Full embed release binary (Docker) |
-| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) |
-| `checksums` | `dist/checksums.txt` for uploaded binaries |
+| `linux-amd64` / `linux-arm64` | Full embed release binary (Docker) + `--version` smoke test |
+| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) + `--version` smoke test |
+
+The `checksums` job runs only on **push to `main` or `release/*`** (when artifacts are
+published). Remove `checksums` from PR required checks in branch protection if it
+still blocks merges — it is validated on every `main` push instead.
+
+**CI artifacts** (binaries + `checksums.txt`) are uploaded only from `main` and
+`release/*` pushes, not from pull requests. PRs still run full embed builds to catch
+breaking changes.
 
 **PR Persona Review** is advisory (optional); it does not block merge.
 

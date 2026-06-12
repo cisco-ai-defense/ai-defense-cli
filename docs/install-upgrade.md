@@ -17,11 +17,13 @@ for release builds.
 
 1. Open [Releases](https://github.com/cisco-ai-defense/ai-defense-cli/releases) and pick a version.
 2. Download the binary for your OS/arch and `checksums.txt`.
-3. Verify the checksum:
+3. Verify the checksum for your binary only:
 
    ```bash
-   shasum -a 256 -c checksums.txt
+   grep aid-cisco-cli-linux-amd64 checksums.txt | shasum -a 256 -c
    ```
+
+   Replace the filename with your platform artifact name.
 
 4. Install on your `PATH`:
 
@@ -40,18 +42,23 @@ for release builds.
    aid-cisco-cli --help
    ```
 
-## Install from PR CI artifacts (testing)
+## Install from CI artifacts (main branch)
 
-While a release is pending, contributors can download binaries from a pull request:
+After a merge to `main`, the **CI** workflow publishes embed binaries and
+`checksums.txt` as workflow artifacts (7-day retention):
 
-1. Open the PR → **Checks** → **CI** workflow run.
-2. Download artifacts: `aid-cisco-cli-linux-amd64`, `aid-cisco-cli-darwin-arm64`, etc.
-3. Artifacts expire after **7 days**; they are not permanent distribution channels.
+1. Open **Actions** → latest **CI** run on `main`.
+2. Download the binary for your platform and `checksums`.
+3. Verify with the same `grep … | shasum -a 256 -c` pattern above.
+
+Pull requests run the same embed builds to verify they compile, but **do not**
+publish downloadable artifacts (security: untrusted PR code must not be distributed
+as official-looking binaries).
 
 ## Upgrade
 
 1. Download the new release binary for your platform.
-2. Verify `checksums.txt`.
+2. Verify the checksum line from `checksums.txt`.
 3. Replace the existing binary on your `PATH`.
 4. Run `aid-cisco-cli --version` to confirm the new build metadata.
 

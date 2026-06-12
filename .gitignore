@@ -39,7 +39,8 @@ internal/embedded/python/bundle/
 internal/embedded/python/bin/
 *.log
 
-# Review artifacts (optional local only)
+# Review artifacts (local only — pr-review skill output)
+reviews/
 canvases/
 
 # Cursor — local agent plans (not team-shared)

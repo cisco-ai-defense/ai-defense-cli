@@ -1,0 +1,63 @@
+# Auto-tag when a release/v* prepare PR merges to main or a release/* line.
+name: Release on merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - 'release/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: push-release-tag
+    if: |
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+
+      - name: Verify VERSION matches prepare branch
+        id: meta
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          expected="${HEAD_REF#release/v}"
+          if [ "$version" != "$expected" ]; then
+            echo "::error::VERSION ($version) does not match prepare branch ($HEAD_REF)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Tagging v$version at merge commit"
+
+      - name: Validate release tag
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          chmod +x scripts/validate-release-tag.sh
+          ./scripts/validate-release-tag.sh "$VERSION" "$MERGE_SHA"
+
+      - name: Create and push tag
+        env:
+          TAG: v${{ steps.meta.outputs.version }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" "$MERGE_SHA" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Pushed $TAG — Release workflow will start automatically."

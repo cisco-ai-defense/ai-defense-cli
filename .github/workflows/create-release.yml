@@ -1,0 +1,73 @@
+# Manual release trigger: validate inputs, create v* tag on a chosen ref, then
+# the Release workflow (.github/workflows/release.yml) runs on tag push.
+name: Create release tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version without v prefix (must match VERSION file on ref)'
+        required: true
+        type: string
+      ref:
+        description: 'Branch name or commit SHA to tag (e.g. main or abc1234)'
+        required: true
+        type: string
+        default: main
+      dry_run:
+        description: 'Validate only — do not create or push the tag'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: create-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: validate-and-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Resolve target commit
+        id: target
+        run: |
+          sha="$(git rev-parse HEAD)"
+          short="$(git rev-parse --short HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "Target commit: $sha ($short)"
+
+      - name: Validate release tag
+        env:
+          VERSION: ${{ inputs.version }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          chmod +x scripts/validate-release-tag.sh
+          ./scripts/validate-release-tag.sh "$VERSION" "$TARGET_SHA"
+
+      - name: Dry run summary
+        if: inputs.dry_run
+        run: |
+          echo "Dry run OK — would create tag v${{ inputs.version }} on ${{ steps.target.outputs.sha }}"
+          echo "Pushing the tag would start the Release workflow (build + GitHub Release)."
+
+      - name: Create and push tag
+        if: ${{ !inputs.dry_run }}
+        env:
+          TAG: v${{ inputs.version }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" "$TARGET_SHA" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Pushed $TAG — Release workflow will start automatically."

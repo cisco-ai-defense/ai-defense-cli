@@ -31,3 +31,17 @@ make bundle && make build-embed # Full CLI with cisco-aibom
 | `make build-release-linux` | `dist/aid-cisco-cli-linux-$(GOARCH)` via Docker |
 | `make build-release-darwin` | `dist/aid-cisco-cli-darwin-$(GOARCH)` native on macOS |
 | `make checksums` | `dist/checksums.txt` |
+
+## Release automation
+
+| Script | Role |
+|--------|------|
+| `autofill-changelog.py` | Add missing `[Unreleased]` bullets from merged PRs since last `v*` tag |
+| `prepare-release.sh` | Bump `VERSION` and finalize CHANGELOG section |
+| `validate-release-tag.sh` | Shared validation before pushing `v*` tags |
+| `generate-release-manifest.sh` | Build `manifest.json` for release artifacts |
+
+```bash
+python3 scripts/autofill-changelog.py --ref main --dry-run
+./scripts/prepare-release.sh patch
+```

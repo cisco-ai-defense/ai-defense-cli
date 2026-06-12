@@ -14,13 +14,14 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] Advisory persona review on PRs (`.github/workflows/pr-persona-review.yml`, read-only) — test + 4-platform embed builds
 - [x] Version file + versioned artifacts (`VERSION`, `manifest.json`)
 - [x] GitHub Release workflow (`.github/workflows/release.yml` on `v*` tags)
+- [x] Prepare release + autofill + release-on-merge automation (`feature/release-process`)
 - [x] Install/upgrade docs (`docs/install-upgrade.md`)
 - [ ] First public GitHub release (`v0.1.0` tag after merge)
 - [x] PR review fixes: transport errors (exit 4), TOML parse errors, macOS Gatekeeper docs
 - [x] Upload redirect SSRF hardening, verdict `envelope_version`, mcp-scan `PollTimeoutError`
 - [x] CI: fold `meta` into `test`; `checksums` job only on main/release push
 - [x] CLI output parity PR (`fix/cli-output-parity`): raw API JSON default for scan commands; model-scan list/info API pass-through
-- [ ] Merge PR #3 after CI green
+- [ ] Merge PR #3 (CLI output parity) after CI green
 
 ## Deferred (post-merge)
 

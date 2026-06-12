@@ -68,9 +68,38 @@ embed builds to catch breaking changes.
 - **Source of truth:** [`VERSION`](VERSION) at repo root (semver, e.g. `0.1.0`).
 - **Local builds:** `make version` prints `VERSION` and `COMMIT`; embedded via `-ldflags`.
 - **Release binaries:** `dist/aid-cisco-cli-<version>-<os>-<arch>`.
-- **Cut a release:** bump `VERSION` and `CHANGELOG.md`, merge to `main`, then push tag `v0.1.0`.
-  The [Release workflow](.github/workflows/release.yml) builds all platforms and publishes
-  a GitHub Release with assets.
+- **Day to day:** feature/fix PRs SHOULD add bullets under `[Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md).
+
+#### Standard release from `main`
+
+1. **Prepare:** GitHub → **Actions** → **Prepare release** → Run workflow.
+   - **bump:** `patch` / `minor` / `major`, or set **custom_version** (e.g. `1.0.0`)
+   - **ref:** branch to prepare from (default `main`; use `release/0.1.x` for patch lines)
+   - Autofills missing changelog bullets, bumps `VERSION`, moves `[Unreleased]` → dated section.
+   - Opens PR `release/vX.Y.Z` → **`ref`** (same branch you prepared from).
+2. **Review + merge** the prepare PR.
+3. **Publish:** **Release on merge** pushes `vX.Y.Z` automatically → **Release** workflow publishes binaries and GitHub Release assets.
+
+#### Release line (`release/0.1.x`) and cherry-picks
+
+Use a long-lived `release/0.1.x` branch when stabilizing or patching while `main` continues:
+
+1. Cut `release/0.1.x` from a freeze commit.
+2. Cherry-pick PRs target the release branch; **include `[Unreleased]` on that branch** in each CP PR.
+3. **Prepare release** with `ref: release/0.1.x` — bot PR merges into the release line.
+4. Merge → **Release on merge** auto-tags (same as `main`).
+5. **Backport** code and CHANGELOG entries to `main` after shipping so histories stay aligned.
+
+Fixes merged to `main` first are **not** auto-copied to a release line — CP the commit and changelog hunk.
+
+#### Escape hatch
+
+- **Create release tag** — dry-run validation, tag a specific SHA without a prepare PR, or emergency retag.
+- **Local:** `./scripts/autofill-changelog.py --ref main`, then
+  `./scripts/prepare-release.sh patch|minor|major [custom_version]`, then manual tag.
+
+Repo admins should restrict **Prepare release** and **Create release tag**
+(`workflow_dispatch`) to trusted roles under **Settings → Actions → General → Workflow permissions**.
 
 **PR Persona Review** is advisory (optional); it does not block merge.
 

@@ -16,14 +16,14 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - `model-scan list` and `model-scan info` print verbatim API JSON
   (pass-through), matching Python CLI output shape; paging serializes as
   `count`/`offset`/`total` instead of `limit`.
-- CI: version resolution folded into the `test` job; `checksums` runs only on
-  `main` / `release/**` pushes (not on pull requests).
-- Upload client fallback uses redirect-safe HTTP client when `UploadHTTPClient` is unset.
-- **Dropped `linux-arm64` release artifacts** — publish `linux-amd64` only; ARM Linux
-  users can use Docker (`platform: linux/amd64`) or build from source.
+
+## [0.1.1] - 2026-06-12
 
 ### Added
 
+- **Prepare release** workflow — hybrid changelog autofill, VERSION bump, opens `release/v*` PR
+- **Release on merge** — auto-tag when a prepare PR merges to `main` or `release/**`.
+- **Create release tag** workflow (`workflow_dispatch`) — dry-run or manual tag escape hatch.
 - **Semantic versioning** — `VERSION` file, `make version`, versioned release binaries
   (`aid-cisco-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
 - **GitHub Release workflow** — push tag `v*` to publish versioned downloads.
@@ -47,9 +47,14 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changed
 
+- CI: version resolution folded into the `test` job; `checksums` runs only on
+  `main` / `release/**` pushes (not on pull requests).
+- Upload client fallback uses redirect-safe HTTP client when `UploadHTTPClient` is unset.
+- **Dropped `linux-arm64` release artifacts** — publish `linux-amd64` only; ARM Linux
+  users can use Docker (`platform: linux/amd64`) or build from source.
 - **Backward-incompatible vs. the Python `aidcli` this CLI replaces** (the Go CLI
   itself has not previously shipped):
-  - Scan commands now print the verdict envelope by default instead of the raw
+  - Scan commands print the verdict envelope by default instead of the raw
     API JSON. Use `--raw` to restore the verbatim payload.
   - A completed scan with findings now exits `10`/`20` instead of `0`. Use
     `--fail-on none --block-on none` to report without gating.

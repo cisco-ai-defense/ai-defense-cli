@@ -31,7 +31,7 @@ func emitScanResult(info modelscansdk.ScanStatusInfo, raw json.RawMessage, opts 
 	// (exit 5), not a clean pass.
 	switch info.Status {
 	case modelscansdk.ScanStatusFailed, modelscansdk.ScanStatusCanceled:
-		if opts.Raw {
+		if opts.PrintRawAPI() {
 			output.PrintRawJSON(raw)
 		}
 		return clierror.ScanFailed(
@@ -43,7 +43,7 @@ func emitScanResult(info modelscansdk.ScanStatusInfo, raw json.RawMessage, opts 
 	result := verdict.FromModelScan(info)
 	result.Decide(failOn, blockOn)
 
-	if opts.Raw {
+	if opts.PrintRawAPI() {
 		output.PrintRawJSON(raw)
 	} else {
 		fmt.Println(result.Render(format))

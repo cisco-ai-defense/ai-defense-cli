@@ -13,7 +13,7 @@
 | `internal/config` | Auth and endpoint resolution |
 | `internal/clierror` | Exit-code contract |
 | `internal/verdict` | Scan result envelope |
-| `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` |
+| `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` (default true), `--envelope` |
 | `internal/embedded/python` | Relocatable CPython + `cisco-aibom` |
 | `scripts/` | Bundle build helpers |
 

@@ -24,9 +24,9 @@ func newTriggerCmd(cli *cmdutil.CLI) *cobra.Command {
 		Short: "Trigger a cloud-based scan of an AI/ML model",
 		Long: `Submit a model file or repository URL to the cloud for server-side scanning.
 
-Prints a normalized verdict envelope and sets the exit code per the scan
-contract: 0 pass, 10 fail (>= --fail-on), 20 block (>= --block-on); operational
-failures use codes 1-5.
+Prints raw API JSON by default (Python CLI parity). Use --envelope for the
+normalized verdict JSON/text. Exit codes follow the scan contract: 0 pass,
+10 fail (>= --fail-on), 20 block (>= --block-on); operational failures use 1-5.
 
 Examples:
   aid-cisco-cli model-scan trigger -f model.pth

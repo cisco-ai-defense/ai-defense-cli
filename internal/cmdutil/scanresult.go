@@ -13,15 +13,27 @@ import (
 // that produces a scan verdict. Using one helper across model-scan and mcp-scan
 // keeps the automation UX identical between scan types.
 type ScanResultOptions struct {
-	FailOn  string
-	BlockOn string
-	Output  string
-	Raw     bool
+	FailOn   string
+	BlockOn  string
+	Output   string
+	Raw      bool
+	Envelope bool
 }
 
-// AddScanResultFlags registers --fail-on/--block-on/--output/--raw on cmd and
-// returns the bound options. Defaults are fail-closed: any detected threat fails
-// (--fail-on=low) and a critical finding blocks (--block-on=critical).
+// PrintRawAPI reports whether stdout should carry the verbatim API JSON.
+// Default is raw API (Python CLI parity); --envelope or --raw=false select the
+// normalized verdict envelope instead.
+func (o *ScanResultOptions) PrintRawAPI() bool {
+	if o.Envelope {
+		return false
+	}
+	return o.Raw
+}
+
+// AddScanResultFlags registers --fail-on/--block-on/--output/--raw/--envelope on
+// cmd and returns the bound options. Defaults are fail-closed: any detected
+// threat fails (--fail-on=low) and a critical finding blocks (--block-on=critical).
+// Scan stdout defaults to raw API JSON for migration parity with the Python CLI.
 func AddScanResultFlags(cmd *cobra.Command) *ScanResultOptions {
 	o := &ScanResultOptions{}
 	cmd.Flags().StringVar(&o.FailOn, "fail-on", "low",
@@ -29,9 +41,11 @@ func AddScanResultFlags(cmd *cobra.Command) *ScanResultOptions {
 	cmd.Flags().StringVar(&o.BlockOn, "block-on", "critical",
 		"Minimum severity that blocks with exit 20 (none|low|medium|high|critical)")
 	cmd.Flags().StringVar(&o.Output, "output", "json",
-		"Verdict envelope format: json|text")
-	cmd.Flags().BoolVar(&o.Raw, "raw", false,
-		"Print the raw API response instead of the normalized verdict envelope")
+		"Verdict envelope format when --envelope is set: json|text")
+	cmd.Flags().BoolVar(&o.Raw, "raw", true,
+		"Print raw API JSON on stdout (default). Set --raw=false or use --envelope for the verdict envelope")
+	cmd.Flags().BoolVar(&o.Envelope, "envelope", false,
+		"Print the normalized verdict envelope (json|text) instead of raw API JSON")
 	return o
 }
 

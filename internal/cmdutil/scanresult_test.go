@@ -12,8 +12,11 @@ import (
 func TestAddScanResultFlagsDefaults(t *testing.T) {
 	cmd := &cobra.Command{Use: "x"}
 	opts := AddScanResultFlags(cmd)
-	if opts.FailOn != "low" || opts.BlockOn != "critical" || opts.Output != "json" || opts.Raw {
+	if opts.FailOn != "low" || opts.BlockOn != "critical" || opts.Output != "json" || !opts.Raw || opts.Envelope {
 		t.Fatalf("unexpected defaults: %+v", opts)
+	}
+	if !opts.PrintRawAPI() {
+		t.Fatal("default should print raw API JSON")
 	}
 
 	failOn, blockOn, err := opts.Thresholds()
@@ -41,6 +44,21 @@ func TestThresholdsInvalid(t *testing.T) {
 	opts = &ScanResultOptions{FailOn: "low", BlockOn: "nope"}
 	if _, _, err := opts.Thresholds(); err == nil {
 		t.Fatal("expected error for invalid --block-on")
+	}
+}
+
+func TestPrintRawAPIDefaultsAndEnvelope(t *testing.T) {
+	opts := &ScanResultOptions{Raw: true}
+	if !opts.PrintRawAPI() {
+		t.Fatal("expected raw API by default")
+	}
+	opts = &ScanResultOptions{Raw: true, Envelope: true}
+	if opts.PrintRawAPI() {
+		t.Fatal("--envelope should disable raw API stdout")
+	}
+	opts = &ScanResultOptions{Raw: false, Envelope: false}
+	if opts.PrintRawAPI() {
+		t.Fatal("--raw=false should select verdict envelope")
 	}
 }
 

@@ -31,7 +31,7 @@ func emitScanResult(scanID, status string, raw json.RawMessage, opts *cmdutil.Sc
 
 	switch mcpscansdk.MCPScanStatus(status) {
 	case mcpscansdk.MCPScanStatusFailed, mcpscansdk.MCPScanStatusCancelled:
-		if opts.Raw {
+		if opts.PrintRawAPI() {
 			output.PrintRawJSON(raw)
 		}
 		return clierror.ScanFailed(
@@ -44,7 +44,7 @@ func emitScanResult(scanID, status string, raw json.RawMessage, opts *cmdutil.Sc
 	result := verdict.FromMCPScan(scanID, status, severities)
 	result.Decide(failOn, blockOn)
 
-	if opts.Raw {
+	if opts.PrintRawAPI() {
 		output.PrintRawJSON(raw)
 	} else {
 		fmt.Println(result.Render(format))

@@ -21,8 +21,8 @@ func newInfoCmd(cli *cmdutil.CLI) *cobra.Command {
 		Short: "Get details of an MCP server or scan",
 		Long: `Get details of an MCP server or scan by ID. Provide exactly one of --server-id or --scan-id.
 
-With --scan-id, prints a normalized verdict envelope and applies the scan
-contract exit codes (the gating flags apply to --scan-id only). With --server-id,
+With --scan-id, prints raw API JSON by default (--envelope for the verdict) and
+applies scan exit codes (gating applies to --scan-id only). With --server-id,
 prints the raw server details.
 
 Examples:

@@ -25,6 +25,7 @@ Review the user-facing and CI-facing contract of `aid-cisco-cli`.
 ## Focus
 
 - `--fail-on` / `--block-on` semantics and fail-closed defaults
+- Scan stdout defaults to raw API JSON; `--envelope` for verdict contract
 - Machine-readable JSON vs human text output
 - Backward compatibility with Python `aidcli` where documented
 - Semver impact of any change

@@ -21,8 +21,8 @@ func newInfoCmd(cli *cmdutil.CLI) *cobra.Command {
 		Short: "Get detailed information about a specific scan",
 		Long: `Retrieve scan status, scanned files, detected threats, and severity breakdown.
 
-Prints a normalized verdict envelope and applies the same exit-code contract as
-'trigger' for completed scans (0 pass, 10 fail, 20 block; 5 if the scan failed).
+Prints raw API JSON by default. Use --envelope for the normalized verdict and
+the same exit-code contract as 'trigger' (0 pass, 10 fail, 20 block; 5 if failed).
 
 Examples:
   aid-cisco-cli model-scan info --scan-id <uuid>

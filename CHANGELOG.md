@@ -8,7 +8,10 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changed
 
-- `model-scan list` and `model-scan info --raw` now print verbatim API JSON
+- Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) now
+  print **raw API JSON by default** for Python CLI migration parity; use
+  `--envelope` for the normalized verdict JSON/text.
+- `model-scan list` and `model-scan info` print verbatim API JSON
   (pass-through), matching Python CLI output shape; paging serializes as
   `count`/`offset`/`total` instead of `limit`.
 - CI: version resolution folded into the `test` job; `checksums` runs only on

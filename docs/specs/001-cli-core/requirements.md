@@ -7,7 +7,7 @@
 | REQ-01 | Binary name is `aid-cisco-cli` |
 | REQ-02 | Command groups: `model-scan`, `mcp-scan`, `ai-bom` |
 | REQ-03 | Exit codes 0, 1–5 (operational), 10/20 (policy) per `internal/clierror` |
-| REQ-04 | Scan commands emit verdict envelope (`envelope_version`); `--raw` for API payload |
+| REQ-04 | Scan commands emit raw API JSON by default; `--envelope` for verdict (`envelope_version`) |
 | REQ-05 | `--fail-on` / `--block-on` severity gating on scan commands |
 | REQ-06 | Config precedence: flags > env (`AI_DEFENSE_*`) > TOML |
 | REQ-07 | Release builds embed CPython + `cisco-aibom[all]` (`embed_python` tag) |

@@ -189,9 +189,10 @@ Use `--llm-provider` to force a provider when the model name is ambiguous.
 ## 6. Use exit codes in CI/CD
 
 Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) print
-a normalized verdict envelope on stdout and set a deterministic exit code, so your
-pipeline can branch on `$?` instead of parsing output. Policy verdicts (`>= 10`)
-are always distinct from operational failures (`1-9`):
+**raw API JSON on stdout by default** (same shape as the Python `aidcli`). They
+also set a deterministic exit code so your pipeline can branch on `$?`. Use
+`--envelope` when you want the normalized verdict JSON/text instead. Policy
+verdicts (`>= 10`) are always distinct from operational failures (`1-9`):
 
 | Code | Meaning |
 |---|---|
@@ -228,9 +229,9 @@ case $? in
 esac
 ```
 
-Use `--raw` to print the verbatim API response instead of the envelope (gating
-still applies). On any non-zero exit the CLI prints `Error:` and, where helpful,
-a `Hint:` line to stderr.
+Raw API JSON is the default. Use `--envelope` (or `--raw=false`) for the
+normalized verdict envelope (gating still applies). On any non-zero exit the CLI
+prints `Error:` and, where helpful, a `Hint:` line to stderr.
 
 > MCP note: the unregistered `mcp-scan run`/`info --scan-id` status payload may
 > report status only. When it carries no severity signal, a completed scan
@@ -248,7 +249,8 @@ purpose, so review any pipeline that consumed the old output:
 
 | Behavior | Python `aidcli` | Go `aid-cisco-cli` (default) |
 |---|---|---|
-| Scan stdout | Raw API response JSON | Normalized **verdict envelope** JSON |
+| Scan stdout | Raw API response JSON | Raw API response JSON (same default) |
+| Verdict envelope | N/A | Opt in with `--envelope` |
 | Exit on a completed scan **with threats** | `0` (you parsed findings yourself) | `10` (fail) / `20` (block) |
 | Exit on usage error | `2` | `2` (unchanged) |
 | Exit on operational error | `1` | `1` / `3` / `4` / `5` by class |
@@ -261,17 +263,20 @@ What this means in practice:
 - A check for *exactly* exit `1` may now see `3`/`4`/`5`. Prefer `!= 0`, or branch
   on the [exit-code table](#6-use-exit-codes-in-cicd) above.
 
-**Bridge to the old behavior** (opt out of the new contract) by adding:
+**Match Python exit behavior** (never fail the step on findings) with:
 
 ```bash
-# Old shape: raw API JSON on stdout, never gate on findings (exit 0).
-./aid-cisco-cli model-scan trigger -f ./model.pth --raw --fail-on none --block-on none
+./aid-cisco-cli model-scan trigger -f ./model.pth --fail-on none --block-on none
 ```
 
-Caveats even with `--raw`: re-serialized JSON may differ from the Python output
-in whitespace/key order, and operational errors are still classified into
-`3`/`4`/`5` (the old catch-all `1` is no longer used for those). Prefer adopting
-the new exit-code contract — it's why this section exists.
+**Use the verdict envelope** (unified CI JSON across model-scan and mcp-scan):
+
+```bash
+./aid-cisco-cli model-scan trigger -f ./model.pth --envelope --fail-on high
+```
+
+Operational errors are classified into `3`/`4`/`5` (the old catch-all `1` is no
+longer used for those). Prefer the new exit-code contract for new pipelines.
 
 ---
 

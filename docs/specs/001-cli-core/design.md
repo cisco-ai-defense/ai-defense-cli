@@ -26,7 +26,8 @@
 | 10 | Policy fail (`--fail-on`) |
 | 20 | Policy block (`--block-on`) |
 
-Scan commands emit a normalized verdict envelope on stdout (`--output json|text`). `--raw` prints the API payload; gating still applies.
+Scan commands emit raw API JSON on stdout by default (Python CLI parity).
+`--envelope` prints the normalized verdict (`--output json|text`); gating still applies.
 
 ## Configuration precedence
 

@@ -18,7 +18,7 @@ Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-s
 - **mcp-scan** — MCP server registration and scanning
 - **ai-bom** — AI Bill of Materials (embedded `cisco-aibom` analyzer)
 - **Exit codes** — operational (1–5) vs policy verdicts (10, 20)
-- **CI output** — JSON verdict envelope, `--fail-on` / `--block-on`
+- **CI output** — raw API JSON by default; `--envelope` + `--fail-on` / `--block-on`
 
 ## Installation
 

@@ -26,10 +26,10 @@ func newRunCmd(cli *cmdutil.CLI) *cobra.Command {
 		Short: "Scan a remote MCP server for security threats",
 		Long: `Start a scan of an MCP server and poll until completion.
 
-Prints a normalized verdict envelope and sets the exit code per the scan
-contract: 0 pass, 10 fail, 20 block; a failed/cancelled scan is 5 and a poll
-timeout is 4. Note: the scan-status payload may report status only, in which case
-a completed scan reports PASS.
+Prints raw API JSON by default. Use --envelope for the normalized verdict.
+Exit codes: 0 pass, 10 fail, 20 block; failed/cancelled is 5; poll timeout is 4.
+Note: the scan-status payload may report status only, in which case a completed
+scan reports PASS.
 
 Examples:
   aid-cisco-cli mcp-scan run --url https://mcp.example.com/sse --name "My Server"

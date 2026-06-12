@@ -20,7 +20,7 @@ This repo contains only the CLI — no UI, database, or backend services.
 
 - `internal/clierror` — exit-code contract (ops 1–5, policy 10/20)
 - `internal/verdict` — scan result envelope
-- `internal/cmdutil` — `--fail-on`, `--block-on`, `--output`, `--raw`
+- `internal/cmdutil` — `--fail-on`, `--block-on`, `--output`, `--raw` (default), `--envelope`
 - `internal/config` — flags > env > TOML
 - `api/` — HTTP client and service clients
 

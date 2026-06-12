@@ -13,7 +13,7 @@ alwaysApply: false
 | `internal/cli/` | Cobra command groups |
 | `internal/clierror` | Exit-code contract (ops 1–5, policy 10/20) |
 | `internal/verdict` | Scan result envelope |
-| `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` |
+| `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` (default), `--envelope` |
 | `internal/config` | Auth and endpoint (flags > env > TOML) |
 | `internal/embedded/python` | Go ↔ embedded CPython bridge (see embedded-python rule) |
 | `api/` | HTTP client — extend, don't duplicate |

@@ -14,7 +14,7 @@
 
 - **REQ-02.1** `workflow_dispatch` inputs: `bump` (patch|minor|major), optional `custom_version`, `ref` (default `main`).
 - **REQ-02.2** Bump `VERSION`, move `[Unreleased]` → `[X.Y.Z] - date`, leave empty `[Unreleased]`.
-- **REQ-02.3** Open PR `release/vX.Y.Z` with **base branch = `ref`** (prepare from `release/0.1.x` targets that branch).
+- **REQ-02.3** Push branch `release/vX.Y.Z` with VERSION/CHANGELOG commit; print compare URL in workflow summary. Maintainer opens PR with **base = `ref`** manually.
 
 ### REQ-03 — Auto-tag on merge
 

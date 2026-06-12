@@ -76,9 +76,11 @@ embed builds to catch breaking changes.
    - **bump:** `patch` / `minor` / `major`, or set **custom_version** (e.g. `1.0.0`)
    - **ref:** branch to prepare from (default `main`; use `release/0.1.x` for patch lines)
    - Autofills missing changelog bullets, bumps `VERSION`, moves `[Unreleased]` → dated section.
-   - Opens PR `release/vX.Y.Z` → **`ref`** (same branch you prepared from).
-2. **Review + merge** the prepare PR.
-3. **Publish:** **Release on merge** pushes `vX.Y.Z` automatically → **Release** workflow publishes binaries and GitHub Release assets.
+   - Pushes branch `release/vX.Y.Z` (does **not** open a PR — org policy may block bot PRs).
+2. **Open PR manually** — use the **Create pull request** link in the workflow run summary
+   (base = **`ref`**, compare = `release/vX.Y.Z`, title `chore(release): vX.Y.Z`).
+3. **Review + merge** the prepare PR.
+4. **Publish:** **Release on merge** pushes `vX.Y.Z` automatically → **Release** workflow publishes binaries and GitHub Release assets.
 
 #### Release line (`release/0.1.x`) and cherry-picks
 
@@ -86,7 +88,7 @@ Use a long-lived `release/0.1.x` branch when stabilizing or patching while `main
 
 1. Cut `release/0.1.x` from a freeze commit.
 2. Cherry-pick PRs target the release branch; **include `[Unreleased]` on that branch** in each CP PR.
-3. **Prepare release** with `ref: release/0.1.x` — bot PR merges into the release line.
+3. **Prepare release** with `ref: release/0.1.x` — pushes `release/vX.Y.Z`; open and merge PR into the release line manually.
 4. Merge → **Release on merge** auto-tags (same as `main`).
 5. **Backport** code and CHANGELOG entries to `main` after shipping so histories stay aligned.
 

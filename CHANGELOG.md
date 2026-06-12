@@ -8,6 +8,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Changed
 
+- **Prepare release** — pushes `release/v*` branch only; open the version-bump PR manually
+  (workflow summary link). Avoids org restriction on Actions creating pull requests.
 - Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) now
   print **raw API JSON by default** for Python CLI migration parity; use
   `--envelope` for the normalized verdict JSON/text. **Migration:** CI jobs that

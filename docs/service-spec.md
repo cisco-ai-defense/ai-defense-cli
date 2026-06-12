@@ -211,7 +211,7 @@ go build -tags embed_python -o aid-cisco-cli \
 
 Pull request and `main` branch CI (`.github/workflows/ci.yml`) builds three release
 platform binaries (`linux-amd64`, `darwin-arm64`, `darwin-amd64`) and uploads them
-on `main` / `release/**` pushes. **Prepare release** opens a version-bump PR;
+on `main` / `release/**` pushes. **Prepare release** pushes a `release/v*` branch;
 **Release on merge** auto-tags when that PR merges; **Release** (`release.yml`)
 publishes GitHub Release assets on `v*` tag push.
 

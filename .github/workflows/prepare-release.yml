@@ -1,5 +1,6 @@
-# Bump VERSION, autofill CHANGELOG, finalize [Unreleased], and open a PR for review.
-# Merging the PR triggers Release on merge (auto-tag) when head is release/v*.
+# Bump VERSION, autofill CHANGELOG, finalize [Unreleased], push release/v* branch.
+# Maintainer opens the PR manually (link in workflow summary).
+# Merging that PR triggers Release on merge (auto-tag).
 name: Prepare release
 
 on:
@@ -26,7 +27,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: prepare-release
@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   prepare:
-    name: bump-and-pr
+    name: bump-and-push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -63,7 +63,7 @@ jobs:
           fi
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "new=$new" >> "$GITHUB_OUTPUT"
-          echo "Will release $current → $new on base ${{ inputs.ref }}"
+          echo "Will release $current → $new from ${{ inputs.ref }}"
 
       - name: Autofill CHANGELOG
         env:
@@ -80,25 +80,39 @@ jobs:
             ./scripts/prepare-release.sh "${{ inputs.bump }}"
           fi
 
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          branch: release/v${{ steps.ver.outputs.new }}
-          base: ${{ inputs.ref }}
-          delete-branch: true
-          title: 'chore(release): v${{ steps.ver.outputs.new }}'
-          body: |
-            Automated release preparation.
+      - name: Push release branch
+        env:
+          BRANCH: release/v${{ steps.ver.outputs.new }}
+          NEW: ${{ steps.ver.outputs.new }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add VERSION CHANGELOG.md
+          git commit -m "chore(release): prepare v${NEW}"
+          git push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
 
-            - **Base branch:** `${{ inputs.ref }}`
-            - **VERSION:** `${{ steps.ver.outputs.current }}` → `${{ steps.ver.outputs.new }}`
-            - **CHANGELOG:** autofill (if needed) + moved `[Unreleased]` → `[${{ steps.ver.outputs.new }}]`
-
-            ## After merge
-
-            **Release on merge** pushes `v${{ steps.ver.outputs.new }}` and starts the Release workflow
-            (binaries, checksums, manifest, GitHub Release).
-
-            For release lines (`release/0.1.x`), backport VERSION/CHANGELOG to `main` after shipping.
-          commit-message: 'chore(release): prepare v${{ steps.ver.outputs.new }}'
-          labels: release
+      - name: Workflow summary — open PR manually
+        env:
+          REPO: ${{ github.repository }}
+          BASE: ${{ inputs.ref }}
+          BRANCH: release/v${{ steps.ver.outputs.new }}
+          CURRENT: ${{ steps.ver.outputs.current }}
+          NEW: ${{ steps.ver.outputs.new }}
+        run: |
+          base_enc="$(printf '%s' "$BASE" | jq -sRr @uri)"
+          branch_enc="$(printf '%s' "$BRANCH" | jq -sRr @uri)"
+          title_enc="$(printf 'chore(release): v%s' "$NEW" | jq -sRr @uri)"
+          pr_url="https://github.com/${REPO}/compare/${base_enc}...${branch_enc}?expand=1&title=${title_enc}"
+          {
+            echo "## Prepare release v${NEW}"
+            echo ""
+            echo "Pushed \`${BRANCH}\` with VERSION \`${CURRENT}\` → \`${NEW}\`."
+            echo ""
+            echo "**Open a pull request manually** (base \`${BASE}\`, compare \`${BRANCH}\`):"
+            echo ""
+            echo "[Create pull request](${pr_url})"
+            echo ""
+            echo "After merge, **Release on merge** pushes \`v${NEW}\` and starts the Release workflow."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Open PR: ${pr_url}"

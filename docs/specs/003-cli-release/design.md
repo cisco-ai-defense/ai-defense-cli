@@ -4,7 +4,7 @@
 
 | Workflow | Trigger | Outcome |
 |----------|---------|---------|
-| **Prepare release** | `workflow_dispatch` | Autofill → bump VERSION → finalize CHANGELOG → PR `release/vX.Y.Z` → `ref` |
+| **Prepare release** | `workflow_dispatch` | Autofill → bump VERSION → finalize CHANGELOG → push `release/vX.Y.Z` |
 | **Release on merge** | `release/v*` PR merged to `main` or `release/**` | Push `vX.Y.Z` tag |
 | **Release** | Push tag `v*` | Embed builds, checksums, manifest, GitHub Release |
 | **Create release tag** | `workflow_dispatch` | Manual/dry-run tag (escape hatch) |
@@ -20,8 +20,8 @@ sequenceDiagram
   M->>Prep: dispatch ref plus bump
   Prep->>Prep: autofill_changelog.py
   Prep->>Prep: prepare-release.sh
-  Prep->>PR: open PR base equals ref
-  M->>PR: review and merge
+  Prep->>Prep: push release/vX.Y.Z
+  M->>PR: open PR manually base equals ref
   PR->>Tag: pull_request closed merged
   Tag->>Rel: push vX.Y.Z
 ```
@@ -43,11 +43,11 @@ sequenceDiagram
 
 | Pattern | Meaning |
 |---------|---------|
-| `release/v0.1.1` | Ephemeral bot PR head from Prepare release |
+| `release/v0.1.1` | Ephemeral prepare branch (VERSION/CHANGELOG bump); PR opened manually |
 | `release/0.1.x` | Long-lived stabilization / patch line (merge base for prepare PRs) |
 
 ## Permissions
 
-- **Prepare release:** `contents: write`, `pull-requests: write`
+- **Prepare release:** `contents: write`
 - **Release on merge:** `contents: write`
 - Concurrency group `release-tag` prevents double tag push

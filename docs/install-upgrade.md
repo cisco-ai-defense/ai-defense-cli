@@ -11,9 +11,12 @@ Release binaries are named `aid-cisco-cli-<version>-<os>-<arch>`. For version `0
 | OS | Architecture | Artifact name |
 |----|--------------|---------------|
 | Linux | amd64 | `aid-cisco-cli-0.1.0-linux-amd64` |
-| Linux | arm64 | `aid-cisco-cli-0.1.0-linux-arm64` |
 | macOS | arm64 (Apple Silicon) | `aid-cisco-cli-0.1.0-darwin-arm64` |
 | macOS | amd64 (Intel) | `aid-cisco-cli-0.1.0-darwin-amd64` |
+
+Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use the
+`linux-amd64` binary in a container (`platform: linux/amd64`), or
+[build from source](getting-started-developer.md) on the ARM host.
 
 > **macOS:** Release binaries are **unsigned and not notarized** (no Apple Developer ID).
 > Gatekeeper blocks the first run until you clear quarantine or approve the binary — see

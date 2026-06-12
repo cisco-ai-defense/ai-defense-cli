@@ -209,12 +209,12 @@ go build -tags embed_python -o aid-cisco-cli \
 
 ### 5. CI / release builds
 
-Pull request and `main` branch CI (`.github/workflows/ci.yml`) builds all four platform
-binaries and uploads them as short-lived artifacts. GitHub Release publishing is a
-follow-up workflow.
+Pull request and `main` branch CI (`.github/workflows/ci.yml`) builds three release
+platform binaries (`linux-amd64`, `darwin-arm64`, `darwin-amd64`) and uploads them
+on `main` / `release/**` pushes. GitHub Release publishing uses `release.yml` on `v*` tags.
 
 ```bash
-make build-release-linux GOARCH=arm64
+make build-release-linux GOARCH=amd64
 make build-release-darwin GOARCH=arm64   # macOS host only
 make checksums
 ```

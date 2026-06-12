@@ -11,7 +11,7 @@ Review Makefile, Dockerfile, and `.github/workflows/` for reliable releases.
 
 ## Focus
 
-- Multi-arch builds (linux/darwin, amd64/arm64)
+- Multi-platform builds (linux-amd64, darwin amd64/arm64)
 - `checksums.txt` and `manifest.json` generation
 - Pinned action versions (SHA preferred)
 - Install/upgrade doc matches actual artifact URLs and layout

@@ -28,7 +28,6 @@ page. Artifact names:
 | Platform | Binary (example v0.1.0) |
 |----------|-------------------------|
 | Linux x86_64 | `aid-cisco-cli-0.1.0-linux-amd64` |
-| Linux arm64 | `aid-cisco-cli-0.1.0-linux-arm64` |
 | macOS Apple Silicon | `aid-cisco-cli-0.1.0-darwin-arm64` |
 | macOS Intel | `aid-cisco-cli-0.1.0-darwin-amd64` |
 

@@ -60,6 +60,6 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 ## Merge gate
 
-PRs require: `test`, `linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64` only.
+PRs require: `test`, `linux-amd64`, `darwin-amd64`, `darwin-arm64` only.
 
 Do not require `meta` (folded into `test`) or `checksums` (main/release push only).

@@ -121,6 +121,7 @@ endif
 # PBS pins per linux arch (python-build-standalone 20250723 / cpython 3.12.11)
 PBS_TRIPLE_amd64  := x86_64-unknown-linux-gnu
 PBS_SHA256_amd64  := e5e828ba2c1a55400cdb07ff5f052908c46d5deb4f62d8b5825f8c24aeffcccb
+# arm64 Linux PBS pins kept for optional local builds (not published in CI/releases).
 PBS_TRIPLE_arm64  := aarch64-unknown-linux-gnu
 PBS_SHA256_arm64  := 6344f857fab8453423cf0471a9bd1e74393947c9e3d59919d78eebc4c7eb8590
 
@@ -146,9 +147,8 @@ build-release-darwin: bundle-check ## macOS release binary (native embed) → di
 		-o $(DIST_DIR)/$(DIST_PREFIX)-darwin-$(GOARCH) .
 	@printf "Built $(DIST_DIR)/$(DIST_PREFIX)-darwin-$(GOARCH)\n"
 
-build-release-all: ## Build linux amd64+arm64 (Docker); darwin if on macOS host
+build-release-all: ## Build linux amd64 (Docker); darwin if on macOS host
 	$(MAKE) build-release-linux GOARCH=amd64
-	$(MAKE) build-release-linux GOARCH=arm64
 ifeq ($(shell uname -s),Darwin)
 	$(MAKE) build-release-darwin GOARCH=arm64
 ifneq ($(shell uname -m),arm64)

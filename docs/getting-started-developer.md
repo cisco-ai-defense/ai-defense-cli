@@ -75,8 +75,7 @@ On macOS this produces a darwin binary with embedded Python. First `make bundle`
 
 | Target | Platform | Method |
 |--------|----------|--------|
-| `make build-release-linux GOARCH=amd64` | Linux | Docker → `dist/aid-cisco-cli-linux-amd64` |
-| `make build-release-linux GOARCH=arm64` | Linux | Docker → `dist/aid-cisco-cli-linux-arm64` |
+| `make build-release-linux GOARCH=amd64` | Linux amd64 | Docker → `dist/aid-cisco-cli-<version>-linux-amd64` |
 | `make build-release-darwin` | macOS | Native `bundle` + `go build -tags embed_python` |
 | `make build-release` | Host OS | Dispatches linux→Docker, darwin→native |
 | `make checksums` | — | `dist/checksums.txt` |

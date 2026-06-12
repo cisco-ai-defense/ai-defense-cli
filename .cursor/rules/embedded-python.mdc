@@ -36,7 +36,7 @@ Do not break `go test ./...` on machines without the full Python bundle unless s
 
 - Release artifacts must include the embedded runtime (single binary or documented layout)
 - CI must build **both** stub (fast tests) and full embed (release smoke) where applicable
-- Document platform support for embedded CPython (linux/darwin, amd64/arm64)
+- Document platform support for embedded CPython (linux-amd64, darwin amd64/arm64)
 
 ## References
 

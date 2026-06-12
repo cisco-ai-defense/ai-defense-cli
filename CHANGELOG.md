@@ -11,6 +11,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - CI: version resolution folded into the `test` job; `checksums` runs only on
   `main` / `release/**` pushes (not on pull requests).
 - Upload client fallback uses redirect-safe HTTP client when `UploadHTTPClient` is unset.
+- **Dropped `linux-arm64` release artifacts** — publish `linux-amd64` only; ARM Linux
+  users can use Docker (`platform: linux/amd64`) or build from source.
 
 ### Added
 

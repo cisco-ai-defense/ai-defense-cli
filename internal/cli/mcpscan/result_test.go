@@ -1,8 +1,10 @@
 package mcpscan
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
@@ -21,7 +23,25 @@ func silenceStdout(t *testing.T) {
 }
 
 func defaultOpts() *cmdutil.ScanResultOptions {
-	return &cmdutil.ScanResultOptions{FailOn: "low", BlockOn: "critical", Output: "json"}
+	return &cmdutil.ScanResultOptions{
+		FailOn: "low", BlockOn: "critical", Output: "json", Raw: true,
+	}
+}
+
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := os.Stdout
+	os.Stdout = w
+	fn()
+	_ = w.Close()
+	os.Stdout = orig
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	return buf.String()
 }
 
 func TestEmitScanResultMCP(t *testing.T) {
@@ -52,4 +72,37 @@ func TestEmitScanResultMCP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEmitScanResultStdoutMode(t *testing.T) {
+	const scanID = "mcp-scan-1"
+	raw := json.RawMessage(`{"scan_id":"mcp-scan-1","status":"COMPLETED"}`)
+	base := &cmdutil.ScanResultOptions{FailOn: "none", BlockOn: "none", Output: "json", Raw: true}
+
+	t.Run("raw API default", func(t *testing.T) {
+		out := captureStdout(t, func() {
+			if err := emitScanResult(scanID, "COMPLETED", raw, base); err != nil {
+				t.Fatal(err)
+			}
+		})
+		if strings.Contains(out, "envelope_version") {
+			t.Fatalf("expected raw API JSON, got envelope: %s", out)
+		}
+		if !strings.Contains(out, scanID) {
+			t.Fatalf("expected scan id in raw output: %s", out)
+		}
+	})
+
+	t.Run("envelope opt in", func(t *testing.T) {
+		opts := *base
+		opts.Envelope = true
+		out := captureStdout(t, func() {
+			if err := emitScanResult(scanID, "COMPLETED", raw, &opts); err != nil {
+				t.Fatal(err)
+			}
+		})
+		if !strings.Contains(out, "envelope_version") {
+			t.Fatalf("expected verdict envelope: %s", out)
+		}
+	})
 }

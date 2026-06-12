@@ -20,7 +20,6 @@ permissions:
 
 env:
   DOCKER_BUILDKIT: "1"
-  PUBLISH_ARTIFACTS: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) }}
 
 jobs:
   meta:
@@ -80,7 +79,7 @@ jobs:
           "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
-        if: env.PUBLISH_ARTIFACTS == 'true'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
@@ -115,7 +114,7 @@ jobs:
           "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
-        if: env.PUBLISH_ARTIFACTS == 'true'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
@@ -150,7 +149,7 @@ jobs:
           "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
-        if: env.PUBLISH_ARTIFACTS == 'true'
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
@@ -163,7 +162,6 @@ jobs:
     needs: [meta, build-linux, build-darwin-arm64, build-darwin-amd64]
     runs-on: ubuntu-latest
     if: >-
-      env.PUBLISH_ARTIFACTS == 'true' &&
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
@@ -171,18 +169,26 @@ jobs:
       VERSION: ${{ needs.meta.outputs.version }}
       COMMIT: ${{ needs.meta.outputs.commit }}
     steps:
+      - name: Pull request (no artifact publish)
+        if: github.event_name == 'pull_request'
+        run: echo "checksums.txt and manifest.json are published on main/release pushes only"
+
       - uses: actions/checkout@v6
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
 
       - uses: actions/download-artifact@v8
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         with:
           path: dist
           pattern: aid-cisco-cli-*
           merge-multiple: true
 
       - name: Generate checksums.txt and manifest.json
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         run: make checksums manifest VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Upload release metadata
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-${{ needs.meta.outputs.version }}-metadata

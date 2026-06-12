@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -227,5 +228,22 @@ func TestValidateUploadURL(t *testing.T) {
 	}
 	if err := c.DoRawPUT("https://127.0.0.1/upload", strings.NewReader("x"), 1); err == nil {
 		t.Fatal("expected error for localhost upload URL")
+	}
+}
+
+func TestDoRawPUT_RejectsRedirectToPrivateHost(t *testing.T) {
+	redirectSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://127.0.0.1/evil", http.StatusTemporaryRedirect)
+	}))
+	defer redirectSrv.Close()
+
+	c := NewBaseClient("k", NewConfig("https://example.cisco.com"))
+	err := c.DoRawPUT(redirectSrv.URL, strings.NewReader("x"), 1)
+	if err == nil {
+		t.Fatal("expected error when upload redirects to private host")
+	}
+	var valErr *ValidationError
+	if !errors.As(err, &valErr) {
+		t.Fatalf("expected ValidationError, got %T: %v", err, err)
 	}
 }

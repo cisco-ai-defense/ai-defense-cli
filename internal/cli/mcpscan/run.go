@@ -9,7 +9,6 @@ import (
 
 	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	mcpscansdk "github.com/cisco-ai-defense/ai-defense-cli/api/mcpscan"
-	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 )
 
@@ -98,12 +97,10 @@ Examples:
 			}
 
 			if timedOut {
-				return clierror.Network(
-					fmt.Sprintf("scan %s did not complete within %ds (last status: %s)",
-						scanID, retryCount*waitSecs, lastStatus),
-					"Increase the polling budget via AI_DEFENSE_MCP_RETRY_COUNT and/or "+
-						"AI_DEFENSE_MCP_WAIT_TIME_SECS, then re-run.",
-					nil)
+				return &api.PollTimeoutError{
+					ScanID:     scanID,
+					BudgetSecs: retryCount * waitSecs,
+				}
 			}
 
 			raw, err := client.GetScanStatusRaw(scanID)

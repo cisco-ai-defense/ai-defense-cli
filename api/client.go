@@ -41,9 +41,7 @@ func NewBaseClient(apiKey string, config *Config) *BaseClient {
 	if uploadSecs <= 0 {
 		uploadSecs = timeout
 	}
-	uploadHTTPClient := &http.Client{
-		Timeout: time.Duration(uploadSecs) * time.Second,
-	}
+	uploadHTTPClient := newUploadHTTPClient(uploadSecs)
 
 	return &BaseClient{
 		HTTPClient: &http.Client{
@@ -175,6 +173,22 @@ func (c *BaseClient) Put(path string, body interface{}) (json.RawMessage, error)
 // Delete performs a DELETE request.
 func (c *BaseClient) Delete(path string) (json.RawMessage, error) {
 	return c.DoRequest(http.MethodDelete, path, nil, nil)
+}
+
+func newUploadHTTPClient(uploadSecs int) *http.Client {
+	return &http.Client{
+		Timeout:       time.Duration(uploadSecs) * time.Second,
+		CheckRedirect: uploadCheckRedirect,
+	}
+}
+
+// uploadCheckRedirect re-validates each redirect target so a presigned URL cannot
+// be redirected to a private or link-local host (SSRF).
+func uploadCheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return fmt.Errorf("upload redirect limit exceeded")
+	}
+	return validateUploadURL(req.URL.String())
 }
 
 func validateUploadURL(raw string) error {

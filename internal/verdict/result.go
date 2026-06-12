@@ -10,6 +10,9 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 )
 
+// EnvelopeVersion is the schema version of the verdict JSON envelope.
+const EnvelopeVersion = "1"
+
 // Decision is the policy outcome of a completed scan.
 type Decision string
 
@@ -34,6 +37,7 @@ type Threat struct {
 // `decision`/`highest_severity`/`counts_by_severity` and branches on the process
 // exit code rather than parsing scan-type-specific payloads.
 type Result struct {
+	EnvelopeVersion  string         `json:"envelope_version"`
 	ScanType         string         `json:"scan_type"`
 	ScanID           string         `json:"scan_id,omitempty"`
 	Status           string         `json:"status,omitempty"`
@@ -50,7 +54,8 @@ type Result struct {
 // FromModelScan builds a Result from a completed model-scan status payload.
 func FromModelScan(info modelscansdk.ScanStatusInfo) Result {
 	r := Result{
-		ScanType: "model-scan",
+		EnvelopeVersion: EnvelopeVersion,
+		ScanType:        "model-scan",
 		ScanID:   info.ScanID,
 		Status:   string(info.Status),
 	}
@@ -77,7 +82,8 @@ func FromModelScan(info modelscansdk.ScanStatusInfo) Result {
 // the caller; pass the raw severity strings in threatSeverities.
 func FromMCPScan(scanID, status string, threatSeverities []string) Result {
 	r := Result{
-		ScanType: "mcp-scan",
+		EnvelopeVersion: EnvelopeVersion,
+		ScanType:        "mcp-scan",
 		ScanID:   scanID,
 		Status:   status,
 	}

@@ -128,7 +128,7 @@ func TestFromModelScanEnvelope(t *testing.T) {
 	blockCrit, _ := ParseThreshold("critical")
 	r.Decide(failLow, blockCrit)
 
-	if r.ScanType != "model-scan" || r.ScanID != "scan-1" {
+	if r.EnvelopeVersion != EnvelopeVersion || r.ScanType != "model-scan" || r.ScanID != "scan-1" {
 		t.Errorf("unexpected envelope identity: %+v", r)
 	}
 	if r.ThreatCount != 3 {
@@ -147,7 +147,7 @@ func TestFromModelScanEnvelope(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &decoded); err != nil {
 		t.Fatalf("render json invalid: %v", err)
 	}
-	for _, key := range []string{"scan_type", "decision", "exit_code", "highest_severity", "counts_by_severity", "threat_count"} {
+	for _, key := range []string{"envelope_version", "scan_type", "decision", "exit_code", "highest_severity", "counts_by_severity", "threat_count"} {
 		if _, ok := decoded[key]; !ok {
 			t.Errorf("json envelope missing key %q", key)
 		}

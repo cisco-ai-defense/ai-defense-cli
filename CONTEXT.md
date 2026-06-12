@@ -17,12 +17,13 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] Install/upgrade docs (`docs/install-upgrade.md`)
 - [ ] First public GitHub release (`v0.1.0` tag after merge)
 - [x] PR review fixes: transport errors (exit 4), TOML parse errors, macOS Gatekeeper docs
+- [x] Upload redirect SSRF hardening, verdict `envelope_version`, mcp-scan `PollTimeoutError`
 
 ## Deferred (post-merge)
 
 - macOS Developer ID signing + notarization in release CI
 - GitHub Actions SHA pinning (org policy)
-- Verdict JSON `envelope_version` field
+- Fold CI `meta` job; drop `checksums` from PR required branch checks
 
 ## Layout
 

@@ -12,7 +12,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   (`aid-cisco-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
 - **GitHub Release workflow** — push tag `v*` to publish versioned downloads.
 - **Public repository** with Vault-inspired layout (`api/`, `internal/cli/`).
-- **Multi-platform CI** — Linux and macOS embed builds; PR artifacts with 7-day retention.
+- **Multi-platform CI** — Linux and macOS embed builds on every PR; versioned artifacts
+  published on `main` / `release/**` pushes only (7-day retention).
 - **Install/upgrade** and user/developer getting-started guides.
 - **Deterministic exit-code contract** for scan commands so CI/CD pipelines can
   branch on `$?` instead of parsing output. Operational failures (`1`-`9`) are
@@ -20,8 +21,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   `0` pass, `2` usage, `3` auth/config, `4` connectivity/timeout, `5` scan
   failed/cancelled, `1` unexpected, `10` fail, `20` block.
 - **Unified verdict envelope** emitted on stdout by `model-scan trigger`/`info`
-  and `mcp-scan run`/`info --scan-id`: normalized decision, highest severity,
-  threat counts, and per-severity breakdown (`--output json|text`).
+  and `mcp-scan run`/`info --scan-id`: `envelope_version`, normalized decision,
+  highest severity, threat counts, and per-severity breakdown (`--output json|text`).
 - **Gating flags** `--fail-on` and `--block-on` (`none|low|medium|high|critical`)
   to configure which severities fail (`10`) or hard-block (`20`) the command;
   fail-closed by default.

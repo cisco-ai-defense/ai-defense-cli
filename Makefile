@@ -122,7 +122,7 @@ PBS_SHA256_arm64  := 6344f857fab8453423cf0471a9bd1e74393947c9e3d59919d78eebc4c7e
 
 build-release-linux: ## Linux release binary via Docker (embed_python) → dist/
 	@mkdir -p $(DIST_DIR)
-	$(DOCKER) build --target release \
+	$(DOCKER) build --platform linux/$(GOARCH) --target release \
 	  --build-arg PY_BUILD_IMAGE=$(PY_BUILD_IMAGE) \
 	  --build-arg GO_BUILD_IMAGE=$(GO_BUILD_IMAGE) \
 	  --build-arg TARGETARCH=$(GOARCH) \

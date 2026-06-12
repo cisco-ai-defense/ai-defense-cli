@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to `aid-cisco-cli` are documented here. This project adheres
+to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- **Deterministic exit-code contract** for scan commands so CI/CD pipelines can
+  branch on `$?` instead of parsing output. Operational failures (`1`-`9`) are
+  partitioned from policy verdicts (`>= 10`):
+  `0` pass, `2` usage, `3` auth/config, `4` connectivity/timeout, `5` scan
+  failed/cancelled, `1` unexpected, `10` fail, `20` block.
+- **Unified verdict envelope** emitted on stdout by `model-scan trigger`/`info`
+  and `mcp-scan run`/`info --scan-id`: normalized decision, highest severity,
+  threat counts, and per-severity breakdown (`--output json|text`).
+- **Gating flags** `--fail-on` and `--block-on` (`none|low|medium|high|critical`)
+  to configure which severities fail (`10`) or hard-block (`20`) the command;
+  fail-closed by default.
+- `--raw` flag to print the verbatim API response instead of the envelope
+  (gating still applies).
+
+### Changed
+
+- **Backward-incompatible vs. the Python `aidcli` this CLI replaces** (the Go CLI
+  itself has not previously shipped):
+  - Scan commands now print the verdict envelope by default instead of the raw
+    API JSON. Use `--raw` to restore the verbatim payload.
+  - A completed scan with findings now exits `10`/`20` instead of `0`. Use
+    `--fail-on none --block-on none` to report without gating.
+  - Operational errors are now classified into `3`/`4`/`5` instead of the
+    catch-all `1`. Usage errors remain `2`.
+  - Command and flag names are unchanged, so existing invocations still run.
+  - See [Migrating from the Python `aidcli`](docs/getting-started-client.md#7-migrating-from-the-python-aidcli).

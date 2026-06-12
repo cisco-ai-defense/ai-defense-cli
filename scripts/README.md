@@ -23,3 +23,11 @@ Invoked by `make bundle`. Uses [python-build-standalone](https://github.com/astr
 make build-go test vet          # Go-only
 make bundle && make build-embed # Full CLI with cisco-aibom
 ```
+
+## Release builds
+
+| Target | Output |
+|--------|--------|
+| `make build-release-linux` | `dist/aid-cisco-cli-linux-$(GOARCH)` via Docker |
+| `make build-release-darwin` | `dist/aid-cisco-cli-darwin-$(GOARCH)` native on macOS |
+| `make checksums` | `dist/checksums.txt` |

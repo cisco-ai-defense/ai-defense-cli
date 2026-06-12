@@ -2,104 +2,67 @@
 
 **Cisco AI Defense CLI** (`aid-cisco-cli`)
 
-Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-scan**, and **ai-bom**. Designed for local development and CI/CD pipelines with deterministic exit codes and machine-readable output.
-
-> This repository is the public home for the Go CLI previously developed in [ai-firewall-services](https://github.com/cisco-aispg/ai-firewall-services). CLI source, CI/CD, and install docs are being migrated from PRs [#5789](https://github.com/cisco-aispg/ai-firewall-services/pull/5789), [#5790](https://github.com/cisco-aispg/ai-firewall-services/pull/5790), and [#5810](https://github.com/cisco-aispg/ai-firewall-services/pull/5810).
-
----
+Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-scan**, and **ai-bom**. Deterministic exit codes and machine-readable output for CI/CD.
 
 ## Status
 
 | Area | Status |
 |------|--------|
-| Repository bootstrap | In progress (`feature/repo-bootstrap`) |
-| CLI source migration | Pending |
-| Release / versioned downloads | Pending (see `docs/install-upgrade.md` after migration) |
-| Public GitHub releases | Pending |
+| CLI source | Migrated from [PR #5789](https://github.com/cisco-aispg/ai-firewall-services/pull/5789) |
+| Release CI/CD | Pending ([PR #5790](https://github.com/cisco-aispg/ai-firewall-services/pull/5790)) |
+| Install docs | Pending ([PR #5810](https://github.com/cisco-aispg/ai-firewall-services/pull/5810)) |
 
-See [CONTEXT.md](/CONTEXT.md) for the current migration plan.
+## Features
 
----
-
-## Features (planned)
-
-- **model-scan** — trigger and retrieve AI/ML model security scans
-- **mcp-scan** — register and scan MCP servers
-- **ai-bom** — generate and manage AI Bill of Materials (embedded analyzer)
-- **Deterministic exit codes** — operational failures (1–5) vs policy verdicts (10, 20)
-- **CI-friendly output** — JSON verdict envelope, `--fail-on` / `--block-on` thresholds
-- **Versioned releases** — pinned downloads with checksum verification
-
----
+- **model-scan** — AI/ML model security scans
+- **mcp-scan** — MCP server registration and scanning
+- **ai-bom** — AI Bill of Materials (embedded `cisco-aibom` analyzer)
+- **Exit codes** — operational (1–5) vs policy verdicts (10, 20)
+- **CI output** — JSON verdict envelope, `--fail-on` / `--block-on`
 
 ## Installation
 
-Installation and upgrade instructions (versioned downloads, checksums, rollback) will be documented in:
+See [docs/install-upgrade.md](docs/install-upgrade.md) (release downloads coming with CI migration).
 
-- [docs/install-upgrade.md](docs/install-upgrade.md) *(after CLI migration)*
-
-For now, build from source once the Go module is present:
+Build from source:
 
 ```bash
 git clone https://github.com/cisco-ai-defense/ai-defense-cli.git
 cd ai-defense-cli
-go build -o aid-cisco-cli .
+make build-go
+./bin/aid-cisco-cli --help
 ```
-
----
 
 ## Quick start
 
 ```bash
-# Configure (flags > env > TOML)
-export AIDEFENSE_API_KEY="your-api-key"
-export AIDEFENSE_BASE_URL="https://your-region.ai.defense.cisco.com"
+export AI_DEFENSE_API_KEY="your-api-key"
+export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
 
-# Example (after migration)
-aid-cisco-cli model-scan trigger --model-uri "hf://org/model"
-aid-cisco-cli model-scan result --scan-id <id> --output json
+./bin/aid-cisco-cli model-scan list --limit 5
 ```
 
----
-
-## Repository layout (target)
+## Repository layout
 
 ```
-cmd/              # Cobra command groups
-internal/         # config, exit codes, verdict, embedded Python
-sdk/aidefense/    # AI Defense HTTP client
-docs/             # specs, install, getting started
-.github/workflows/  # build, test, release
+api/                 # HTTP client (importable)
+internal/cli/        # Cobra commands
+internal/            # config, exit codes, verdict, embedded Python
+scripts/             # Python bundle build
+docs/                # specs, architecture, guides
 ```
-
----
 
 ## Development
 
 ```bash
-make build-go          # Go CLI only (stub embedded Python)
-make test vet
-
-# Full CLI with embedded cisco-aibom (release-style):
-make bundle build-embed
+make build-go test vet           # daily dev
+make bundle build-embed          # full embed (local OS)
+make build-release-darwin        # macOS release → dist/
+make build-release-linux GOARCH=amd64   # Linux release via Docker
 ```
 
-See `Makefile` and `scripts/README.md` for build modes (`BUILD_MODE=go|full`).
-
-The CLI is primarily Go and embeds a relocatable CPython runtime for local AIBOM analysis (`cisco-aibom`). See `docs/architecture/ai-defense-cli.md` for details.
-
----
-
-## Related projects
-
-- [ai-defense-python-sdk](https://github.com/cisco-ai-defense/ai-defense-python-sdk) — Python SDK for AI Defense APIs
-
----
+See [docs/getting-started-developer.md](docs/getting-started-developer.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and [SECURITY.md](SECURITY.md).
-
-## License
-
-Apache License 2.0 — see [LICENSE](LICENSE).
+[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [LICENSE](LICENSE)

@@ -1,0 +1,170 @@
+package api
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// BaseClient provides authenticated HTTP access to the AI Defense Management API.
+type BaseClient struct {
+	HTTPClient       *http.Client
+	UploadHTTPClient *http.Client
+	apiKey           string
+	apiPrefix        string
+}
+
+// NewBaseClient creates a BaseClient for the given API key and config.
+func NewBaseClient(apiKey string, config *Config) *BaseClient {
+	if config == nil {
+		config = NewConfig("")
+	}
+	baseURL := strings.TrimRight(config.ManagementBaseURL, "/")
+	apiVersion := config.APIVersion
+	if apiVersion == "" {
+		apiVersion = DefaultAPIVersion
+	}
+	apiPrefix := fmt.Sprintf("%s/%s/%s", baseURL, APIPrefix, apiVersion)
+
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+
+	uploadHTTPClient := &http.Client{}
+	if config.UploadTimeout > 0 {
+		uploadHTTPClient.Timeout = time.Duration(config.UploadTimeout) * time.Second
+	}
+
+	return &BaseClient{
+		HTTPClient: &http.Client{
+			Timeout: time.Duration(timeout) * time.Second,
+		},
+		UploadHTTPClient: uploadHTTPClient,
+		apiKey:           apiKey,
+		apiPrefix:        apiPrefix,
+	}
+}
+
+func (c *BaseClient) getURL(path string) string {
+	path = strings.TrimLeft(path, "/")
+	return fmt.Sprintf("%s/%s", c.apiPrefix, path)
+}
+
+// DoRequest performs an HTTP request with JSON body and returns the raw JSON response.
+func (c *BaseClient) DoRequest(method, path string, params url.Values, body interface{}) (json.RawMessage, error) {
+	reqURL := c.getURL(path)
+	if len(params) > 0 {
+		reqURL = reqURL + "?" + params.Encode()
+	}
+
+	var bodyReader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		bodyReader = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequest(method, reqURL, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set(AuthHeader, c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		apiErr := &ApiError{
+			StatusCode: resp.StatusCode,
+			Message:    string(respBody),
+		}
+		var errResp map[string]interface{}
+		if json.Unmarshal(respBody, &errResp) == nil {
+			if reqID, ok := errResp["request_id"].(string); ok {
+				apiErr.RequestID = reqID
+			}
+			if msg, ok := errResp["message"].(string); ok {
+				apiErr.Message = msg
+			}
+		}
+		return nil, apiErr
+	}
+
+	if len(respBody) == 0 {
+		return nil, nil
+	}
+
+	return json.RawMessage(respBody), nil
+}
+
+// DoRawPUT performs a raw PUT to an arbitrary URL (for presigned uploads).
+func (c *BaseClient) DoRawPUT(uploadURL string, body io.Reader, contentLength int64) error {
+	req, err := http.NewRequest(http.MethodPut, uploadURL, body)
+	if err != nil {
+		return fmt.Errorf("failed to create upload request: %w", err)
+	}
+	req.ContentLength = contentLength
+
+	uploadClient := c.UploadHTTPClient
+	if uploadClient == nil {
+		uploadClient = c.HTTPClient
+	}
+	resp, err := uploadClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("upload request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return &ApiError{
+			StatusCode: resp.StatusCode,
+			Message:    string(respBody),
+		}
+	}
+	return nil
+}
+
+// Get performs a GET request.
+func (c *BaseClient) Get(path string, params url.Values) (json.RawMessage, error) {
+	return c.DoRequest(http.MethodGet, path, params, nil)
+}
+
+// Post performs a POST request with a JSON body.
+func (c *BaseClient) Post(path string, body interface{}) (json.RawMessage, error) {
+	return c.DoRequest(http.MethodPost, path, nil, body)
+}
+
+// PostWithParams performs a POST request with query parameters and a JSON body.
+func (c *BaseClient) PostWithParams(path string, params url.Values, body interface{}) (json.RawMessage, error) {
+	return c.DoRequest(http.MethodPost, path, params, body)
+}
+
+// Put performs a PUT request with a JSON body.
+func (c *BaseClient) Put(path string, body interface{}) (json.RawMessage, error) {
+	return c.DoRequest(http.MethodPut, path, nil, body)
+}
+
+// Delete performs a DELETE request.
+func (c *BaseClient) Delete(path string) (json.RawMessage, error) {
+	return c.DoRequest(http.MethodDelete, path, nil, nil)
+}

@@ -1,0 +1,280 @@
+package modelscan
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/cisco-ai-defense/ai-defense-cli/api"
+)
+
+const (
+	defaultRetryCount = 60
+	defaultWaitSecs   = 10
+)
+
+// Client provides access to the AI Defense Model Scan API.
+type Client struct {
+	base *api.BaseClient
+}
+
+// NewClient creates a new model scan client.
+func NewClient(apiKey string, config *api.Config) *Client {
+	return &Client{base: api.NewBaseClient(apiKey, config)}
+}
+
+// RegisterScan registers a new scan session.
+func (c *Client) RegisterScan() (*RegisterScanResponse, error) {
+	resp, err := c.base.Post(Scans+"/register", nil)
+	if err != nil {
+		return nil, err
+	}
+	var result RegisterScanResponse
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse register scan response: %w", err)
+	}
+	return &result, nil
+}
+
+// CreateScanObject creates a scan object and returns (objectID, uploadURL).
+func (c *Client) CreateScanObject(scanID string, req *CreateScanObjectRequest) (string, string, error) {
+	resp, err := c.base.Post(ScanByID(scanID)+"/"+ScanObjects, req)
+	if err != nil {
+		return "", "", err
+	}
+	var result CreateScanObjectResponse
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return "", "", fmt.Errorf("failed to parse create scan object response: %w", err)
+	}
+	return result.ObjectID, result.UploadURL, nil
+}
+
+// UploadFile uploads a file to the presigned URL.
+func (c *Client) UploadFile(uploadURL string, filePath string) error {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file %s: %w", filePath, err)
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to stat file %s: %w", filePath, err)
+	}
+
+	return c.base.DoRawPUT(uploadURL, f, info.Size())
+}
+
+// UploadScanResult uploads scan results for a specific scan object.
+func (c *Client) UploadScanResult(scanID, objectID string, scanResult map[string]interface{}) error {
+	body := map[string]interface{}{
+		"scan_result": scanResult,
+	}
+	_, err := c.base.Post(ObjectByID(scanID, objectID)+"/results", body)
+	return err
+}
+
+// MarkScanCompleted marks a scan as completed.
+func (c *Client) MarkScanCompleted(scanID string, errors string) error {
+	body := map[string]string{"errors": errors}
+	_, err := c.base.Put(ScanByID(scanID)+"/complete", body)
+	return err
+}
+
+// TriggerScan triggers execution of a scan for uploaded files.
+func (c *Client) TriggerScan(scanID string) error {
+	_, err := c.base.Put(ScanByID(scanID)+"/run", nil)
+	return err
+}
+
+// ValidateScanURL validates a repository URL for scanning.
+func (c *Client) ValidateScanURL(scanID string, req *ModelRepoConfig) (*ValidateModelURLResponse, error) {
+	resp, err := c.base.Post(ScanByID(scanID)+"/validate_url", req)
+	if err != nil {
+		return nil, err
+	}
+	var result ValidateModelURLResponse
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse validate URL response: %w", err)
+	}
+	return &result, nil
+}
+
+// GetScan retrieves detailed information about a specific scan.
+func (c *Client) GetScan(scanID string, req *GetScanStatusRequest) (*GetScanStatusResponse, error) {
+	params := url.Values{}
+	if req != nil {
+		if req.FileLimit > 0 {
+			params.Set("file_limit", strconv.Itoa(req.FileLimit))
+		}
+		if req.FileOffset > 0 {
+			params.Set("file_offset", strconv.Itoa(req.FileOffset))
+		}
+		if req.Query != "" {
+			params.Set("query", req.Query)
+		}
+	}
+	resp, err := c.base.Get(ScanByID(scanID), params)
+	if err != nil {
+		return nil, err
+	}
+	var result GetScanStatusResponse
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse scan status response: %w", err)
+	}
+	return &result, nil
+}
+
+// ListScans lists scans with pagination.
+func (c *Client) ListScans(req *ListScansRequest) (*ListScansResponse, error) {
+	params := url.Values{}
+	if req != nil {
+		if req.Limit > 0 {
+			params.Set("limit", strconv.Itoa(req.Limit))
+		}
+		if req.Offset > 0 {
+			params.Set("offset", strconv.Itoa(req.Offset))
+		}
+		if req.Name != "" {
+			params.Set("name", req.Name)
+		}
+		if req.Type != "" {
+			params.Set("type", string(req.Type))
+		}
+	}
+	resp, err := c.base.Get(Scans, params)
+	if err != nil {
+		return nil, err
+	}
+	var result ListScansResponse
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse list scans response: %w", err)
+	}
+	return &result, nil
+}
+
+// DeleteScan deletes a scan session.
+func (c *Client) DeleteScan(scanID string) error {
+	_, err := c.base.Delete(ScanByID(scanID))
+	return err
+}
+
+// CancelScan cancels a running scan.
+func (c *Client) CancelScan(scanID string) error {
+	_, err := c.base.Post(ScanByID(scanID)+"/cancel", nil)
+	return err
+}
+
+// CleanupScanData deletes scan data on failure.
+func (c *Client) CleanupScanData(scanID string) {
+	_ = c.DeleteScan(scanID)
+}
+
+// ScanFile performs a cloud-based file scan: register, upload, trigger, and poll.
+func (c *Client) ScanFile(filePath string) (json.RawMessage, error) {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat file %s: %w", filePath, err)
+	}
+
+	reg, err := c.RegisterScan()
+	if err != nil {
+		return nil, fmt.Errorf("failed to register scan: %w", err)
+	}
+	scanID := reg.ScanID
+
+	if err := validateSupportedFileType(info.Name(), reg.SupportedFileTypes); err != nil {
+		c.CleanupScanData(scanID)
+		return nil, err
+	}
+
+	req := &CreateScanObjectRequest{
+		FileName: info.Name(),
+		Size:     info.Size(),
+	}
+	_, uploadURL, err := c.CreateScanObject(scanID, req)
+	if err != nil {
+		c.CleanupScanData(scanID)
+		return nil, fmt.Errorf("failed to create scan object: %w", err)
+	}
+
+	if err := c.UploadFile(uploadURL, filePath); err != nil {
+		c.CleanupScanData(scanID)
+		return nil, fmt.Errorf("failed to upload file: %w", err)
+	}
+
+	if err := c.TriggerScan(scanID); err != nil {
+		c.CleanupScanData(scanID)
+		return nil, fmt.Errorf("failed to trigger scan: %w", err)
+	}
+
+	return c.pollScanCompletion(scanID)
+}
+
+// ScanRepo performs a cloud-based repository scan: register, validate, trigger, and poll.
+func (c *Client) ScanRepo(repoConfig *ModelRepoConfig) (json.RawMessage, error) {
+	reg, err := c.RegisterScan()
+	if err != nil {
+		return nil, fmt.Errorf("failed to register scan: %w", err)
+	}
+	scanID := reg.ScanID
+
+	validation, err := c.ValidateScanURL(scanID, repoConfig)
+	if err != nil {
+		c.CleanupScanData(scanID)
+		return nil, fmt.Errorf("failed to validate repo URL: %w", err)
+	}
+	if !validation.IsAccessible || validation.ErrorMessage != "" {
+		c.CleanupScanData(scanID)
+		return nil, &api.ValidationError{Message: validation.ErrorMessage}
+	}
+
+	if err := c.TriggerScan(scanID); err != nil {
+		c.CleanupScanData(scanID)
+		return nil, fmt.Errorf("failed to trigger scan: %w", err)
+	}
+
+	return c.pollScanCompletion(scanID)
+}
+
+func (c *Client) pollScanCompletion(scanID string) (json.RawMessage, error) {
+	retryCount := envIntOrDefault("AI_DEFENSE_RETRY_COUNT_FOR_SCANNING", defaultRetryCount)
+	waitSecs := envIntOrDefault("AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK", defaultWaitSecs)
+
+	terminalStatuses := map[ScanStatus]bool{
+		ScanStatusCompleted: true,
+		ScanStatusFailed:    true,
+		ScanStatusCanceled:  true,
+	}
+
+	for i := 0; i < retryCount; i++ {
+		time.Sleep(time.Duration(waitSecs) * time.Second)
+
+		resp, err := c.GetScan(scanID, &GetScanStatusRequest{FileLimit: 100})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get scan status: %w", err)
+		}
+
+		if terminalStatuses[resp.ScanStatusInfo.Status] {
+			data, err := json.Marshal(resp)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal scan response: %w", err)
+			}
+			return data, nil
+		}
+	}
+
+	return nil, fmt.Errorf("scan %s did not complete within %ds", scanID, retryCount*waitSecs)
+}
+
+func envIntOrDefault(key string, defaultVal int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return defaultVal
+}

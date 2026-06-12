@@ -8,11 +8,11 @@ This repo contains only the CLI — no UI, database, or backend services.
 
 | Area | Purpose |
 |------|---------|
-| `cmd/` | Cobra commands: `model-scan`, `mcp-scan`, `ai-bom` |
+| `internal/cli/` | Cobra commands: `model-scan`, `mcp-scan`, `ai-bom` |
 | `internal/embedded/python/` | Relocatable CPython + packaged `cisco-aibom` (not system Python) |
 | `internal/` | Config, exit codes, verdict output |
 | `scripts/` | Python bundle requirements and build helpers |
-| `sdk/aidefense/` | HTTP client for AI Defense APIs |
+| `api/` | HTTP client for AI Defense APIs |
 | `docs/` | Specs, install/upgrade, architecture |
 | `.github/workflows/` | Test, build, release |
 
@@ -22,7 +22,7 @@ This repo contains only the CLI — no UI, database, or backend services.
 - `internal/verdict` — scan result envelope
 - `internal/cmdutil` — `--fail-on`, `--block-on`, `--output`, `--raw`
 - `internal/config` — flags > env > TOML
-- `sdk/aidefense` — HTTP client and service clients
+- ``api`` — HTTP client and service clients
 
 ## Rules
 

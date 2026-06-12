@@ -33,11 +33,10 @@ BUNDLE_TAR    := $(EMBED_BIN_DIR)/aid-py-bundle.tar.gz
 BUNDLE_ID     := $(EMBED_BIN_DIR)/aid-py-bundle.id
 
 LDFLAGS := -s -w \
-	-X $(MODULE)/cmd.version=$(VERSION) \
-	-X $(MODULE)/cmd.commit=$(COMMIT) \
-	-X $(MODULE)/cmd.date=$(BUILD_DATE)
+	-X $(MODULE)/internal/cli.version=$(VERSION) \
+	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help build build-go build-embed bundle bundle-check test vet fmt clean
+.PHONY: help build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums clean-dist
 
 help: ## Show targets
 	@printf "ai-defense-cli Makefile\n\n"
@@ -98,3 +97,66 @@ clean: ## Remove build outputs
 	rm -rf $(BIN_DIR)/$(BINARY_NAME)
 	rm -rf $(EMBED_BIN_DIR)/aid-py-bundle.tar.gz $(EMBED_BIN_DIR)/aid-py-bundle.id
 	$(GO) clean -cache -testcache 2>/dev/null || true
+
+DIST_DIR      ?= dist
+DOCKER        ?= docker
+PY_BUILD_IMAGE  ?= debian:bookworm-slim
+GO_BUILD_IMAGE  ?= golang:1.23-bookworm
+
+.PHONY: build-release build-release-linux build-release-darwin build-release-all checksums clean-dist
+
+build-release: ## Release binary for host OS (linux→Docker, darwin→native embed)
+ifeq ($(GOOS),linux)
+	$(MAKE) build-release-linux GOARCH=$(GOARCH)
+else ifeq ($(GOOS),darwin)
+	$(MAKE) build-release-darwin GOARCH=$(GOARCH)
+else
+	$(error build-release unsupported GOOS=$(GOOS); use build-release-linux or build-release-darwin)
+endif
+
+# PBS pins per linux arch (python-build-standalone 20250723 / cpython 3.12.11)
+PBS_TRIPLE_amd64  := x86_64-unknown-linux-gnu
+PBS_SHA256_amd64  := e5e828ba2c1a55400cdb07ff5f052908c46d5deb4f62d8b5825f8c24aeffcccb
+PBS_TRIPLE_arm64  := aarch64-unknown-linux-gnu
+PBS_SHA256_arm64  := 6344f857fab8453423cf0471a9bd1e74393947c9e3d59919d78eebc4c7eb8590
+
+build-release-linux: ## Linux release binary via Docker (embed_python) → dist/
+	@mkdir -p $(DIST_DIR)
+	$(DOCKER) build --target release \
+	  --build-arg PY_BUILD_IMAGE=$(PY_BUILD_IMAGE) \
+	  --build-arg GO_BUILD_IMAGE=$(GO_BUILD_IMAGE) \
+	  --build-arg TARGETARCH=$(GOARCH) \
+	  --build-arg PBS_TRIPLE=$(PBS_TRIPLE_$(GOARCH)) \
+	  --build-arg PBS_SHA256=$(PBS_SHA256_$(GOARCH)) \
+	  --build-arg CLI_VERSION=$(VERSION) \
+	  --build-arg CLI_COMMIT=$(COMMIT) \
+	  --output type=local,dest=$(DIST_DIR)/ .
+	@mv -f $(DIST_DIR)/aid-cisco-cli $(DIST_DIR)/aid-cisco-cli-linux-$(GOARCH)
+	@printf "Built $(DIST_DIR)/aid-cisco-cli-linux-$(GOARCH)\n"
+
+build-release-darwin: bundle-check ## macOS release binary (native embed) → dist/
+	@mkdir -p $(DIST_DIR)
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=$(GOARCH) $(GO) build \
+		-tags embed_python \
+		-ldflags "$(LDFLAGS)" \
+		-o $(DIST_DIR)/aid-cisco-cli-darwin-$(GOARCH) .
+	@printf "Built $(DIST_DIR)/aid-cisco-cli-darwin-$(GOARCH)\n"
+
+build-release-all: ## Build linux amd64+arm64 (Docker); darwin if on macOS host
+	$(MAKE) build-release-linux GOARCH=amd64
+	$(MAKE) build-release-linux GOARCH=arm64
+ifeq ($(shell uname -s),Darwin)
+	$(MAKE) build-release-darwin GOARCH=arm64
+ifneq ($(shell uname -m),arm64)
+	$(MAKE) build-release-darwin GOARCH=amd64
+endif
+endif
+
+checksums: ## Generate dist/checksums.txt (sha256)
+	@command -v shasum >/dev/null || (echo "shasum required" && exit 1)
+	@mkdir -p $(DIST_DIR)
+	@cd $(DIST_DIR) && shasum -a 256 aid-cisco-cli-* 2>/dev/null > checksums.txt || true
+	@printf "Wrote $(DIST_DIR)/checksums.txt\n"
+
+clean-dist: ## Remove dist/ release artifacts
+	rm -rf $(DIST_DIR)

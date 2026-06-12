@@ -1,6 +1,9 @@
-# Pinned Python deps for the embedded aid-py bundle.
-# Installed into relocatable CPython (python-build-standalone), then tarred and
-# embedded in the Go CLI via //go:build embed_python.
+# Pinned Python deps for the aid-py bundle stage (aid_cli/Dockerfile).
 #
-# Bump in sync with aibom release notes when upgrading analyzer versions.
+# These are installed into a relocatable CPython (python-build-standalone)
+# which is tarred and embedded in the Go CLI. No compilation step is involved,
+# so adding a new aibom backend never requires touching build flags -- pip just
+# resolves the (possibly lazily-imported) dependency tree and it ships as-is.
+#
+# Keep cisco-aibom in sync with aidcli/poetry.lock when bumping.
 cisco-aibom[all]==1.0.0rc4

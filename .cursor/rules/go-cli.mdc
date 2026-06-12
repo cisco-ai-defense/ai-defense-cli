@@ -10,13 +10,13 @@ alwaysApply: false
 
 | Path | Role |
 |------|------|
-| `cmd/` | Cobra command groups |
+| `internal/cli/` | Cobra command groups |
 | `internal/clierror` | Exit-code contract (ops 1–5, policy 10/20) |
 | `internal/verdict` | Scan result envelope |
 | `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` |
 | `internal/config` | Auth and endpoint (flags > env > TOML) |
 | `internal/embedded/python` | Go ↔ embedded CPython bridge (see embedded-python rule) |
-| `sdk/aidefense/` | HTTP client — extend, don't duplicate |
+| `api/` | HTTP client — extend, don't duplicate |
 
 ## Quality gates
 

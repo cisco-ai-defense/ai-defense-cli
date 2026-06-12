@@ -15,6 +15,10 @@ Release binaries are named `aid-cisco-cli-<version>-<os>-<arch>`. For version `0
 | macOS | arm64 (Apple Silicon) | `aid-cisco-cli-0.1.0-darwin-arm64` |
 | macOS | amd64 (Intel) | `aid-cisco-cli-0.1.0-darwin-amd64` |
 
+> **macOS:** Release binaries are **unsigned and not notarized** (no Apple Developer ID).
+> Gatekeeper blocks the first run until you clear quarantine or approve the binary — see
+> [macOS install](#macos-install) below.
+
 Each release also ships `checksums.txt` and `manifest.json` (version, commit, per-arch SHA-256).
 
 ## Install from GitHub Release
@@ -29,23 +33,14 @@ Each release also ships `checksums.txt` and `manifest.json` (version, commit, pe
 
    Replace `0.1.0` and the platform suffix with your release version and OS/arch.
 
-4. Install on your `PATH`:
+4. Install on your `PATH` (Linux example):
 
    ```bash
-   chmod +x aid-cisco-cli-linux-amd64
-   sudo mv aid-cisco-cli-linux-amd64 /usr/local/bin/aid-cisco-cli
+   chmod +x aid-cisco-cli-0.1.0-linux-amd64
+   sudo mv aid-cisco-cli-0.1.0-linux-amd64 /usr/local/bin/aid-cisco-cli
    ```
 
-   On macOS, release binaries are not notarized yet. If Gatekeeper blocks the first
-   run ("cannot verify … is free of malware"), either:
-
-   - **System Settings → Privacy & Security → Open Anyway**, or
-   - Remove the download quarantine flag, then run:
-
-     ```bash
-     xattr -d com.apple.quarantine ./aid-cisco-cli-0.1.0-darwin-arm64
-     chmod +x ./aid-cisco-cli-0.1.0-darwin-arm64
-     ```
+   On macOS, follow [macOS install](#macos-install) instead.
 
 5. Confirm:
 
@@ -53,6 +48,28 @@ Each release also ships `checksums.txt` and `manifest.json` (version, commit, pe
    aid-cisco-cli --version
    aid-cisco-cli --help
    ```
+
+## macOS install
+
+> **Unsigned binary:** macOS release builds are not code-signed or notarized. This is
+> expected until an org Apple Developer ID is available.
+
+1. Download and verify the `darwin-*` binary (steps 1–3 above).
+2. Clear Gatekeeper quarantine and install:
+
+   ```bash
+   xattr -d com.apple.quarantine ./aid-cisco-cli-0.1.0-darwin-arm64
+   chmod +x ./aid-cisco-cli-0.1.0-darwin-arm64
+   sudo mv ./aid-cisco-cli-0.1.0-darwin-arm64 /usr/local/bin/aid-cisco-cli
+   ```
+
+   Replace the filename with your version and architecture (`darwin-amd64` on Intel Macs).
+
+3. If Gatekeeper still blocks the first run ("cannot verify … is free of malware"), use
+   **System Settings → Privacy & Security → Open Anyway**, then re-run the command.
+
+**Alternatives:** build from source on the Mac (no quarantine), or use the Linux binary
+inside Docker/WSL for CI-style workflows.
 
 ## Install from CI artifacts (main branch)
 

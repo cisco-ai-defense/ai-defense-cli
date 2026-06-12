@@ -4,18 +4,13 @@ All notable changes to `aid-cisco-cli` are documented here. This project adheres
 to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2] - 2026-06-12
 
 ### Changed
-
 - Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) now
-  print **raw API JSON by default** for Python CLI migration parity; use
-  `--envelope` for the normalized verdict JSON/text. **Migration:** pipelines on
-  `0.1.1` that parsed `envelope_version` on stdout without `--raw` must add
-  `--envelope` (or `--raw=false`) after upgrade.
 - `model-scan list` and `model-scan info` print verbatim API JSON
-  (pass-through), matching Python CLI output shape; paging serializes as
-  `count`/`offset`/`total` instead of `limit`.
+
+## [Unreleased]
 
 ## [0.1.1] - 2026-06-12
 

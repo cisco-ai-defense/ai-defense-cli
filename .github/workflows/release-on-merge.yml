@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: release-tag
@@ -60,4 +61,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" "$MERGE_SHA" -m "Release $TAG"
           git push origin "$TAG"
-          echo "Pushed $TAG — Release workflow will start automatically."
+          echo "Pushed $TAG"
+
+      - name: Trigger Release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.meta.outputs.version }}
+        run: |
+          # Tag pushes from GITHUB_TOKEN do not trigger other workflows; dispatch explicitly.
+          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG"
+          echo "Started Release workflow for $TAG"

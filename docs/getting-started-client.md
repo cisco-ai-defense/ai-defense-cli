@@ -244,8 +244,8 @@ prints `Error:` and, where helpful, a `Hint:` line to stderr.
 `aid-cisco-cli` (Go) replaces the earlier Python `aidcli`. **Your existing
 commands keep working** — the subcommands and flags are unchanged
 (`model-scan trigger -f`, `--repo-url`, `--scan-id`, `mcp-scan run --url/--name`,
-the deprecated `scan` alias, `--version`, etc.). Two behaviors changed on
-purpose, so review any pipeline that consumed the old output:
+the deprecated `scan` alias, `--version`, etc.). Exit-code behavior changed on
+purpose, so review any pipeline that branched on `$?`:
 
 | Behavior | Python `aidcli` | Go `aid-cisco-cli` (default) |
 |---|---|---|
@@ -257,7 +257,8 @@ purpose, so review any pipeline that consumed the old output:
 
 What this means in practice:
 
-- A script that `jq`-parsed the old raw JSON will see a different document.
+- Scan stdout matches Python (raw API JSON by default). If you tested an interim
+  build that defaulted to the verdict envelope, add `--envelope` (or `--raw=false`).
 - A pipeline that relied on "completed scan ⇒ exit `0`" will now **fail the step**
   when threats meet the gate. This is usually what you want, but it is a change.
 - A check for *exactly* exit `1` may now see `3`/`4`/`5`. Prefer `!= 0`, or branch

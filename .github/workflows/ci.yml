@@ -23,9 +23,9 @@ jobs:
     name: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -42,17 +42,17 @@ jobs:
       matrix:
         goarch: [amd64, arm64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-qemu-action@v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build release binary (embed_python)
         run: make build-release-linux GOARCH=${{ matrix.goarch }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-linux-${{ matrix.goarch }}-${{ github.run_id }}
           path: dist/aid-cisco-cli-linux-${{ matrix.goarch }}
@@ -64,9 +64,9 @@ jobs:
     needs: test
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -77,7 +77,7 @@ jobs:
           make build-release-darwin GOARCH=arm64
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-darwin-arm64-${{ github.run_id }}
           path: dist/aid-cisco-cli-darwin-arm64
@@ -89,9 +89,9 @@ jobs:
     needs: test
     runs-on: macos-15-intel
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
@@ -102,7 +102,7 @@ jobs:
           make build-release-darwin GOARCH=amd64
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-darwin-amd64-${{ github.run_id }}
           path: dist/aid-cisco-cli-darwin-amd64
@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           pattern: aid-cisco-cli-*
@@ -128,7 +128,7 @@ jobs:
           cat checksums.txt
 
       - name: Upload checksums
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: checksums-${{ github.run_id }}
           path: dist/checksums.txt

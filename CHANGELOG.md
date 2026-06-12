@@ -28,6 +28,11 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Fixed
+
+- **Release on merge** / **Create release tag** — explicitly dispatch the **Release** workflow
+  after pushing a tag (`GITHUB_TOKEN` tag pushes do not trigger `on: push: tags` workflows).
+
 ### Changed
 
 - **Prepare release** — pushes `release/v*` branch only; open the version-bump PR manually

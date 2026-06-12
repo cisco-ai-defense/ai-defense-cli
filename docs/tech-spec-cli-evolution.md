@@ -464,7 +464,7 @@ remaining opportunity is *tool discovery* rather than dependency wiring:
 
 | Enhancement | Priority | Description |
 |---|---|---|
-| **Structured output modes** | Low | Extend output formats (`table`/`yaml`) to all commands. Scan commands already emit a normalized JSON/text verdict envelope with a deterministic exit-code contract — see `internal/verdict` and `internal/clierror` (AIFW-24131). |
+| **Structured output modes** | Low | Extend output formats (`table`/`yaml`) to all commands. Scan commands default to raw API JSON on stdout (`--envelope` for the normalized JSON/text verdict); exit codes unchanged — see `internal/verdict`, `internal/cmdutil`, and `internal/clierror` (AIFW-24131). |
 | **Shell completions** | Low | Generate bash/zsh/fish completions via Cobra |
 | **Profile management** | Medium | `--profile <name>` to switch between TOML config sections (multi-tenant support) |
 | **Offline mode / cache** | Low | Cache scan results locally for disconnected review |

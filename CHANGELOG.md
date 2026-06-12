@@ -10,7 +10,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 - Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) now
   print **raw API JSON by default** for Python CLI migration parity; use
-  `--envelope` for the normalized verdict JSON/text.
+  `--envelope` for the normalized verdict JSON/text. **Migration:** CI jobs that
+  parsed `envelope_version` on stdout without `--raw` must add `--envelope`
+  (or `--raw=false`) after upgrade.
 - `model-scan list` and `model-scan info` print verbatim API JSON
   (pass-through), matching Python CLI output shape; paging serializes as
   `count`/`offset`/`total` instead of `limit`.

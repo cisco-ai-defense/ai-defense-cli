@@ -64,9 +64,11 @@ Update as needed:
 | Change | Update |
 |--------|--------|
 | New command or flag | `docs/specs/`, `README.md`, `CHANGELOG.md` |
-| Exit code or JSON output | `docs/specs/`, `docs/architecture/ai-defense-cli.md` |
-| Release/install | `docs/install-upgrade.md`, workflow comments |
+| Exit code or JSON output | `docs/specs/`, `docs/architecture/ai-defense-cli.md`, `README.md` (Features + examples) |
+| Release/install | `docs/install-upgrade.md`, `README.md` Status (`VERSION`), workflow comments |
 | Architecture | `docs/architecture/ai-defense-cli.md`, optional ADR in `docs/adr/` |
+
+**README landing page:** keep `## Status` aligned with `VERSION` and `CONTEXT.md` — use version/install links, not open-PR links after merge.
 
 ---
 
@@ -163,6 +165,6 @@ If `pr-review` finds new BLOCKER/MAJOR issues, fix via [address-review-comments]
 - [ ] GATE SPEC: docs/cli-contract/release personas; no open BLOCKER/MAJOR
 - [ ] IMPLEMENT + VERIFY: build/test pass
 - [ ] GATE CODE: relevant personas; no open BLOCKER/MAJOR
-- [ ] CONTEXT: CHANGELOG + CONTEXT updated
+- [ ] CONTEXT: CHANGELOG + CONTEXT updated; README Status matches `VERSION`
 - [ ] pr-review before merge
 ```

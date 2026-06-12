@@ -8,9 +8,9 @@ Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-s
 
 | Area | Status |
 |------|--------|
-| CLI source | In review ([PR #1](https://github.com/cisco-ai-defense/ai-defense-cli/pull/1)) |
-| Multi-platform CI | Active on PRs and `main` |
-| Install docs | [install-upgrade.md](docs/install-upgrade.md) |
+| Current version | `0.1.1` — see [CHANGELOG](CHANGELOG.md) |
+| Distribution | [install-upgrade.md](docs/install-upgrade.md) — binaries, checksums, upgrade |
+| CI / releases | Active on PRs and `main`; push tag `v*` to publish a GitHub Release |
 
 ## Features
 

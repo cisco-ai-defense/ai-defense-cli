@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -63,6 +64,26 @@ api_key = "toml-key"
 	}
 	if key != "env-key" {
 		t.Errorf("expected env key 'env-key', got %q", key)
+	}
+}
+
+func TestNewManager_InvalidTOML(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "bad.toml")
+	if err := os.WriteFile(cfgPath, []byte("not valid toml [[["), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", cfgPath)
+	t.Setenv("AI_DEFENSE_API_KEY", "")
+	t.Setenv("AI_DEFENSE_BASE_URL", "")
+
+	m := NewManager()
+	_, err := m.GetAPIKey()
+	if err == nil {
+		t.Fatal("expected error for invalid TOML config")
+	}
+	if !strings.Contains(err.Error(), "invalid config file") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

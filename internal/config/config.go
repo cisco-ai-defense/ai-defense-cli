@@ -12,7 +12,9 @@ import (
 
 // Manager loads and resolves CLI configuration from TOML files and env vars.
 type Manager struct {
-	data map[string]interface{}
+	data       map[string]interface{}
+	configPath string
+	loadErr    error
 }
 
 // NewManager creates a config manager, loading the TOML file if present.
@@ -34,16 +36,29 @@ func NewManager() *Manager {
 	}
 
 	if configPath != "" {
-		if raw, err := os.ReadFile(configPath); err == nil {
-			_ = toml.Unmarshal(raw, &m.data)
+		m.configPath = configPath
+		raw, err := os.ReadFile(configPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				m.loadErr = fmt.Errorf("read config file %s: %w", configPath, err)
+			}
+		} else if err := toml.Unmarshal(raw, &m.data); err != nil {
+			m.loadErr = fmt.Errorf("invalid config file %s: %w", configPath, err)
 		}
 	}
 
 	return m
 }
 
+func (m *Manager) configLoadError() error {
+	return m.loadErr
+}
+
 // GetAPIKey returns the API key from env or config file.
 func (m *Manager) GetAPIKey() (string, error) {
+	if err := m.configLoadError(); err != nil {
+		return "", err
+	}
 	if v := os.Getenv("AI_DEFENSE_API_KEY"); v != "" {
 		return v, nil
 	}
@@ -59,6 +74,9 @@ func (m *Manager) GetAPIKey() (string, error) {
 
 // GetBaseURL returns the base URL from env or config file.
 func (m *Manager) GetBaseURL() (string, error) {
+	if err := m.configLoadError(); err != nil {
+		return "", err
+	}
 	if v := os.Getenv("AI_DEFENSE_BASE_URL"); v != "" {
 		return v, nil
 	}

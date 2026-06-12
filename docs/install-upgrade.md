@@ -36,8 +36,16 @@ Each release also ships `checksums.txt` and `manifest.json` (version, commit, pe
    sudo mv aid-cisco-cli-linux-amd64 /usr/local/bin/aid-cisco-cli
    ```
 
-   On macOS, you may need to allow the binary in **System Settings → Privacy & Security**
-   the first time you run an unsigned build.
+   On macOS, release binaries are not notarized yet. If Gatekeeper blocks the first
+   run ("cannot verify … is free of malware"), either:
+
+   - **System Settings → Privacy & Security → Open Anyway**, or
+   - Remove the download quarantine flag, then run:
+
+     ```bash
+     xattr -d com.apple.quarantine ./aid-cisco-cli-0.1.0-darwin-arm64
+     chmod +x ./aid-cisco-cli-0.1.0-darwin-arm64
+     ```
 
 5. Confirm:
 

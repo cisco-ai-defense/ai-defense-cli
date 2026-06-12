@@ -87,7 +87,7 @@ Examples:
 				time.Sleep(time.Duration(waitSecs) * time.Second)
 				statusResp, err := client.GetScanStatus(scanID)
 				if err != nil {
-					return fmt.Errorf("failed to get scan status: %w", err)
+					return err
 				}
 				lastStatus = statusResp.Status
 				fmt.Fprintf(os.Stderr, "Scan status: %s\n", lastStatus)

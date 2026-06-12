@@ -15,7 +15,14 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] Version file + versioned artifacts (`VERSION`, `manifest.json`)
 - [x] GitHub Release workflow (`.github/workflows/release.yml` on `v*` tags)
 - [x] Install/upgrade docs (`docs/install-upgrade.md`)
-- [ ] First public GitHub release
+- [ ] First public GitHub release (`v0.1.0` tag after merge)
+- [x] PR review fixes: transport errors (exit 4), TOML parse errors, macOS Gatekeeper docs
+
+## Deferred (post-merge)
+
+- macOS Developer ID signing + notarization in release CI
+- GitHub Actions SHA pinning (org policy)
+- Verdict JSON `envelope_version` field
 
 ## Layout
 
@@ -42,8 +49,8 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 |--------|--------|
 | `make build-go` | `bin/aid-cisco-cli` (stub Python) |
 | `make build-embed` | `bin/aid-cisco-cli` (full embed) |
-| `make build-release-linux` | `dist/aid-cisco-cli-linux-*` |
-| `make build-release-darwin` | `dist/aid-cisco-cli-darwin-*` |
+| `make build-release-linux` | `dist/aid-cisco-cli-<version>-linux-*` |
+| `make build-release-darwin` | `dist/aid-cisco-cli-<version>-darwin-*` |
 
 ## Conventions
 

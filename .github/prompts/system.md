@@ -22,7 +22,7 @@ This repo contains only the CLI — no UI, database, or backend services.
 - `internal/verdict` — scan result envelope
 - `internal/cmdutil` — `--fail-on`, `--block-on`, `--output`, `--raw`
 - `internal/config` — flags > env > TOML
-- ``api`` — HTTP client and service clients
+- `api/` — HTTP client and service clients
 
 ## Rules
 

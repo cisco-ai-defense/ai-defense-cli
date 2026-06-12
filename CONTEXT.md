@@ -1,6 +1,6 @@
 # AI Defense CLI — Project Context
 
-Last updated: 2026-06-13
+Last updated: 2026-06-12
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] GitHub Release workflow (`.github/workflows/release.yml` on `v*` tags)
 - [x] Prepare release + autofill + release-on-merge automation (`feature/release-process`)
 - [x] Install/upgrade docs (`docs/install-upgrade.md`)
-- [ ] First public GitHub release (`v0.1.0` tag; aborted `v0.1.1` prepare — VERSION reset on `main`)
+- [x] First public GitHub release (`v0.1.1` — #8)
 - [x] PR review fixes: transport errors (exit 4), TOML parse errors, macOS Gatekeeper docs
 - [x] Upload redirect SSRF hardening, verdict `envelope_version`, mcp-scan `PollTimeoutError`
 - [x] CI: fold `meta` into `test`; `checksums` job only on main/release push

@@ -257,8 +257,8 @@ purpose, so review any pipeline that branched on `$?`:
 
 What this means in practice:
 
-- Scan stdout matches Python (raw API JSON by default). If you tested an interim
-  build that defaulted to the verdict envelope, add `--envelope` (or `--raw=false`).
+- Scan stdout matches Python (raw API JSON by default). If you adopted `v0.1.1`
+  (verdict envelope on stdout without `--raw`), add `--envelope` (or `--raw=false`).
 - A pipeline that relied on "completed scan ⇒ exit `0`" will now **fail the step**
   when threats meet the gate. This is usually what you want, but it is a change.
 - A check for *exactly* exit `1` may now see `3`/`4`/`5`. Prefer `!= 0`, or branch

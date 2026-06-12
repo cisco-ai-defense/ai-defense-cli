@@ -53,8 +53,7 @@ Pull requests must pass all **required** CI checks before merge:
 | `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) + `--version` smoke test |
 
 The `checksums` job runs only on **push to `main` or `release/*`** (when artifacts are
-published). Remove `checksums` from PR required checks in branch protection if it
-still blocks merges — it is validated on every `main` push instead.
+published). It does not run on pull requests, so it should not be a PR required check.
 
 **CI artifacts** (versioned binaries + `checksums.txt` + `manifest.json`) are uploaded
 only from `main` and `release/*` pushes, not from pull requests. PRs still run full

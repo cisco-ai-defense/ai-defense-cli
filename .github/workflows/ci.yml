@@ -22,8 +22,8 @@ env:
   DOCKER_BUILDKIT: "1"
 
 jobs:
-  meta:
-    name: meta
+  test:
+    name: test
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
@@ -37,12 +37,6 @@ jobs:
           echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
@@ -53,15 +47,15 @@ jobs:
 
   build-linux:
     name: linux-${{ matrix.goarch }}
-    needs: [meta, test]
+    needs: [test]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         goarch: [amd64, arm64]
     env:
-      VERSION: ${{ needs.meta.outputs.version }}
-      COMMIT: ${{ needs.meta.outputs.commit }}
+      VERSION: ${{ needs.test.outputs.version }}
+      COMMIT: ${{ needs.test.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -82,18 +76,18 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
-          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
+          name: aid-cisco-cli-${{ needs.test.outputs.version }}-linux-${{ matrix.goarch }}
+          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-linux-${{ matrix.goarch }}
           retention-days: 7
           if-no-files-found: error
 
   build-darwin-arm64:
     name: darwin-arm64
-    needs: [meta, test]
+    needs: [test]
     runs-on: macos-latest
     env:
-      VERSION: ${{ needs.meta.outputs.version }}
-      COMMIT: ${{ needs.meta.outputs.commit }}
+      VERSION: ${{ needs.test.outputs.version }}
+      COMMIT: ${{ needs.test.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -117,18 +111,18 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
-          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
+          name: aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
+          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
           retention-days: 7
           if-no-files-found: error
 
   build-darwin-amd64:
     name: darwin-amd64
-    needs: [meta, test]
+    needs: [test]
     runs-on: macos-15-intel
     env:
-      VERSION: ${{ needs.meta.outputs.version }}
-      COMMIT: ${{ needs.meta.outputs.commit }}
+      VERSION: ${{ needs.test.outputs.version }}
+      COMMIT: ${{ needs.test.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -152,46 +146,40 @@ jobs:
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
-          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
+          name: aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-amd64
+          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-amd64
           retention-days: 7
           if-no-files-found: error
 
   checksums:
     name: checksums
-    needs: [meta, build-linux, build-darwin-arm64, build-darwin-amd64]
+    needs: [test, build-linux, build-darwin-arm64, build-darwin-amd64]
     runs-on: ubuntu-latest
     if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) &&
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
     env:
-      VERSION: ${{ needs.meta.outputs.version }}
-      COMMIT: ${{ needs.meta.outputs.commit }}
+      VERSION: ${{ needs.test.outputs.version }}
+      COMMIT: ${{ needs.test.outputs.commit }}
     steps:
-      - name: Pull request (no artifact publish)
-        if: github.event_name == 'pull_request'
-        run: echo "checksums.txt and manifest.json are published on main/release pushes only"
-
       - uses: actions/checkout@v6
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
 
       - uses: actions/download-artifact@v8
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         with:
           path: dist
           pattern: aid-cisco-cli-*
           merge-multiple: true
 
       - name: Generate checksums.txt and manifest.json
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         run: make checksums manifest VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Upload release metadata
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-metadata
+          name: aid-cisco-cli-${{ needs.test.outputs.version }}-metadata
           path: |
             dist/checksums.txt
             dist/manifest.json

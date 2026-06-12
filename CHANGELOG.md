@@ -6,6 +6,12 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Changed
+
+- CI: version resolution folded into the `test` job; `checksums` runs only on
+  `main` / `release/**` pushes (not on pull requests).
+- Upload client fallback uses redirect-safe HTTP client when `UploadHTTPClient` is unset.
+
 ### Added
 
 - **Semantic versioning** — `VERSION` file, `make version`, versioned release binaries

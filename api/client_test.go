@@ -231,6 +231,25 @@ func TestValidateUploadURL(t *testing.T) {
 	}
 }
 
+func TestDoRawPUT_NilUploadClientUsesRedirectSafeFallback(t *testing.T) {
+	redirectSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://127.0.0.1/evil", http.StatusTemporaryRedirect)
+	}))
+	defer redirectSrv.Close()
+
+	c := NewBaseClient("k", NewConfig("https://example.cisco.com"))
+	c.UploadHTTPClient = nil
+
+	err := c.DoRawPUT(redirectSrv.URL, strings.NewReader("x"), 1)
+	if err == nil {
+		t.Fatal("expected error when fallback upload client hits redirect to private host")
+	}
+	var valErr *ValidationError
+	if !errors.As(err, &valErr) {
+		t.Fatalf("expected ValidationError, got %T: %v", err, err)
+	}
+}
+
 func TestDoRawPUT_RejectsRedirectToPrivateHost(t *testing.T) {
 	redirectSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://127.0.0.1/evil", http.StatusTemporaryRedirect)

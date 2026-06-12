@@ -130,11 +130,7 @@ func (c *BaseClient) DoRawPUT(uploadURL string, body io.Reader, contentLength in
 	}
 	req.ContentLength = contentLength
 
-	uploadClient := c.UploadHTTPClient
-	if uploadClient == nil {
-		uploadClient = c.HTTPClient
-	}
-	resp, err := uploadClient.Do(req)
+	resp, err := c.uploadHTTPClient().Do(req)
 	if err != nil {
 		return &TransportError{Method: http.MethodPut, URL: uploadURL, Cause: err}
 	}
@@ -173,6 +169,19 @@ func (c *BaseClient) Put(path string, body interface{}) (json.RawMessage, error)
 // Delete performs a DELETE request.
 func (c *BaseClient) Delete(path string) (json.RawMessage, error) {
 	return c.DoRequest(http.MethodDelete, path, nil, nil)
+}
+
+// uploadHTTPClient returns the dedicated upload client, or a short-lived client
+// with redirect hardening when UploadHTTPClient was not configured.
+func (c *BaseClient) uploadHTTPClient() *http.Client {
+	if c.UploadHTTPClient != nil {
+		return c.UploadHTTPClient
+	}
+	secs := int(DefaultTimeout)
+	if c.HTTPClient != nil && c.HTTPClient.Timeout > 0 {
+		secs = int(c.HTTPClient.Timeout.Seconds())
+	}
+	return newUploadHTTPClient(secs)
 }
 
 func newUploadHTTPClient(uploadSecs int) *http.Client {

@@ -18,12 +18,12 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [ ] First public GitHub release (`v0.1.0` tag after merge)
 - [x] PR review fixes: transport errors (exit 4), TOML parse errors, macOS Gatekeeper docs
 - [x] Upload redirect SSRF hardening, verdict `envelope_version`, mcp-scan `PollTimeoutError`
+- [x] CI: fold `meta` into `test`; `checksums` job only on main/release push
 
 ## Deferred (post-merge)
 
 - macOS Developer ID signing + notarization in release CI
 - GitHub Actions SHA pinning (org policy)
-- Fold CI `meta` job; drop `checksums` from PR required branch checks
 
 ## Layout
 
@@ -62,5 +62,4 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 PRs require: `test`, `linux-amd64`, `linux-arm64`, `darwin-amd64`, `darwin-arm64`.
 
-`checksums` runs on push to `main` / `release/*` only (artifacts not published on PRs).
-Update branch protection: drop `checksums` from PR required checks if it blocks merges.
+`checksums` runs on push to `main` / `release/*` only (not on pull requests).

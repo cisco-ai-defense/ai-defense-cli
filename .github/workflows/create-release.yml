@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: create-release-${{ inputs.version }}
@@ -70,4 +71,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$TAG" "$TARGET_SHA" -m "Release $TAG"
           git push origin "$TAG"
-          echo "Pushed $TAG — Release workflow will start automatically."
+          echo "Pushed $TAG"
+
+      - name: Trigger Release workflow
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ inputs.version }}
+        run: |
+          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG"
+          echo "Started Release workflow for $TAG"

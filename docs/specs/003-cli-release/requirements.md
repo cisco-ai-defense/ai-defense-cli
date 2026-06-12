@@ -21,7 +21,7 @@
 - **REQ-03.1** When a `release/v*` PR merges into `main` **or** a long-lived `release/*` line (e.g. `release/0.1.x`), push annotated tag `v{VERSION}` at the merge commit.
 - **REQ-03.2** `VERSION` file on merge commit MUST match `release/v{VERSION}` head branch name.
 - **REQ-03.3** Tag MUST NOT already exist on `origin`. Shared validation with **Create release tag**.
-- **REQ-03.4** Tag push triggers existing **Release** workflow unchanged.
+- **REQ-03.4** After tag push, explicitly dispatch **Release** (`workflow_dispatch`) — tags pushed by `GITHUB_TOKEN` do not trigger `on: push: tags` workflows.
 - **REQ-03.5** Auto-tag MUST NOT run for pull requests from repository forks.
 
 ### REQ-04 — Create release tag (escape hatch)

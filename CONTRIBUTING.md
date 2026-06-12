@@ -68,9 +68,17 @@ embed builds to catch breaking changes.
 - **Source of truth:** [`VERSION`](VERSION) at repo root (semver, e.g. `0.1.0`).
 - **Local builds:** `make version` prints `VERSION` and `COMMIT`; embedded via `-ldflags`.
 - **Release binaries:** `dist/aid-cisco-cli-<version>-<os>-<arch>`.
-- **Cut a release:** bump `VERSION` and `CHANGELOG.md`, merge to `main`, then push tag `v0.1.0`.
-  The [Release workflow](.github/workflows/release.yml) builds all platforms and publishes
-  a GitHub Release with assets.
+- **Cut a release:**
+  1. Bump `VERSION` and `CHANGELOG.md` on `main` (or `release/*`) and merge.
+  2. **Automated (recommended):** GitHub → **Actions** → **Create release tag** → Run workflow.
+     - **version:** must match `VERSION` on the chosen ref (e.g. `0.1.0`)
+     - **ref:** branch or commit to tag (default `main`)
+     - **dry_run:** validate without pushing a tag
+     - Pushing the tag starts [Release](.github/workflows/release.yml) (build all platforms + GitHub Release).
+  3. **Manual:** `git tag v0.1.0 <commit> && git push origin v0.1.0` (same Release workflow on tag push).
+
+Repo admins should restrict **Create release tag** (`workflow_dispatch`) to trusted
+roles under **Settings → Actions → General → Workflow permissions**.
 
 **PR Persona Review** is advisory (optional); it does not block merge.
 

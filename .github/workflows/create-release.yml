@@ -1,0 +1,119 @@
+# Manual release trigger: validate inputs, create v* tag on a chosen ref, then
+# the Release workflow (.github/workflows/release.yml) runs on tag push.
+name: Create release tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version without v prefix (must match VERSION file on ref)'
+        required: true
+        type: string
+      ref:
+        description: 'Branch name or commit SHA to tag (e.g. main or abc1234)'
+        required: true
+        type: string
+        default: main
+      dry_run:
+        description: 'Validate only — do not create or push the tag'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: create-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: validate-and-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Resolve target commit
+        id: target
+        run: |
+          sha="$(git rev-parse HEAD)"
+          short="$(git rev-parse --short HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "Target commit: $sha ($short)"
+
+      - name: Validate version format
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          if ! printf '%s' "$VERSION_INPUT" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Invalid semver: $VERSION_INPUT (expected e.g. 0.1.0)"
+            exit 1
+          fi
+
+      - name: Validate VERSION file on ref
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          file_version="$(tr -d '[:space:]' < VERSION)"
+          if [ "$file_version" != "$VERSION_INPUT" ]; then
+            echo "::error::VERSION file on ref is '$file_version' but input version is '$VERSION_INPUT'"
+            echo "Update VERSION on the target branch/commit before releasing."
+            exit 1
+          fi
+          echo "VERSION file matches $VERSION_INPUT"
+
+      - name: Ensure tag does not already exist
+        env:
+          TAG: v${{ inputs.version }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists locally on this runner"
+            exit 1
+          fi
+          if git ls-remote --exit-code origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists on origin"
+            exit 1
+          fi
+
+      - name: Require ref on main or release branch
+        run: |
+          # Allow tagging main HEAD or any commit reachable from origin/main / release/*
+          git fetch origin main --quiet || true
+          for branch in $(git branch -r --list 'origin/release/*'); do
+            git fetch origin "${branch#origin/}" --quiet || true
+          done
+          sha="${{ steps.target.outputs.sha }}"
+          if git merge-base --is-ancestor "$sha" origin/main 2>/dev/null; then
+            echo "Commit is on main history"
+            exit 0
+          fi
+          for branch in $(git branch -r --list 'origin/release/*'); do
+            if git merge-base --is-ancestor "$sha" "$branch" 2>/dev/null; then
+              echo "Commit is on ${branch} history"
+              exit 0
+            fi
+          done
+          echo "::error::Ref must be a commit on origin/main or origin/release/*"
+          exit 1
+
+      - name: Dry run summary
+        if: inputs.dry_run
+        run: |
+          echo "Dry run OK — would create tag v${{ inputs.version }} on ${{ steps.target.outputs.sha }}"
+          echo "Pushing the tag would start the Release workflow (build + GitHub Release)."
+
+      - name: Create and push tag
+        if: ${{ !inputs.dry_run }}
+        env:
+          TAG: v${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "Pushed $TAG — Release workflow will start automatically."

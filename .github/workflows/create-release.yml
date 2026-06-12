@@ -46,60 +46,13 @@ jobs:
           echo "short=$short" >> "$GITHUB_OUTPUT"
           echo "Target commit: $sha ($short)"
 
-      - name: Validate version format
+      - name: Validate release tag
         env:
-          VERSION_INPUT: ${{ inputs.version }}
+          VERSION: ${{ inputs.version }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
         run: |
-          if ! printf '%s' "$VERSION_INPUT" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
-            echo "::error::Invalid semver: $VERSION_INPUT (expected e.g. 0.1.0)"
-            exit 1
-          fi
-
-      - name: Validate VERSION file on ref
-        env:
-          VERSION_INPUT: ${{ inputs.version }}
-        run: |
-          file_version="$(tr -d '[:space:]' < VERSION)"
-          if [ "$file_version" != "$VERSION_INPUT" ]; then
-            echo "::error::VERSION file on ref is '$file_version' but input version is '$VERSION_INPUT'"
-            echo "Update VERSION on the target branch/commit before releasing."
-            exit 1
-          fi
-          echo "VERSION file matches $VERSION_INPUT"
-
-      - name: Ensure tag does not already exist
-        env:
-          TAG: v${{ inputs.version }}
-        run: |
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "::error::Tag $TAG already exists locally on this runner"
-            exit 1
-          fi
-          if git ls-remote --exit-code origin "refs/tags/$TAG" >/dev/null 2>&1; then
-            echo "::error::Tag $TAG already exists on origin"
-            exit 1
-          fi
-
-      - name: Require ref on main or release branch
-        run: |
-          # Allow tagging main HEAD or any commit reachable from origin/main / release/*
-          git fetch origin main --quiet || true
-          for branch in $(git branch -r --list 'origin/release/*'); do
-            git fetch origin "${branch#origin/}" --quiet || true
-          done
-          sha="${{ steps.target.outputs.sha }}"
-          if git merge-base --is-ancestor "$sha" origin/main 2>/dev/null; then
-            echo "Commit is on main history"
-            exit 0
-          fi
-          for branch in $(git branch -r --list 'origin/release/*'); do
-            if git merge-base --is-ancestor "$sha" "$branch" 2>/dev/null; then
-              echo "Commit is on ${branch} history"
-              exit 0
-            fi
-          done
-          echo "::error::Ref must be a commit on origin/main or origin/release/*"
-          exit 1
+          chmod +x scripts/validate-release-tag.sh
+          ./scripts/validate-release-tag.sh "$VERSION" "$TARGET_SHA"
 
       - name: Dry run summary
         if: inputs.dry_run
@@ -111,9 +64,10 @@ jobs:
         if: ${{ !inputs.dry_run }}
         env:
           TAG: v${{ inputs.version }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "Release $TAG"
+          git tag -a "$TAG" "$TARGET_SHA" -m "Release $TAG"
           git push origin "$TAG"
           echo "Pushed $TAG — Release workflow will start automatically."

@@ -24,6 +24,10 @@ Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use th
 
 Each release also ships `checksums.txt` and `manifest.json` (version, commit, per-arch SHA-256).
 
+Releases are published when a **Prepare release** PR (`release/v*`) merges to `main` or a
+`release/*` line — **Release on merge** pushes the `v*` tag and starts the Release workflow.
+See [CONTRIBUTING.md](../CONTRIBUTING.md#versioning-and-releases).
+
 ## Install from GitHub Release
 
 1. Open [Releases](https://github.com/cisco-ai-defense/ai-defense-cli/releases) and pick a version.

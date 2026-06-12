@@ -16,8 +16,10 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
-- **Create release tag** workflow (`workflow_dispatch`) — input version + ref, optional dry run;
-  creates `v*` tag and triggers the Release workflow.
+- **Prepare release** workflow — hybrid changelog autofill, VERSION bump, opens `release/v*` PR
+  (base branch = chosen `ref`, including `release/0.1.x` lines).
+- **Release on merge** — auto-tag when a prepare PR merges to `main` or `release/**`.
+- **Create release tag** workflow (`workflow_dispatch`) — dry-run or manual tag escape hatch.
 - **Semantic versioning** — `VERSION` file, `make version`, versioned release binaries
   (`aid-cisco-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
 - **GitHub Release workflow** — push tag `v*` to publish versioned downloads.

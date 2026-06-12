@@ -1,0 +1,104 @@
+# Bump VERSION, autofill CHANGELOG, finalize [Unreleased], and open a PR for review.
+# Merging the PR triggers Release on merge (auto-tag) when head is release/v*.
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Semver bump (ignored if custom_version is set)'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Explicit version (e.g. 1.0.0). Leave empty to use bump.'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Branch to prepare from (e.g. main or release/0.1.x)'
+        required: true
+        type: string
+        default: main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: bump-and-pr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Compute release version
+        id: ver
+        env:
+          BUMP: ${{ inputs.bump }}
+          CUSTOM: ${{ inputs.custom_version }}
+        run: |
+          current="$(tr -d '[:space:]' < VERSION)"
+          if [ -n "$CUSTOM" ]; then
+            new="$CUSTOM"
+          else
+            IFS=. read -r major minor patch _ <<< "${current%%-*}"
+            patch="${patch%%[^0-9]*}"
+            case "$BUMP" in
+              patch) patch=$((patch + 1)) ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+            esac
+            new="${major}.${minor}.${patch}"
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+          echo "Will release $current → $new on base ${{ inputs.ref }}"
+
+      - name: Autofill CHANGELOG
+        env:
+          PREPARE_REF: ${{ inputs.ref }}
+        run: |
+          python3 scripts/autofill-changelog.py --ref "$PREPARE_REF" --skip-internal
+
+      - name: Run prepare-release.sh
+        run: |
+          chmod +x scripts/prepare-release.sh
+          if [ -n "${{ inputs.custom_version }}" ]; then
+            ./scripts/prepare-release.sh patch "${{ inputs.custom_version }}"
+          else
+            ./scripts/prepare-release.sh "${{ inputs.bump }}"
+          fi
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: release/v${{ steps.ver.outputs.new }}
+          base: ${{ inputs.ref }}
+          delete-branch: true
+          title: 'chore(release): v${{ steps.ver.outputs.new }}'
+          body: |
+            Automated release preparation.
+
+            - **Base branch:** `${{ inputs.ref }}`
+            - **VERSION:** `${{ steps.ver.outputs.current }}` → `${{ steps.ver.outputs.new }}`
+            - **CHANGELOG:** autofill (if needed) + moved `[Unreleased]` → `[${{ steps.ver.outputs.new }}]`
+
+            ## After merge
+
+            **Release on merge** pushes `v${{ steps.ver.outputs.new }}` and starts the Release workflow
+            (binaries, checksums, manifest, GitHub Release).
+
+            For release lines (`release/0.1.x`), backport VERSION/CHANGELOG to `main` after shipping.
+          commit-message: 'chore(release): prepare v${{ steps.ver.outputs.new }}'
+          labels: release

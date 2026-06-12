@@ -17,6 +17,56 @@ func newTestClient(t *testing.T, handler http.HandlerFunc) *Client {
 	return NewClient("test-key", api.NewConfig(srv.URL))
 }
 
+func TestListScansRaw_PreservesAPIBody(t *testing.T) {
+	const body = `{"scans":{"items":[],"paging":{"total":1,"count":5,"offset":0}}}`
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(body))
+	})
+
+	raw, err := c.ListScansRaw(&ListScansRequest{Limit: 5})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("expected verbatim API body, got %s", raw)
+	}
+}
+
+func TestGetScanRaw_PreservesAPIBody(t *testing.T) {
+	const body = `{"scan_status_info":{"scan_id":"s-1","status":"COMPLETED","analysis_results":{"items":[],"paging":{"total":0,"count":10,"offset":0}}}}`
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(body))
+	})
+
+	raw, err := c.GetScanRaw("s-1", &GetScanStatusRequest{FileLimit: 10})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("expected verbatim API body, got %s", raw)
+	}
+}
+
+func TestPaging_MarshalJSONUsesCount(t *testing.T) {
+	data, err := json.Marshal(Paging{Total: 34, Limit: 5, Offset: 0})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var got map[string]int
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if _, ok := got["limit"]; ok {
+		t.Fatalf("expected no limit key, got %v", got)
+	}
+	if got["count"] != 5 {
+		t.Fatalf("expected count=5, got %v", got)
+	}
+	if got["total"] != 34 {
+		t.Fatalf("expected total=34, got %v", got)
+	}
+}
+
 func TestListScans(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {

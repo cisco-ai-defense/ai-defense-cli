@@ -29,15 +29,14 @@ Examples:
 			config := api.NewConfig(baseURL)
 			client := modelscansdk.NewClient(apiKey, config)
 
-			resp, err := client.ListScans(&modelscansdk.ListScansRequest{
+			raw, err := client.ListScansRaw(&modelscansdk.ListScansRequest{
 				Limit:  limit,
 				Offset: offset,
 			})
 			if err != nil {
 				return err
 			}
-
-			output.PrintJSON(resp)
+			output.PrintRawJSON(raw)
 			return nil
 		},
 	}

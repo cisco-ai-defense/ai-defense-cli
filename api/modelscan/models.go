@@ -257,6 +257,19 @@ func (p *Paging) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON emits API wire paging: total, offset, and count (not limit).
+func (p Paging) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Total  int `json:"total"`
+		Offset int `json:"offset"`
+		Count  int `json:"count"`
+	}{
+		Total:  p.Total,
+		Offset: p.Offset,
+		Count:  p.Limit,
+	})
+}
+
 // ThreatInfo holds information about a detected threat.
 type ThreatInfo struct {
 	ID          string   `json:"id"`

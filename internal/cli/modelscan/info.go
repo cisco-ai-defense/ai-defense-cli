@@ -40,17 +40,17 @@ Examples:
 			config := api.NewConfig(baseURL)
 			client := modelscansdk.NewClient(apiKey, config)
 
-			resp, err := client.GetScan(scanID, &modelscansdk.GetScanStatusRequest{
+			req := &modelscansdk.GetScanStatusRequest{
 				FileLimit:  limit,
 				FileOffset: offset,
-			})
+			}
+			raw, err := client.GetScanRaw(scanID, req)
 			if err != nil {
 				return err
 			}
-
-			raw, err := json.Marshal(resp)
-			if err != nil {
-				return clierror.Unexpected("failed to render scan result", err)
+			var resp modelscansdk.GetScanStatusResponse
+			if err := json.Unmarshal(raw, &resp); err != nil {
+				return clierror.Unexpected("failed to parse scan result", err)
 			}
 			return emitScanResult(resp.ScanStatusInfo, raw, resultOpts)
 		},

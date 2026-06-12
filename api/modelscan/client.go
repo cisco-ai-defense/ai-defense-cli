@@ -103,21 +103,51 @@ func (c *Client) ValidateScanURL(scanID string, req *ModelRepoConfig) (*Validate
 	return &result, nil
 }
 
+func scanStatusParams(req *GetScanStatusRequest) url.Values {
+	params := url.Values{}
+	if req == nil {
+		return params
+	}
+	if req.FileLimit > 0 {
+		params.Set("file_limit", strconv.Itoa(req.FileLimit))
+	}
+	if req.FileOffset > 0 {
+		params.Set("file_offset", strconv.Itoa(req.FileOffset))
+	}
+	if req.Query != "" {
+		params.Set("query", req.Query)
+	}
+	return params
+}
+
+func listScansParams(req *ListScansRequest) url.Values {
+	params := url.Values{}
+	if req == nil {
+		return params
+	}
+	if req.Limit > 0 {
+		params.Set("limit", strconv.Itoa(req.Limit))
+	}
+	if req.Offset > 0 {
+		params.Set("offset", strconv.Itoa(req.Offset))
+	}
+	if req.Name != "" {
+		params.Set("name", req.Name)
+	}
+	if req.Type != "" {
+		params.Set("type", string(req.Type))
+	}
+	return params
+}
+
+// GetScanRaw returns the verbatim scan status JSON from the API.
+func (c *Client) GetScanRaw(scanID string, req *GetScanStatusRequest) (json.RawMessage, error) {
+	return c.base.Get(ScanByID(scanID), scanStatusParams(req))
+}
+
 // GetScan retrieves detailed information about a specific scan.
 func (c *Client) GetScan(scanID string, req *GetScanStatusRequest) (*GetScanStatusResponse, error) {
-	params := url.Values{}
-	if req != nil {
-		if req.FileLimit > 0 {
-			params.Set("file_limit", strconv.Itoa(req.FileLimit))
-		}
-		if req.FileOffset > 0 {
-			params.Set("file_offset", strconv.Itoa(req.FileOffset))
-		}
-		if req.Query != "" {
-			params.Set("query", req.Query)
-		}
-	}
-	resp, err := c.base.Get(ScanByID(scanID), params)
+	resp, err := c.GetScanRaw(scanID, req)
 	if err != nil {
 		return nil, err
 	}
@@ -128,24 +158,14 @@ func (c *Client) GetScan(scanID string, req *GetScanStatusRequest) (*GetScanStat
 	return &result, nil
 }
 
+// ListScansRaw returns the verbatim list-scans JSON from the API.
+func (c *Client) ListScansRaw(req *ListScansRequest) (json.RawMessage, error) {
+	return c.base.Get(Scans, listScansParams(req))
+}
+
 // ListScans lists scans with pagination.
 func (c *Client) ListScans(req *ListScansRequest) (*ListScansResponse, error) {
-	params := url.Values{}
-	if req != nil {
-		if req.Limit > 0 {
-			params.Set("limit", strconv.Itoa(req.Limit))
-		}
-		if req.Offset > 0 {
-			params.Set("offset", strconv.Itoa(req.Offset))
-		}
-		if req.Name != "" {
-			params.Set("name", req.Name)
-		}
-		if req.Type != "" {
-			params.Set("type", string(req.Type))
-		}
-	}
-	resp, err := c.base.Get(Scans, params)
+	resp, err := c.ListScansRaw(req)
 	if err != nil {
 		return nil, err
 	}

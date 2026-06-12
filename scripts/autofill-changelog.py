@@ -207,9 +207,12 @@ def collect_entries(
     repo: Path,
     skip_internal: bool,
 ) -> list[Entry]:
-    candidates = merged_prs_gh(base, repo)
-    if not candidates:
+    if since_tag:
         candidates = merged_prs_git(since_tag, repo)
+    else:
+        candidates = merged_prs_gh(base, repo)
+        if not candidates:
+            candidates = merged_prs_git(since_tag, repo)
 
     entries: list[Entry] = []
     for title, labels, number in candidates:

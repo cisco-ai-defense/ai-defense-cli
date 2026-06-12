@@ -5,7 +5,7 @@
 ### REQ-01 — Hybrid changelog autofill
 
 - **REQ-01.1** During **Prepare release**, before VERSION bump, autofill missing `[Unreleased]` bullets from merged PRs/commits since the latest `v*` tag on `origin`.
-- **REQ-01.2** Scope autofill to merges into the workflow `ref` branch (e.g. `main` or `release/0.1.x`), not all repository activity.
+- **REQ-01.2** Scope autofill to merges into the workflow `ref` branch (e.g. `main` or `release/0.1.x`), not all repository activity. When a prior `v*` tag exists, use `git log ${tag}..HEAD` merges only (not unbounded `gh pr list` history).
 - **REQ-01.3** Map entries to Keep a Changelog sections (`Added`, `Changed`, `Fixed`) using PR title prefixes and labels; skip `chore(release):`, Dependabot-only, and `[skip changelog]`.
 - **REQ-01.4** Do not duplicate bullets already present under `[Unreleased]` (normalized dedup).
 - **REQ-01.5** If `[Unreleased]` is empty after autofill, **Prepare release** MUST fail with a clear error.
@@ -22,6 +22,7 @@
 - **REQ-03.2** `VERSION` file on merge commit MUST match `release/v{VERSION}` head branch name.
 - **REQ-03.3** Tag MUST NOT already exist on `origin`. Shared validation with **Create release tag**.
 - **REQ-03.4** Tag push triggers existing **Release** workflow unchanged.
+- **REQ-03.5** Auto-tag MUST NOT run for pull requests from repository forks.
 
 ### REQ-04 — Create release tag (escape hatch)
 

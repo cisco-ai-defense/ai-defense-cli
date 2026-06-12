@@ -1,0 +1,164 @@
+# Publish a versioned GitHub Release when a v* tag is pushed.
+# Tag name (e.g. v0.1.0) becomes the release version; keep VERSION file in sync.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  DOCKER_BUILDKIT: "1"
+
+jobs:
+  meta:
+    name: meta
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      commit: ${{ steps.v.outputs.commit }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve version from tag
+        id: v
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          file_version="$(tr -d '[:space:]' < VERSION)"
+          if [ "$file_version" != "$version" ]; then
+            echo "::warning::VERSION file ($file_version) does not match tag ($version)"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: make build-go test vet
+        run: make build-go test vet
+
+  build-linux:
+    name: linux-${{ matrix.goarch }}
+    needs: [meta, test]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goarch: [amd64, arm64]
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build release binary
+        run: make build-release-linux GOARCH=${{ matrix.goarch }} VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
+          if-no-files-found: error
+
+  build-darwin-arm64:
+    name: darwin-arm64
+    needs: [meta, test]
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build release binary
+        run: |
+          make bundle
+          make build-release-darwin GOARCH=arm64 VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
+          if-no-files-found: error
+
+  build-darwin-amd64:
+    name: darwin-amd64
+    needs: [meta, test]
+    runs-on: macos-15-intel
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build release binary
+        run: |
+          make bundle
+          make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
+          if-no-files-found: error
+
+  release:
+    name: release
+    needs: [meta, build-linux, build-darwin-arm64, build-darwin-amd64]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          pattern: aid-cisco-cli-*
+          merge-multiple: true
+
+      - name: Generate checksums.txt and manifest.json
+        run: make checksums manifest VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.meta.outputs.tag }}
+          name: aid-cisco-cli ${{ needs.meta.outputs.version }}
+          generate_release_notes: true
+          files: |
+            dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-amd64
+            dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-arm64
+            dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
+            dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
+            dist/checksums.txt
+            dist/manifest.json

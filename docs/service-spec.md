@@ -184,7 +184,7 @@ Exports a release binary to `dist/` (not a container image):
 
 ```bash
 make build-release-linux GOARCH=amd64
-# → dist/aid-cisco-cli-linux-amd64
+# → dist/aid-cisco-cli-<version>-linux-amd64 (version from VERSION file)
 ```
 
 Docker stages (`Dockerfile`):

@@ -8,6 +8,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
+- **Semantic versioning** — `VERSION` file, `make version`, versioned release binaries
+  (`aid-cisco-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
+- **GitHub Release workflow** — push tag `v*` to publish versioned downloads.
 - **Public repository** with Vault-inspired layout (`api/`, `internal/cli/`).
 - **Multi-platform CI** — Linux and macOS embed builds; PR artifacts with 7-day retention.
 - **Install/upgrade** and user/developer getting-started guides.

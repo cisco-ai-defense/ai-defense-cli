@@ -12,7 +12,8 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] CLI source migrated on `feature/migrate-cli-5789`
 - [x] PR/main CI (`.github/workflows/ci.yml`)
 - [x] Advisory persona review on PRs (`.github/workflows/pr-persona-review.yml`, read-only) — test + 4-platform embed builds
-- [ ] GitHub Release workflow (versioned downloads)
+- [x] Version file + versioned artifacts (`VERSION`, `manifest.json`)
+- [x] GitHub Release workflow (`.github/workflows/release.yml` on `v*` tags)
 - [x] Install/upgrade docs (`docs/install-upgrade.md`)
 - [ ] First public GitHub release
 

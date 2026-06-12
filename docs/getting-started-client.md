@@ -25,12 +25,12 @@ Python install needed for `ai-bom generate` / `ai-bom run`.
 Download the binary for your platform from the [Releases](https://github.com/cisco-ai-defense/ai-defense-cli/releases)
 page. Artifact names:
 
-| Platform | Binary |
-|----------|--------|
-| Linux x86_64 | `aid-cisco-cli-linux-amd64` |
-| Linux arm64 | `aid-cisco-cli-linux-arm64` |
-| macOS Apple Silicon | `aid-cisco-cli-darwin-arm64` |
-| macOS Intel | `aid-cisco-cli-darwin-amd64` |
+| Platform | Binary (example v0.1.0) |
+|----------|-------------------------|
+| Linux x86_64 | `aid-cisco-cli-0.1.0-linux-amd64` |
+| Linux arm64 | `aid-cisco-cli-0.1.0-linux-arm64` |
+| macOS Apple Silicon | `aid-cisco-cli-0.1.0-darwin-arm64` |
+| macOS Intel | `aid-cisco-cli-0.1.0-darwin-amd64` |
 
 Verify with `checksums.txt` from the same release. See [install-upgrade.md](install-upgrade.md).
 

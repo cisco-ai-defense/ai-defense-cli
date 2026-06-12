@@ -6,12 +6,16 @@ for release builds.
 
 ## Supported platforms
 
+Release binaries are named `aid-cisco-cli-<version>-<os>-<arch>`. For version `0.1.0`:
+
 | OS | Architecture | Artifact name |
 |----|--------------|---------------|
-| Linux | amd64 | `aid-cisco-cli-linux-amd64` |
-| Linux | arm64 | `aid-cisco-cli-linux-arm64` |
-| macOS | arm64 (Apple Silicon) | `aid-cisco-cli-darwin-arm64` |
-| macOS | amd64 (Intel) | `aid-cisco-cli-darwin-amd64` |
+| Linux | amd64 | `aid-cisco-cli-0.1.0-linux-amd64` |
+| Linux | arm64 | `aid-cisco-cli-0.1.0-linux-arm64` |
+| macOS | arm64 (Apple Silicon) | `aid-cisco-cli-0.1.0-darwin-arm64` |
+| macOS | amd64 (Intel) | `aid-cisco-cli-0.1.0-darwin-amd64` |
+
+Each release also ships `checksums.txt` and `manifest.json` (version, commit, per-arch SHA-256).
 
 ## Install from GitHub Release
 
@@ -20,10 +24,10 @@ for release builds.
 3. Verify the checksum for your binary only:
 
    ```bash
-   grep aid-cisco-cli-linux-amd64 checksums.txt | shasum -a 256 -c
+   grep aid-cisco-cli-0.1.0-linux-amd64 checksums.txt | shasum -a 256 -c
    ```
 
-   Replace the filename with your platform artifact name.
+   Replace `0.1.0` and the platform suffix with your release version and OS/arch.
 
 4. Install on your `PATH`:
 

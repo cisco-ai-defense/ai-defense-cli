@@ -18,9 +18,11 @@ BIN_DIR       ?= bin
 MODULE        ?= github.com/cisco-ai-defense/ai-defense-cli
 BUILD_MODE    ?= go
 
-VERSION       ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION_FILE  := $(shell test -f VERSION && tr -d '[:space:]' < VERSION)
+VERSION       ?= $(if $(VERSION_FILE),$(VERSION_FILE),$(shell git describe --tags --always --dirty 2>/dev/null || echo dev))
 COMMIT        ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+DIST_PREFIX   := aid-cisco-cli-$(VERSION)
 
 GO            ?= go
 GOOS          ?= $(shell $(GO) env GOOS)
@@ -36,7 +38,10 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums clean-dist
+.PHONY: help version build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist
+
+version: ## Print VERSION and COMMIT (from VERSION file + git)
+	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
 
 help: ## Show targets
 	@printf "ai-defense-cli Makefile\n\n"
@@ -103,7 +108,6 @@ DOCKER        ?= docker
 PY_BUILD_IMAGE  ?= debian:bookworm-slim
 GO_BUILD_IMAGE  ?= golang:1.23-bookworm
 
-.PHONY: build-release build-release-linux build-release-darwin build-release-all checksums clean-dist
 
 build-release: ## Release binary for host OS (linux→Docker, darwin→native embed)
 ifeq ($(GOOS),linux)
@@ -131,16 +135,16 @@ build-release-linux: ## Linux release binary via Docker (embed_python) → dist/
 	  --build-arg CLI_VERSION=$(VERSION) \
 	  --build-arg CLI_COMMIT=$(COMMIT) \
 	  --output type=local,dest=$(DIST_DIR)/ .
-	@mv -f $(DIST_DIR)/aid-cisco-cli $(DIST_DIR)/aid-cisco-cli-linux-$(GOARCH)
-	@printf "Built $(DIST_DIR)/aid-cisco-cli-linux-$(GOARCH)\n"
+	@mv -f $(DIST_DIR)/aid-cisco-cli $(DIST_DIR)/$(DIST_PREFIX)-linux-$(GOARCH)
+	@printf "Built $(DIST_DIR)/$(DIST_PREFIX)-linux-$(GOARCH)\n"
 
 build-release-darwin: bundle-check ## macOS release binary (native embed) → dist/
 	@mkdir -p $(DIST_DIR)
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=$(GOARCH) $(GO) build \
 		-tags embed_python \
 		-ldflags "$(LDFLAGS)" \
-		-o $(DIST_DIR)/aid-cisco-cli-darwin-$(GOARCH) .
-	@printf "Built $(DIST_DIR)/aid-cisco-cli-darwin-$(GOARCH)\n"
+		-o $(DIST_DIR)/$(DIST_PREFIX)-darwin-$(GOARCH) .
+	@printf "Built $(DIST_DIR)/$(DIST_PREFIX)-darwin-$(GOARCH)\n"
 
 build-release-all: ## Build linux amd64+arm64 (Docker); darwin if on macOS host
 	$(MAKE) build-release-linux GOARCH=amd64
@@ -152,14 +156,19 @@ ifneq ($(shell uname -m),arm64)
 endif
 endif
 
-checksums: ## Generate dist/checksums.txt (sha256)
+checksums: ## Generate dist/checksums.txt (sha256) for versioned release binaries
 	@command -v shasum >/dev/null || (echo "shasum required" && exit 1)
 	@mkdir -p $(DIST_DIR)
 	@cd $(DIST_DIR) && \
-		files=$$(ls aid-cisco-cli-* 2>/dev/null) && \
-		test -n "$$files" || (echo "no release binaries in $(DIST_DIR)" && exit 1) && \
-		shasum -a 256 aid-cisco-cli-* > checksums.txt
+		files=$$(ls $(DIST_PREFIX)-* 2>/dev/null) && \
+		test -n "$$files" || (echo "no release binaries matching $(DIST_PREFIX)-* in $(DIST_DIR)" && exit 1) && \
+		shasum -a 256 $(DIST_PREFIX)-* > checksums.txt
 	@printf "Wrote $(DIST_DIR)/checksums.txt\n"
+
+manifest: checksums ## Generate dist/manifest.json (version, commit, per-arch sha256)
+	@VERSION="$(VERSION)" COMMIT="$(COMMIT)" BUILD_DATE="$(BUILD_DATE)" DIST_DIR="$(DIST_DIR)" \
+		./scripts/generate-release-manifest.sh
+	@printf "Wrote $(DIST_DIR)/manifest.json\n"
 
 clean-dist: ## Remove dist/ release artifacts
 	rm -rf $(DIST_DIR)

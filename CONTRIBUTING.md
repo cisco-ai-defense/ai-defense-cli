@@ -56,9 +56,18 @@ The `checksums` job runs only on **push to `main` or `release/*`** (when artifac
 published). Remove `checksums` from PR required checks in branch protection if it
 still blocks merges — it is validated on every `main` push instead.
 
-**CI artifacts** (binaries + `checksums.txt`) are uploaded only from `main` and
-`release/*` pushes, not from pull requests. PRs still run full embed builds to catch
-breaking changes.
+**CI artifacts** (versioned binaries + `checksums.txt` + `manifest.json`) are uploaded
+only from `main` and `release/*` pushes, not from pull requests. PRs still run full
+embed builds to catch breaking changes.
+
+### Versioning and releases
+
+- **Source of truth:** [`VERSION`](VERSION) at repo root (semver, e.g. `0.1.0`).
+- **Local builds:** `make version` prints `VERSION` and `COMMIT`; embedded via `-ldflags`.
+- **Release binaries:** `dist/aid-cisco-cli-<version>-<os>-<arch>`.
+- **Cut a release:** bump `VERSION` and `CHANGELOG.md`, merge to `main`, then push tag `v0.1.0`.
+  The [Release workflow](.github/workflows/release.yml) builds all platforms and publishes
+  a GitHub Release with assets.
 
 **PR Persona Review** is advisory (optional); it does not block merge.
 

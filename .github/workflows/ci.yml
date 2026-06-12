@@ -1,6 +1,6 @@
 # CI: test + full embed release builds on every PR and main/release push.
 # Embed builds run on all PRs (including forks) to catch breaking changes.
-# Workflow artifacts are uploaded only on push to main or release/* (7-day retention).
+# Versioned artifacts uploaded only on push to main or release/* (7-day retention).
 name: CI
 
 on:
@@ -20,10 +20,24 @@ permissions:
 
 env:
   DOCKER_BUILDKIT: "1"
-  # Publish downloadable artifacts only from trusted branches (not PRs).
   PUBLISH_ARTIFACTS: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) }}
 
 jobs:
+  meta:
+    name: meta
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      commit: ${{ steps.v.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve version
+        id: v
+        run: |
+          echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
   test:
     name: test
     runs-on: ubuntu-latest
@@ -40,12 +54,15 @@ jobs:
 
   build-linux:
     name: linux-${{ matrix.goarch }}
-    needs: test
+    needs: [meta, test]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         goarch: [amd64, arm64]
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -54,26 +71,30 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - name: Build release binary (embed_python)
-        run: make build-release-linux GOARCH=${{ matrix.goarch }}
+        run: make build-release-linux GOARCH=${{ matrix.goarch }} VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Verify release binary
         run: |
-          test -f dist/aid-cisco-cli-linux-${{ matrix.goarch }}
-          dist/aid-cisco-cli-linux-${{ matrix.goarch }} --version
+          bin="dist/aid-cisco-cli-${VERSION}-linux-${{ matrix.goarch }}"
+          test -f "$bin"
+          "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
         if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-linux-${{ matrix.goarch }}-${{ github.run_id }}
-          path: dist/aid-cisco-cli-linux-${{ matrix.goarch }}
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-linux-${{ matrix.goarch }}
           retention-days: 7
           if-no-files-found: error
 
   build-darwin-arm64:
     name: darwin-arm64
-    needs: test
+    needs: [meta, test]
     runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -85,26 +106,30 @@ jobs:
       - name: Build Python bundle + release binary
         run: |
           make bundle
-          make build-release-darwin GOARCH=arm64
+          make build-release-darwin GOARCH=arm64 VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Verify release binary
         run: |
-          test -f dist/aid-cisco-cli-darwin-arm64
-          dist/aid-cisco-cli-darwin-arm64 --version
+          bin="dist/aid-cisco-cli-${VERSION}-darwin-arm64"
+          test -f "$bin"
+          "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
         if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-darwin-arm64-${{ github.run_id }}
-          path: dist/aid-cisco-cli-darwin-arm64
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-arm64
           retention-days: 7
           if-no-files-found: error
 
   build-darwin-amd64:
     name: darwin-amd64
-    needs: test
+    needs: [meta, test]
     runs-on: macos-15-intel
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
 
@@ -116,47 +141,52 @@ jobs:
       - name: Build Python bundle + release binary
         run: |
           make bundle
-          make build-release-darwin GOARCH=amd64
+          make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Verify release binary
         run: |
-          test -f dist/aid-cisco-cli-darwin-amd64
-          dist/aid-cisco-cli-darwin-amd64 --version
+          bin="dist/aid-cisco-cli-${VERSION}-darwin-amd64"
+          test -f "$bin"
+          "$bin" --version | grep -F "${VERSION}"
 
       - name: Upload artifact
         if: env.PUBLISH_ARTIFACTS == 'true'
         uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-darwin-amd64-${{ github.run_id }}
-          path: dist/aid-cisco-cli-darwin-amd64
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
+          path: dist/aid-cisco-cli-${{ needs.meta.outputs.version }}-darwin-amd64
           retention-days: 7
           if-no-files-found: error
 
   checksums:
     name: checksums
-    needs: [build-linux, build-darwin-arm64, build-darwin-amd64]
+    needs: [meta, build-linux, build-darwin-arm64, build-darwin-amd64]
     runs-on: ubuntu-latest
     if: >-
       env.PUBLISH_ARTIFACTS == 'true' &&
       always() &&
       !contains(needs.*.result, 'failure') &&
       !contains(needs.*.result, 'cancelled')
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      COMMIT: ${{ needs.meta.outputs.commit }}
     steps:
+      - uses: actions/checkout@v6
+
       - uses: actions/download-artifact@v8
         with:
           path: dist
           pattern: aid-cisco-cli-*
           merge-multiple: true
 
-      - name: Generate checksums.txt
-        run: |
-          cd dist
-          shasum -a 256 aid-cisco-cli-* > checksums.txt
-          cat checksums.txt
+      - name: Generate checksums.txt and manifest.json
+        run: make checksums manifest VERSION="$VERSION" COMMIT="$COMMIT"
 
-      - name: Upload checksums
+      - name: Upload release metadata
         uses: actions/upload-artifact@v6
         with:
-          name: checksums-${{ github.run_id }}
-          path: dist/checksums.txt
+          name: aid-cisco-cli-${{ needs.meta.outputs.version }}-metadata
+          path: |
+            dist/checksums.txt
+            dist/manifest.json
           retention-days: 7

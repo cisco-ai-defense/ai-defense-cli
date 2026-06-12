@@ -26,7 +26,7 @@ Each release also ships `checksums.txt` and `manifest.json` (version, commit, pe
 
 Releases are published when a **Prepare release** PR (`release/v*`) merges to `main` or a
 `release/*` line — **Release on merge** pushes the `v*` tag and starts the Release workflow.
-See [CONTRIBUTING.md](../CONTRIBUTING.md#versioning-and-releases).
+Prepare release pushes the branch; open the PR manually from the workflow summary link.
 
 ## Install from GitHub Release
 

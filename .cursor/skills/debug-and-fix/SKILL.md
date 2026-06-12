@@ -24,8 +24,8 @@ go build -o aid-cisco-cli .
 | Symptom | Look in |
 |---------|---------|
 | Wrong exit code | `internal/clierror`, `internal/verdict`, command handler |
-| Auth/config (exit 3) | `internal/config`, `cmd/root.go` |
-| API failure (4–5) | `sdk/aidefense/` |
+| Auth/config (exit 3) | `internal/config`, `internal/cli/root.go` |
+| API failure (4–5) | `api/` |
 | Bad JSON output | `internal/verdict`, `internal/output` |
 | Threshold wrong | `internal/cmdutil/scanresult.go` |
 | AIBOM / embed failure | `internal/embedded/python/`, `scripts/requirements-bundle.txt`, Dockerfile embed stage |

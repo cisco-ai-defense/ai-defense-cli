@@ -4,13 +4,13 @@ Spec-driven development for ai-defense-cli. Update specs **before** code changes
 
 | ID | Area | Status |
 |----|------|--------|
-| 001-cli-core | Commands, exit codes, config, auth | Planned |
-| 002-cli-sdk | HTTP client, API surfaces | Planned |
+| [001-cli-core](001-cli-core/) | Commands, exit codes, config, auth | Active |
+| 002-cli-sdk | HTTP client (`api/`) | Planned |
 | 003-cli-release | Build, versioning, distribution | Planned |
 
-Each spec directory contains:
+Each spec directory should contain:
 
-- `design.md` — structure, data flow, API mapping
+- `design.md` — structure, data flow, contracts
 - `requirements.md` — numbered requirements (REQ-XX)
 
-See `CONTEXT.md` for the development workflow.
+See `CONTEXT.md` and `.cursor/skills/spec-driven-dev/SKILL.md` for the workflow.

@@ -37,4 +37,4 @@ make test vet
 - Config resolution: flags > env > TOML
 - Exit codes: see `internal/clierror` and `docs/architecture/ai-defense-cli.md`
 - Never hardcode or log API keys
-- Minimize diff scope; match existing patterns in `cmd/`, `internal/`, `sdk/`
+- Minimize diff scope; match existing patterns in `internal/cli/`, `internal/`, `api/`

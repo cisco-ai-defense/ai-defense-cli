@@ -1,4 +1,4 @@
-# aid_cli Service Specification
+# aid-cisco-cli Service Specification
 
 ## Overview
 
@@ -140,7 +140,7 @@ query GitHub, S3, or the AI Defense API.
 
 ## Building the CLI
 
-All commands below assume the working directory is `` unless noted.
+All commands below assume the working directory is the repository root unless noted.
 
 ### 1. Go-only build (API commands only)
 
@@ -178,35 +178,22 @@ export AID_CLI_PYTHON="$PWD/.venv/bin/python"
 
 See `scripts/README.md` for the bundle layout and the LLM requirement.
 
-### 3. Full embedded build (Docker)
+### 3. Full embedded build (Linux via Docker)
 
-Multi-stage `Dockerfile` (also wired from repo-root `make build-release-linux` in the CI/CD PR):
-
-```bash
-# From  — requires builder base images from the repo Makefile
-docker build \
-  --build-arg PY_RUNNER_DEBIAN_IMAGE=<py-runner-debian> \
-  --build-arg GO_BUILDER_IMAGE=<go-builder> \
-  --build-arg CLI_VERSION=dev \
-  --build-arg CLI_COMMIT=$(git rev-parse --short HEAD) \
-  -t aid-cisco-cli:local .
-```
-
-Stages:
-
-1. **py-bundler**: Downloads a relocatable CPython (python-build-standalone) and `pip install`s `cisco-aibom[all]` (from `scripts/requirements-bundle.txt`) into it, then packs the tree as `aid-py-bundle.tar.gz`
-2. **go-builder**: Embeds `aid-py-bundle.tar.gz` via `go:embed` and builds with `-tags embed_python`
-3. **runner**: Minimal Debian runtime with only the final Go binary
-
-The CLI extracts the bundle once on first use to a content-addressed cache dir (under the user cache dir) and runs `python3 -m aibom analyze ...` from it.
-
-Extract the binary from the image:
+Exports a release binary to `dist/` (not a container image):
 
 ```bash
-docker create --name aid-cli-tmp aid-cisco-cli:local
-docker cp aid-cli-tmp:/app/aid-cisco-cli ./aid-cisco-cli
-docker rm aid-cli-tmp
+make build-release-linux GOARCH=amd64
+# → dist/aid-cisco-cli-linux-amd64
 ```
+
+Docker stages (`Dockerfile`):
+
+1. **py-bundler** — relocatable CPython + `pip install cisco-aibom[all]`
+2. **go-builder** — `go build -tags embed_python`
+3. **release** — scratch stage; `docker build --target release --output dist/`
+
+The CLI extracts the embedded bundle on first use and runs `python3 -m aibom analyze ...`.
 
 ### 4. Full embedded build (local Go, after building the bundle)
 
@@ -222,7 +209,15 @@ go build -tags embed_python -o aid-cisco-cli \
 
 ### 5. CI / release builds
 
-Release images and GitHub assets are produced by the stacked CI/CD PR (`make build-release-linux` from repo root, Jenkins smart-build, and `.github/workflows/aid-cli-release.yml`). That wiring is intentionally out of scope for the code-only PR.
+Pull request and `main` branch CI (`.github/workflows/ci.yml`) builds all four platform
+binaries and uploads them as short-lived artifacts. GitHub Release publishing is a
+follow-up workflow.
+
+```bash
+make build-release-linux GOARCH=arm64
+make build-release-darwin GOARCH=arm64   # macOS host only
+make checksums
+```
 
 ## Authentication Header
 

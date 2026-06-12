@@ -1,3 +1,6 @@
+> **Historical document** — describes migration from Python `aidcli` and monorepo layout.
+> For the current CLI, see [spec 001](specs/001-cli-core/design.md) and [architecture](architecture/ai-defense-cli.md).
+
 # Tech Spec: CLI Evolution — From Python aidcli to Go aid_cli
 
 | Field | Value |

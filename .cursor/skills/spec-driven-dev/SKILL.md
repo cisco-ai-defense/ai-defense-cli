@@ -93,11 +93,11 @@ Optional log: `reviews/dev-{branch}-spec-gate.md` (local; not required to commit
 Typical layout:
 
 ```
-cmd/                      # Cobra commands
+internal/cli/               # Cobra commands
 internal/                 # config, clierror, verdict, cmdutil
 internal/embedded/python/ # relocatable CPython + cisco-aibom bridge
 scripts/                  # Python bundle requirements / build helpers
-sdk/aidefense/            # API client
+api/                        # HTTP client
 ```
 
 Embedded Python: stub + full-embed paths; see `.cursor/rules/embedded-python.mdc`.
@@ -126,7 +126,7 @@ Review **only** code/test/build files changed in Phase 4–5.
 |---------|----------------|
 | Engineer | `*.go` changed |
 | Security | Go, Makefile, scripts, workflows |
-| CLI Contract | `cmd/`, flags, exit mapping, JSON output |
+| CLI Contract | `internal/cli/`, flags, exit mapping, JSON output |
 | Release | `Makefile`, `scripts/`, Dockerfile, `.github/workflows/` |
 | Docs | If code change requires doc fix not done in SPEC |
 

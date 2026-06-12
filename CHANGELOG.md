@@ -8,6 +8,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ### Added
 
+- **Public repository** with Vault-inspired layout (`api/`, `internal/cli/`).
+- **Multi-platform CI** — Linux and macOS embed builds; PR artifacts with 7-day retention.
+- **Install/upgrade** and user/developer getting-started guides.
 - **Deterministic exit-code contract** for scan commands so CI/CD pipelines can
   branch on `$?` instead of parsing output. Operational failures (`1`-`9`) are
   partitioned from policy verdicts (`>= 10`):

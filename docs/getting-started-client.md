@@ -16,30 +16,43 @@ This guide gets you from zero to your first scan with `aid-cisco-cli`. It is for
 
 ## 1. Get the binary
 
-The CLI ships as a single self-contained binary (the AIBOM analyzer is embedded —
-no separate Python install needed).
+Release builds ship a **single self-contained binary** per OS/architecture. The
+AIBOM analyzer (embedded CPython + `cisco-aibom`) is included — no separate
+Python install needed for `ai-bom generate` / `ai-bom run`.
 
-**From the release image** (most common):
+### GitHub Release (recommended when available)
+
+Download the binary for your platform from the [Releases](https://github.com/cisco-ai-defense/ai-defense-cli/releases)
+page. Artifact names:
+
+| Platform | Binary |
+|----------|--------|
+| Linux x86_64 | `aid-cisco-cli-linux-amd64` |
+| Linux arm64 | `aid-cisco-cli-linux-arm64` |
+| macOS Apple Silicon | `aid-cisco-cli-darwin-arm64` |
+| macOS Intel | `aid-cisco-cli-darwin-amd64` |
+
+Verify with `checksums.txt` from the same release. See [install-upgrade.md](install-upgrade.md).
+
+### PR / CI artifacts (pre-release testing)
+
+On open pull requests, the **CI** workflow uploads matching binaries as workflow
+artifacts (7-day retention). Download from the PR **Checks** tab → latest **CI**
+run → **Artifacts**.
+
+### Build from source
+
+See the [developer guide](getting-started-developer.md). For a full embed binary locally:
 
 ```bash
-docker create --name aid-cli-tmp <aid-cisco-cli-image>:latest
-docker cp aid-cli-tmp:/app/aid-cisco-cli ./aid-cisco-cli
-docker rm aid-cli-tmp
-chmod +x ./aid-cisco-cli
+make bundle build-embed
+./bin/aid-cisco-cli --help
 ```
 
-**Or run it directly from the image:**
+Verify any binary:
 
 ```bash
-docker run --rm \
-  -e AI_DEFENSE_API_KEY \
-  -e AI_DEFENSE_BASE_URL \
-  <aid-cisco-cli-image>:latest model-scan list --limit 5
-```
-
-Verify it works:
-
-```bash
+chmod +x ./aid-cisco-cli   # if needed
 ./aid-cisco-cli --version
 ./aid-cisco-cli --help
 ```

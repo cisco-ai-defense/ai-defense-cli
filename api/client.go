@@ -87,7 +87,7 @@ func (c *BaseClient) DoRequest(method, path string, params url.Values, body inte
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
+		return nil, &TransportError{Method: method, URL: reqURL, Cause: err}
 	}
 	defer resp.Body.Close()
 
@@ -138,7 +138,7 @@ func (c *BaseClient) DoRawPUT(uploadURL string, body io.Reader, contentLength in
 	}
 	resp, err := uploadClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("upload request failed: %w", err)
+		return &TransportError{Method: http.MethodPut, URL: uploadURL, Cause: err}
 	}
 	defer resp.Body.Close()
 

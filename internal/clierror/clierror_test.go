@@ -1,8 +1,10 @@
 package clierror
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/api"
@@ -38,6 +40,24 @@ func TestClassifyAPIError(t *testing.T) {
 				t.Errorf("status %d: want hint=%v, got hint=%q", tt.status, tt.wantHint, got.Hint)
 			}
 		})
+	}
+}
+
+func TestClassifyTransportError(t *testing.T) {
+	err := &api.TransportError{
+		Method: "GET",
+		URL:    "https://tenant.aidefense.aiteam.cisco.com/api/ai-defense/v1/scans",
+		Cause:  context.DeadlineExceeded,
+	}
+	got := Classify(err)
+	if got.Code != CodeNetwork {
+		t.Fatalf("want CodeNetwork, got %d", got.Code)
+	}
+	if got.Hint == "" {
+		t.Fatal("expected network hint")
+	}
+	if !strings.Contains(got.Message, "timed out") {
+		t.Fatalf("expected timeout message, got %q", got.Message)
 	}
 }
 

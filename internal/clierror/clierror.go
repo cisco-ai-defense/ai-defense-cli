@@ -162,6 +162,12 @@ func Classify(err error) *Error {
 		)
 	}
 
+	// HTTP client transport failures (timeout, DNS, TLS, connection refused).
+	var transportErr *api.TransportError
+	if errors.As(err, &transportErr) {
+		return Network(transportErr.Error(), hintNetwork, err)
+	}
+
 	// Fall back to uncategorized.
 	return &Error{Code: CodeUnexpected, Message: err.Error(), Cause: err}
 }

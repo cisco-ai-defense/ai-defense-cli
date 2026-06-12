@@ -63,12 +63,13 @@ Update as needed:
 
 | Change | Update |
 |--------|--------|
-| New command or flag | `docs/specs/`, `README.md`, `CHANGELOG.md` |
-| Exit code or JSON output | `docs/specs/`, `docs/architecture/ai-defense-cli.md`, `README.md` (Features + examples) |
-| Release/install | `docs/install-upgrade.md`, `README.md` Status (`VERSION`), workflow comments |
+| New command or flag | `docs/specs/`, `README.md` (Features if user-facing), `CHANGELOG.md` |
+| Exit code or JSON output | `docs/specs/`, `docs/architecture/ai-defense-cli.md`, `docs/getting-started-client.md` |
+| Release/install | `docs/install-upgrade.md`, workflow comments |
 | Architecture | `docs/architecture/ai-defense-cli.md`, optional ADR in `docs/adr/` |
 
-**README landing page:** keep `## Status` aligned with `VERSION` and `CONTEXT.md` — use version/install links, not open-PR links after merge.
+**README:** evergreen only — what it does, install, quick start, doc links. No version
+tables or PR status (use GitHub Releases badge + `CHANGELOG.md`). Project status → `CONTEXT.md`.
 
 ---
 
@@ -165,6 +166,6 @@ If `pr-review` finds new BLOCKER/MAJOR issues, fix via [address-review-comments]
 - [ ] GATE SPEC: docs/cli-contract/release personas; no open BLOCKER/MAJOR
 - [ ] IMPLEMENT + VERIFY: build/test pass
 - [ ] GATE CODE: relevant personas; no open BLOCKER/MAJOR
-- [ ] CONTEXT: CHANGELOG + CONTEXT updated; README Status matches `VERSION`
+- [ ] CONTEXT: CHANGELOG + CONTEXT updated
 - [ ] pr-review before merge
 ```

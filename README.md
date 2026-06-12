@@ -1,16 +1,10 @@
 # ai-defense-cli
 
-**Cisco AI Defense CLI** (`aid-cisco-cli`)
+[![release](https://img.shields.io/github/v/release/cisco-ai-defense/ai-defense-cli?label=version)](https://github.com/cisco-ai-defense/ai-defense-cli/releases)
 
-Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-scan**, and **ai-bom**. Deterministic exit codes and machine-readable output for CI/CD.
-
-## Status
-
-| Area | Status |
-|------|--------|
-| Current version | `0.1.1` — see [CHANGELOG](CHANGELOG.md) |
-| Distribution | [install-upgrade.md](docs/install-upgrade.md) — binaries, checksums, upgrade |
-| CI / releases | Active on PRs and `main`; push tag `v*` to publish a GitHub Release |
+**Cisco AI Defense CLI** (`aid-cisco-cli`) — command-line tool for AI Defense
+scanning and inventory: **model-scan**, **mcp-scan**, and **ai-bom**. Deterministic
+exit codes and machine-readable output for CI/CD.
 
 ## Features
 
@@ -43,15 +37,8 @@ export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
 ./bin/aid-cisco-cli model-scan list --limit 5
 ```
 
-## Repository layout
-
-```
-api/                 # HTTP client (importable)
-internal/cli/        # Cobra commands
-internal/            # config, exit codes, verdict, embedded Python
-scripts/             # Python bundle build
-docs/                # specs, architecture, guides
-```
+See [docs/getting-started-client.md](docs/getting-started-client.md) for the full command
+reference, output modes, and exit-code gating.
 
 ## Development
 
@@ -62,10 +49,5 @@ make build-release-darwin        # macOS release → dist/
 make build-release-linux GOARCH=amd64   # Linux release via Docker
 ```
 
-See [docs/getting-started-developer.md](docs/getting-started-developer.md).
-
-## Contributing
-
-[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [LICENSE](LICENSE)
-
-Full command reference: [docs/getting-started-client.md](docs/getting-started-client.md) · [docs/service-spec.md](docs/service-spec.md)
+Details: [docs/getting-started-developer.md](docs/getting-started-developer.md) ·
+[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)

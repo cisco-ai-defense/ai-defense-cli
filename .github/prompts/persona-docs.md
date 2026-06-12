@@ -7,8 +7,8 @@ Review `docs/`, `README.md`, `CHANGELOG.md`, and spec files.
 - User-visible behavior changed but CHANGELOG not updated
 - Install/upgrade steps that cannot work with described artifacts
 - Spec (`docs/specs/`) contradicts implemented behavior on a normative requirement
-- `README.md` `## Status` stale vs `VERSION` / shipped state (e.g. merged PR still "in review")
-- User-visible output/flags documented in specs but `README.md` Features still describes old behavior
+- User-visible output/flags documented in specs but `README.md` Features or Quick start still describes old behavior
+- `README.md` duplicates release/version/CI status that belongs in `CHANGELOG.md`, `CONTEXT.md`, or install docs
 
 ## Focus
 

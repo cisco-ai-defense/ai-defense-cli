@@ -52,7 +52,7 @@ sha256_file() {
 }
 
 if [[ ! -f "${REQ_FILE}" ]]; then
-  echo "Missing ${REQ_FILE} — migrate scripts/ from CLI source (PR #5789)" >&2
+  echo "Missing ${REQ_FILE}" >&2
   exit 1
 fi
 
@@ -67,8 +67,8 @@ curl -fsSL --retry 5 --retry-all-errors -o "${archive}" "${base}/${asset}"
 echo "${PBS_SHA256}  ${archive}" | sha256_file -c -
 
 rm -rf "${STAGING}/python"
-mkdir -p "${STAGING}/python"
-tar -xzf "${archive}" -C "${STAGING}/python"
+mkdir -p "${STAGING}"
+tar -xzf "${archive}" -C "${STAGING}"
 
 PYBIN="${STAGING}/python/bin/python3"
 if [[ ! -x "${PYBIN}" ]]; then

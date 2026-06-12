@@ -8,9 +8,9 @@ Command-line tool for AI Defense scanning and inventory: **model-scan**, **mcp-s
 
 | Area | Status |
 |------|--------|
-| CLI source | Migrated from [PR #5789](https://github.com/cisco-aispg/ai-firewall-services/pull/5789) |
-| Release CI/CD | Pending ([PR #5790](https://github.com/cisco-aispg/ai-firewall-services/pull/5790)) |
-| Install docs | Pending ([PR #5810](https://github.com/cisco-aispg/ai-firewall-services/pull/5810)) |
+| CLI source | In review |
+| Release CI/CD | Pending |
+| Install docs | Pending |
 
 ## Features
 

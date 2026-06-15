@@ -6,6 +6,14 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Changed
+
+- CLI `--help`/usage now renders as titled panels with a color scheme matching
+  the embedded AI BOM (`cisco-aibom`) CLI — faint borders/titles, bold-yellow
+  `Usage:`, bold-cyan option names, bold-green short flags, bold-yellow type
+  metavars — so native and aibom-backed help look consistent. Color is gated to
+  the destination stream being a TTY and honors `NO_COLOR` / `FORCE_COLOR`.
+
 ## [0.1.2] - 2026-06-12
 
 ### Changed

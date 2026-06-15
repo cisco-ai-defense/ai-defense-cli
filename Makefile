@@ -31,9 +31,11 @@ CGO_ENABLED   ?= 0
 
 # Packages under scripts/, test helpers, and main are excluded from coverage measurement.
 # TUI/onboarding surfaces are also excluded from the coverage gate until they have unit tests.
-GO_COVER_PKGS := $(shell $(GO) list ./... 2>/dev/null | grep -vE '/scripts/|/internal/testutil/|^$(MODULE)$$|/internal/tui|/internal/selfupdate|/internal/cli/config|/internal/cli/install|/internal/cli/onboard|/internal/config/spec')
+GO_COVER_PKGS := $(shell $(GO) list ./... 2>/dev/null | grep -vE '/scripts/|/internal/testutil/|^$(MODULE)$$|/cmd/|/internal/tui|/internal/selfupdate|/internal/cli/config|/internal/cli/install|/internal/cli/onboard|/internal/config/spec')
 COVERPROFILE  ?= coverage.out
 COVER_MIN     ?= 75
+DIFF_BASE     ?= origin/main
+DIFF_COVER_MIN ?= 75
 
 EMBED_PKG     := ./internal/embedded/python
 EMBED_BIN_DIR := internal/embedded/python/bin
@@ -44,7 +46,7 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
+.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check test-diff-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
@@ -108,6 +110,9 @@ test-cover: ## Run tests and write coverage profile (COVERPROFILE=coverage.out)
 test-cover-check: test-cover ## Enforce minimum coverage (COVER_MIN=75)
 	@chmod +x scripts/check-coverage.sh
 	COVER_MIN=$(COVER_MIN) ./scripts/check-coverage.sh $(COVERPROFILE)
+
+test-diff-cover-check: test-cover ## Enforce diff coverage on changed lines (DIFF_BASE=origin/main, DIFF_COVER_MIN=75)
+	$(GO) run ./cmd/check-diff-coverage --profile $(COVERPROFILE) --base $(DIFF_BASE) --min $(DIFF_COVER_MIN)
 
 smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/aid-cisco-cli)
 	@$(MAKE) smoke-test-bin BIN="$(BIN_DIR)/$(BINARY_NAME)" VERSION="$(VERSION)"

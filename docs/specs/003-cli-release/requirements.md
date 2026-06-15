@@ -52,3 +52,10 @@
 - **REQ-08.2** Default minimum statement coverage (`COVER_MIN`) is **75%** over packages in `GO_COVER_PKGS` (see `Makefile`). `make test` still runs `./...`; exclusions apply only to coverage measurement.
 - **REQ-08.3** Excluded from the gate until they have unit tests: `scripts/`, root `main`, `internal/testutil/`, and TUI/onboarding packages (`internal/tui`, `internal/selfupdate`, `internal/cli/config`, `internal/cli/install`, `internal/cli/onboard`, `internal/config/spec`).
 - **REQ-08.4** `scripts/check-coverage.sh` parses `coverage.out` from `make test-cover` and fails when total is below `COVER_MIN`.
+
+### REQ-09 — PR diff coverage gate
+
+- **REQ-09.1** On `pull_request` events, CI MUST run `make test-diff-cover-check` after `test-cover-check`, comparing `HEAD` to `merge-base(HEAD, base branch)`.
+- **REQ-09.2** Default minimum diff coverage (`DIFF_COVER_MIN`) is **75%** of statements on changed production Go lines in scoped packages (same exclusions as REQ-08.3, plus `*_test.go`).
+- **REQ-09.3** `cmd/check-diff-coverage` reads `coverage.out` and the git diff; when no coverable production lines changed, the check MUST pass with a skip message.
+- **REQ-09.4** Checkout in CI MUST use `fetch-depth: 0` so merge-base is available on PRs.

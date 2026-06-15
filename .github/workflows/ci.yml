@@ -30,6 +30,8 @@ jobs:
       commit: ${{ steps.v.outputs.commit }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Resolve version
         id: v
@@ -44,6 +46,12 @@ jobs:
 
       - name: make build-go test-cover-check vet
         run: make build-go test-cover-check vet
+
+      - name: Diff coverage on changed lines (PRs only)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+          make test-diff-cover-check DIFF_BASE="origin/${{ github.base_ref }}"
 
       - name: Smoke test CLI (help/version)
         run: make smoke-test VERSION="$(tr -d '[:space:]' < VERSION)"

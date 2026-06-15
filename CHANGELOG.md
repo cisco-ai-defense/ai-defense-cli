@@ -29,6 +29,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   `internal/tui`, `internal/selfupdate`, `internal/config/spec`) are excluded from
   the gate until they have unit tests. Command-layer HTTP tests use
   `internal/testutil/apitest` (httptest + `*.cisco.com` base URL rewrite).
+- PR CI enforces **diff coverage** on changed production Go lines (`make test-diff-cover-check`,
+  default floor 75% vs merge base). Overall repo coverage gate unchanged; diff gate skips when
+  no coverable production lines changed in scoped packages.
 
 ### Changed
 

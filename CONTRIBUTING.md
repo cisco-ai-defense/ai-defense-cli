@@ -116,12 +116,17 @@ cd ai-defense-cli
 make build-go test vet
 make test-cover        # coverage profile + summary
 make test-cover-check  # enforce COVER_MIN (default 75%)
+make test-diff-cover-check DIFF_BASE=origin/main  # PR-style diff coverage on changed lines
 ```
 
 Coverage gate scope (`make test-cover` / `test-cover-check`) excludes `scripts/`, `main`,
 test helpers, and TUI/onboarding packages (`install`, `onboard`, `config`, `internal/tui`,
 `internal/selfupdate`, `internal/config/spec`) until they have unit tests. `make test`
 still runs `./...`.
+
+On pull requests, CI also runs `make test-diff-cover-check` against the merge base: new or
+changed **production** Go lines in scoped packages must meet `DIFF_COVER_MIN` (default 75%).
+Test-only or excluded-path changes do not affect the diff gate.
 
 **Build modes:**
 

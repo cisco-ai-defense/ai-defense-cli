@@ -37,7 +37,7 @@ sequenceDiagram
 
 ## CI test job
 
-The `test` workflow job runs `make build-go test-cover-check vet`. Package scope and exclusions for the coverage gate are defined in `Makefile` (`GO_COVER_PKGS`, `COVER_MIN`); see **REQ-08** in `requirements.md`.
+The `test` workflow job runs `make build-go test-cover-check vet`. On pull requests it also runs `make test-diff-cover-check` against the merge base. Package scope and exclusions for the coverage gate are defined in `Makefile` (`GO_COVER_PKGS`, `COVER_MIN`, `DIFF_COVER_MIN`); see **REQ-08** and **REQ-09** in `requirements.md`.
 
 ## Autofill sources
 

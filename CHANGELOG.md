@@ -6,8 +6,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
-### Added
+## [0.1.3] - 2026-06-15
 
+### Added
 - **`aid-cisco-cli install`** — download and verify release binaries from GitHub
   Releases (`--version`, `--check`, `--prefix`).
 - **`aid-cisco-cli onboard`** and **`aid-cisco-cli config`** — interactive TUI wizard
@@ -34,7 +35,6 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   no coverable production lines changed in scoped packages.
 
 ### Changed
-
 - CLI `--help`/usage now renders as titled panels with a color scheme matching
   the embedded AI BOM (`cisco-aibom`) CLI — faint borders/titles, bold-yellow
   `Usage:`, bold-cyan option names, bold-green short flags, bold-yellow type

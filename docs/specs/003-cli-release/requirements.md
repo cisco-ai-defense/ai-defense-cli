@@ -45,3 +45,10 @@
 - **REQ-07.1** After `build-go` and each embed release build, CI MUST run smoke tests: `--version` and `--help` for every command path in `internal/cli.SmokeCommandPaths()`.
 - **REQ-07.2** `scripts/smoke-test-cli.sh` is the release-binary entry point; command paths MUST come from `scripts/list-smoke-commands` (same list as unit tests).
 - **REQ-07.3** `make smoke-test` (stub build) and `make smoke-test-bin BIN=…` MUST be available for local verification; `SMOKE_RUNNER=docker` supports Linux binaries built on non-Linux hosts.
+
+### REQ-08 — Go test coverage gate
+
+- **REQ-08.1** CI `test` job MUST run `make test-cover-check` after `build-go` (with `vet`).
+- **REQ-08.2** Default minimum statement coverage (`COVER_MIN`) is **75%** over packages in `GO_COVER_PKGS` (see `Makefile`). `make test` still runs `./...`; exclusions apply only to coverage measurement.
+- **REQ-08.3** Excluded from the gate until they have unit tests: `scripts/`, root `main`, `internal/testutil/`, and TUI/onboarding packages (`internal/tui`, `internal/selfupdate`, `internal/cli/config`, `internal/cli/install`, `internal/cli/onboard`, `internal/config/spec`).
+- **REQ-08.4** `scripts/check-coverage.sh` parses `coverage.out` from `make test-cover` and fails when total is below `COVER_MIN`.

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/api"
@@ -393,5 +395,104 @@ func TestHasSupportedExtension_CompoundSuffix(t *testing.T) {
 	exts := map[string]struct{}{".tar": {}, ".gz": {}}
 	if !hasSupportedExtension("weights.tar.gz", exts) {
 		t.Fatal("expected .tar suffix match for compound extension")
+	}
+}
+
+func TestTriggerScan(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	if err := c.TriggerScan("scan-1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCancelScan(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	if err := c.CancelScan("scan-1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMarkScanCompleted(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	if err := c.MarkScanCompleted("scan-1", "none"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestUploadScanResult(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	err := c.UploadScanResult("scan-1", "obj-1", map[string]interface{}{"status": "ok"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestScanFile_UnsupportedExtension(t *testing.T) {
+	filePath := t.TempDir() + "/archive.zip"
+	if err := os.WriteFile(filePath, []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	deleteCalled := false
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/register") {
+			w.Write([]byte(`{"scan_id":"scan-1","supported_file_types":{"categories":[{"subcategories":[{"file_extensions":[".bin"]}]}]}}`))
+			return
+		}
+		if r.Method == http.MethodDelete {
+			deleteCalled = true
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		t.Fatalf("unexpected %s %s", r.Method, r.URL.Path)
+	})
+
+	_, err := c.ScanFile(filePath)
+	if err == nil {
+		t.Fatal("expected unsupported file type error")
+	}
+	if !deleteCalled {
+		t.Fatal("expected cleanup delete after unsupported extension")
+	}
+}
+
+func TestPollScanCompletion_Timeout(t *testing.T) {
+	t.Setenv("AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK", "0")
+	t.Setenv("AI_DEFENSE_RETRY_COUNT_FOR_SCANNING", "2")
+
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"scan_status_info":{"scan_id":"scan-1","status":"RUNNING"}}`))
+	})
+
+	_, err := c.pollScanCompletion("scan-1")
+	if err == nil {
+		t.Fatal("expected poll timeout")
+	}
+	var pollErr *api.PollTimeoutError
+	if !errors.As(err, &pollErr) {
+		t.Fatalf("expected PollTimeoutError, got %T: %v", err, err)
+	}
+	if pollErr.ScanID != "scan-1" {
+		t.Errorf("expected scan-1, got %q", pollErr.ScanID)
 	}
 }

@@ -221,3 +221,159 @@ func TestGetScanStatusRaw(t *testing.T) {
 		t.Fatalf("expected verbatim body, got %s", raw)
 	}
 }
+
+func TestGetServerScanReport_NilRequest(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		var req GetMCPServerScanReportRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		if req.ServerID != "srv-1" {
+			t.Errorf("expected server_id srv-1, got %q", req.ServerID)
+		}
+		w.Write([]byte(`{"report":{}}`))
+	})
+
+	raw, err := c.GetServerScanReport("srv-1", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if raw == nil {
+		t.Fatal("expected non-nil response")
+	}
+}
+
+func TestGetServerScanReport_WithRequest(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var req GetMCPServerScanReportRequest
+		json.NewDecoder(r.Body).Decode(&req)
+		if req.ServerID != "srv-2" {
+			t.Errorf("expected server_id injected, got %q", req.ServerID)
+		}
+		w.Write([]byte(`{"report":{"status":"ok"}}`))
+	})
+
+	raw, err := c.GetServerScanReport("srv-2", &GetMCPServerScanReportRequest{ServerID: "srv-2"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(string(raw), "ok") {
+		t.Fatalf("expected report body, got %s", raw)
+	}
+}
+
+func TestGetServerScanSummary(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		w.Write([]byte(`{"total_scans":5}`))
+	})
+
+	raw, err := c.GetServerScanSummary("srv-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(string(raw), "total_scans") {
+		t.Fatalf("expected summary JSON, got %s", raw)
+	}
+}
+
+func TestGetServerThreats(t *testing.T) {
+	capType := CapabilityTool
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if q.Get("capability_type") != "TOOL" {
+			t.Errorf("expected capability_type=TOOL, got %q", q.Get("capability_type"))
+		}
+		if q.Get("limit") != "25" {
+			t.Errorf("expected limit=25, got %q", q.Get("limit"))
+		}
+		if q.Get("threat_severity") != "HIGH" {
+			t.Errorf("expected threat_severity=HIGH, got %q", q.Get("threat_severity"))
+		}
+		w.Write([]byte(`{"items":[]}`))
+	})
+
+	raw, err := c.GetServerThreats("srv-1", &capType, []string{"HIGH"}, 25, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if raw == nil {
+		t.Fatal("expected non-nil response")
+	}
+}
+
+func TestUpdateAuthConfig(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	})
+
+	err := c.UpdateAuthConfig("srv-1", &AuthConfig{AuthType: AuthTypeNoAuth})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestListServers_AllFilters(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		checks := map[string]string{
+			"limit": "10", "offset": "5", "server_name_substr": "acme",
+			"registry_id": "reg-1", "sort_by": "SCAN_DATE", "sort_order": "asc",
+		}
+		for k, want := range checks {
+			if q.Get(k) != want {
+				t.Errorf("expected %s=%q, got %q", k, want, q.Get(k))
+			}
+		}
+		if len(q["onboarding_status"]) != 1 || q["onboarding_status"][0] != "COMPLETED" {
+			t.Errorf("unexpected onboarding_status: %v", q["onboarding_status"])
+		}
+		w.Write([]byte(`{"items":[]}`))
+	})
+
+	_, err := c.ListServers(ListServersParams{
+		Limit:            10,
+		Offset:           5,
+		NameSubstr:       "acme",
+		OnboardingStatus: []OnboardingStatus{OnboardingCompleted},
+		TransportType:    []TransportType{TransportSSE},
+		Severity:         []SeverityLevel{SeverityHigh},
+		RegistryID:       "reg-1",
+		SortBy:           SortScanDate,
+		SortOrder:        SortOrderAsc,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestStartScan_InvalidJSON(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`not-json`))
+	})
+
+	_, err := c.StartScan(&StartMCPServerScanRequest{Name: "test"})
+	if err == nil {
+		t.Fatal("expected parse error")
+	}
+}
+
+func TestGetScanStatus_InvalidJSON(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{`))
+	})
+
+	_, err := c.GetScanStatus("scan-1")
+	if err == nil {
+		t.Fatal("expected parse error")
+	}
+}

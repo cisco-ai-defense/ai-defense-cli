@@ -115,12 +115,13 @@ git clone https://github.com/cisco-ai-defense/ai-defense-cli.git
 cd ai-defense-cli
 make build-go test vet
 make test-cover        # coverage profile + summary
-make test-cover-check  # enforce COVER_MIN (default 70%)
+make test-cover-check  # enforce COVER_MIN (default 75%)
 ```
 
-Coverage scope excludes `scripts/`, `main`, test helpers, and TUI/onboarding packages
-(`install`, `onboard`, `config`, `internal/tui`, `internal/selfupdate`,
-`internal/config/spec`) until they have unit tests.
+Coverage gate scope (`make test-cover` / `test-cover-check`) excludes `scripts/`, `main`,
+test helpers, and TUI/onboarding packages (`install`, `onboard`, `config`, `internal/tui`,
+`internal/selfupdate`, `internal/config/spec`) until they have unit tests. `make test`
+still runs `./...`.
 
 **Build modes:**
 

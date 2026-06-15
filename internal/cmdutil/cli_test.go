@@ -3,6 +3,7 @@ package cmdutil
 import (
 	"testing"
 
+	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 )
@@ -70,6 +71,43 @@ func TestResolveAuth_MissingKeyFails(t *testing.T) {
 	}
 	if code := clierror.Classify(err).Code; code != clierror.CodeAuth {
 		t.Errorf("missing credential should be an auth error (exit %d), got %d", clierror.CodeAuth, code)
+	}
+}
+
+func TestAPIConfig_DefaultFactory(t *testing.T) {
+	cli := &CLI{}
+	cfg := cli.APIConfig("https://test.cisco.com")
+	if cfg == nil || cfg.ManagementBaseURL != "https://test.cisco.com" {
+		t.Fatalf("unexpected config: %#v", cfg)
+	}
+}
+
+func TestAPIConfig_CustomFactory(t *testing.T) {
+	cli := &CLI{
+		APIConfigFactory: func(baseURL string) *api.Config {
+			cfg := api.NewConfig(baseURL)
+			cfg.Timeout = 99
+			return cfg
+		},
+	}
+	cfg := cli.APIConfig("https://test.cisco.com")
+	if cfg.Timeout != 99 {
+		t.Fatalf("expected custom timeout, got %d", cfg.Timeout)
+	}
+}
+
+func TestGetRepoToken(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := dir + "/config.toml"
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", cfgPath)
+	t.Setenv("AI_DEFENSE_API_KEY", "k")
+	t.Setenv("AI_DEFENSE_BASE_URL", "https://test.cisco.com")
+
+	cli := &CLI{
+		ConfigManager: func() *config.Manager { return config.NewManager() },
+	}
+	if cli.GetRepoToken() != "" {
+		t.Fatalf("expected empty repo token by default, got %q", cli.GetRepoToken())
 	}
 }
 

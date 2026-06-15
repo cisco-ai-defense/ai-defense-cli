@@ -29,11 +29,11 @@ GOOS          ?= $(shell $(GO) env GOOS)
 GOARCH        ?= $(shell $(GO) env GOARCH)
 CGO_ENABLED   ?= 0
 
-# Packages under scripts/, test helpers, main, and TUI/onboarding surfaces are excluded
-# from the coverage gate until they have unit tests (install/onboard/config wizards).
-GO_TEST_PKGS  := $(shell $(GO) list ./... 2>/dev/null | grep -vE '/scripts/|/internal/testutil/|^$(MODULE)$$|/internal/tui|/internal/selfupdate|/internal/cli/config|/internal/cli/install|/internal/cli/onboard|/internal/config/spec')
+# Packages under scripts/, test helpers, and main are excluded from coverage measurement.
+# TUI/onboarding surfaces are also excluded from the coverage gate until they have unit tests.
+GO_COVER_PKGS := $(shell $(GO) list ./... 2>/dev/null | grep -vE '/scripts/|/internal/testutil/|^$(MODULE)$$|/internal/tui|/internal/selfupdate|/internal/cli/config|/internal/cli/install|/internal/cli/onboard|/internal/config/spec')
 COVERPROFILE  ?= coverage.out
-COVER_MIN     ?= 70
+COVER_MIN     ?= 75
 
 EMBED_PKG     := ./internal/embedded/python
 EMBED_BIN_DIR := internal/embedded/python/bin
@@ -98,14 +98,14 @@ bundle-check:
 
 test: ## Run tests (stub python; no embed bundle required)
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
-	$(GO) test $(GO_TEST_PKGS)
+	$(GO) test ./...
 
 test-cover: ## Run tests and write coverage profile (COVERPROFILE=coverage.out)
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
-	$(GO) test $(GO_TEST_PKGS) -coverprofile=$(COVERPROFILE) -covermode=atomic
+	$(GO) test $(GO_COVER_PKGS) -coverprofile=$(COVERPROFILE) -covermode=atomic
 	@$(GO) tool cover -func=$(COVERPROFILE) | tail -1
 
-test-cover-check: test-cover ## Enforce minimum coverage (COVER_MIN=65)
+test-cover-check: test-cover ## Enforce minimum coverage (COVER_MIN=75)
 	@chmod +x scripts/check-coverage.sh
 	COVER_MIN=$(COVER_MIN) ./scripts/check-coverage.sh $(COVERPROFILE)
 

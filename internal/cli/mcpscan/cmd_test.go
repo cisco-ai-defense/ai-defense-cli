@@ -198,6 +198,27 @@ func TestDeleteCmd_HTTP(t *testing.T) {
 	}
 }
 
+func TestCapabilitiesCmd_HTTP(t *testing.T) {
+	cli := apitest.NewTestCLI(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		if r.URL.Query().Get("capability_type") != "TOOL" {
+			t.Errorf("expected TOOL filter, got %q", r.URL.Query().Get("capability_type"))
+		}
+		w.Write([]byte(`{"items":[{"name":"search"}]}`))
+	})
+	root := NewCmd(cli)
+	out := captureStdout(t, func() {
+		if err := execCmd(t, root, "capabilities", "--server-id", "srv-1", "--type", "TOOL"); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if !strings.Contains(out, "search") {
+		t.Fatalf("expected capabilities JSON, got %q", out)
+	}
+}
+
 func TestRegisterCmd_HTTP(t *testing.T) {
 	cli := apitest.NewTestCLI(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

@@ -106,8 +106,14 @@ make build-release-darwin GOARCH=arm64
 ## 7. Tests
 
 ```bash
-make test vet
+make test vet              # unit tests only
+make test-cover            # coverage profile (coverage.out)
+make test-cover-check      # enforce COVER_MIN (default 75%; same as CI)
 ```
+
+CI runs `make build-go test-cover-check vet`. Coverage gate scope excludes `scripts/`, `main`, test helpers, and TUI/onboarding packages until they have unit tests — see [CONTRIBUTING.md](../CONTRIBUTING.md). `make test` runs `./...`.
+
+Command-layer HTTP tests use `internal/testutil/apitest` (httptest with a `*.cisco.com` base URL rewrite to satisfy API host validation). Inject a custom client via `api.Config.HTTPClient` and `cmdutil.APIConfigFactory` when testing commands.
 
 ---
 

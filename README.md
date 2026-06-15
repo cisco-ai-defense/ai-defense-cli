@@ -47,7 +47,7 @@ reference, output modes, and exit-code gating. Documentation index: [docs/README
 ## Development
 
 ```bash
-make build-go test vet           # daily dev
+make build-go test-cover-check vet   # daily dev (matches CI test job)
 make bundle build-embed          # full embed (local OS)
 make build-release-darwin        # macOS release → dist/
 make build-release-linux GOARCH=amd64   # Linux release via Docker

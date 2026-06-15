@@ -59,6 +59,12 @@ func init() {
 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	// Unified help styling: render native (Cobra) command help as titled panels
+	// so it matches the embedded aibom (Typer/Rich) help. aibom passthrough
+	// commands forward --help to aibom directly (DisableFlagParsing).
+	rootCmd.SetHelpFunc(panelHelpFunc)
+	rootCmd.SetUsageFunc(panelUsageFunc)
+
 	cli := &cmdutil.CLI{
 		ConfigManager: func() *config.Manager { return cfgManager },
 		FlagAPIKey:    func() string { return flagAPIKey },

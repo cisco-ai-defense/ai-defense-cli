@@ -26,6 +26,11 @@ func NewCmd(currentVersion string) *cobra.Command {
 binary from GitHub Releases. Use after the initial manual bootstrap from the
 Releases page.
 
+By default the running binary is replaced in the same directory as the
+executable you invoked (or --prefix). On Unix you can install while the CLI
+is running; the new file is written atomically and takes effect on the next
+invocation. Close other running instances if your platform locks executables.
+
 Examples:
   aid-cisco-cli install
   aid-cisco-cli install --version 0.1.2

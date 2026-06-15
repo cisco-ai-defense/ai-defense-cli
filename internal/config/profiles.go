@@ -26,6 +26,11 @@ func SetProfileOverride(name string) {
 	profileOverride = strings.TrimSpace(name)
 }
 
+// ResetProfileOverride clears any CLI --profile override (for tests).
+func ResetProfileOverride() {
+	profileOverride = ""
+}
+
 // ValidateProfileName returns an error if name is not a valid profile identifier.
 func ValidateProfileName(name string) error {
 	name = strings.TrimSpace(name)

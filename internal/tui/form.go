@@ -12,7 +12,8 @@ import (
 var initRenderer sync.Once
 
 // ensureRenderer points lipgloss at stderr (same stream bubbletea uses) so
-// adaptive colors match the live TUI.
+// adaptive colors match the live TUI. This replaces the process-wide default
+// lipgloss renderer; native --help uses raw ANSI and is unaffected.
 func ensureRenderer() {
 	initRenderer.Do(func() {
 		lipgloss.SetDefaultRenderer(lipgloss.NewRenderer(os.Stderr))
@@ -34,7 +35,12 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 
 // RunForm executes a styled form.
 func RunForm(groups ...*huh.Group) error {
-	return NewForm(groups...).Run()
+	return Run(NewForm(groups...))
+}
+
+// Run executes a styled form and normalizes cancellation errors.
+func Run(form *huh.Form) error {
+	return NormalizeFormErr(form.Run())
 }
 
 func terminalWidth(w *os.File) int {

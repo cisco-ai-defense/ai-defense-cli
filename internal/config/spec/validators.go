@@ -1,6 +1,8 @@
 package spec
 
 import (
+	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -59,4 +61,18 @@ func hasAIBOMCredential(values map[string]string) bool {
 
 func isBedrock(s string) bool {
 	return strings.Contains(strings.ToLower(s), "bedrock")
+}
+
+// ValidateBaseURLHost checks that baseURL is HTTPS-capable and on a *.cisco.com host.
+func ValidateBaseURLHost(baseURL string) error {
+	s := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	u, err := url.Parse(s)
+	if err != nil || u.Hostname() == "" {
+		return fmt.Errorf("invalid base URL")
+	}
+	host := u.Hostname()
+	if host != "cisco.com" && !strings.HasSuffix(host, ".cisco.com") {
+		return fmt.Errorf("base URL host must be a *.cisco.com domain")
+	}
+	return nil
 }

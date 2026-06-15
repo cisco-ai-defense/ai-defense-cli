@@ -2,7 +2,6 @@ package spec
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/charmbracelet/huh"
@@ -99,7 +98,7 @@ func (s SectionSpec) collectWithPresets(values map[string]string, after WizardFi
 				Value(&presetID),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return nil, err
 	}
 
@@ -221,7 +220,7 @@ func (f FieldSpec) applyInputValidators(input *huh.Input) *huh.Input {
 		})
 	}
 	if f.Key == "base_url" {
-		validators = append(validators, validateBaseURLHost)
+		validators = append(validators, ValidateBaseURLHost)
 	}
 	if len(validators) == 0 {
 		return input
@@ -251,19 +250,6 @@ func matchOptionValue(options []FieldOption, value string) string {
 		}
 	}
 	return ""
-}
-
-func validateBaseURLHost(s string) error {
-	s = strings.TrimRight(strings.TrimSpace(s), "/")
-	u, err := url.Parse(s)
-	if err != nil || u.Hostname() == "" {
-		return fmt.Errorf("invalid base URL")
-	}
-	host := u.Hostname()
-	if host != "cisco.com" && !strings.HasSuffix(host, ".cisco.com") {
-		return fmt.Errorf("base URL host must be a *.cisco.com domain")
-	}
-	return nil
 }
 
 func copyValues(src map[string]string) map[string]string {

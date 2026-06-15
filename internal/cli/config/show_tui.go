@@ -61,7 +61,7 @@ func RunShowInteractive(m *appconfig.Manager) error {
 					Value(&choice),
 			),
 		)
-		if err := form.Run(); err != nil {
+		if err := tui.Run(form); err != nil {
 			return err
 		}
 
@@ -81,7 +81,7 @@ func RunShowInteractive(m *appconfig.Manager) error {
 						Description(desc),
 				),
 			)
-			if err := view.Run(); err != nil {
+			if err := tui.Run(view); err != nil {
 				return err
 			}
 		}

@@ -67,6 +67,28 @@ func TestBaseURLOptions(t *testing.T) {
 	}
 }
 
+func TestValidateBaseURLHost(t *testing.T) {
+	t.Parallel()
+	ok := []string{
+		"https://us.api.aidefense.security.cisco.com",
+		"https://sam.example.aiteam.cisco.com/",
+	}
+	for _, u := range ok {
+		if err := spec.ValidateBaseURLHost(u); err != nil {
+			t.Errorf("%q: %v", u, err)
+		}
+	}
+	bad := []string{"", "not-a-url", "https://evil.example.com"}
+	for _, u := range bad {
+		if err := spec.ValidateBaseURLHost(u); err == nil {
+			t.Errorf("%q: expected error", u)
+		}
+	}
+	if err := spec.ValidateBaseURLHost("https://evil.example.com"); err == nil || err.Error() != "base URL host must be a *.cisco.com domain" {
+		t.Fatalf("got %v", err)
+	}
+}
+
 func TestHuggingFaceResolveFromEnv(t *testing.T) {
 	hf := spec.MustByID("huggingface")
 	vals := hf.Resolve(map[string]string{"token": "hf_abc"}, nil)

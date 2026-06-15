@@ -206,7 +206,7 @@ func promptContinueOrFresh(_ string, profileName string) (resume bool, err error
 				Value(&choice),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return false, err
 	}
 	return choice == "continue", nil
@@ -325,7 +325,7 @@ func promptOptionalCapability(ctx *capabilities.WizardContext, cap capabilities.
 				Value(&choice),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return err
 	}
 

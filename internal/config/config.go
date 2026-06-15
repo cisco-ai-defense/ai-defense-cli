@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -228,13 +227,8 @@ func ResolveAPIKeyAndBaseURL(flagAPIKey, flagBaseURL string, mgr *Manager) (stri
 
 	baseURL = strings.TrimRight(baseURL, "/")
 
-	parsed, err := url.Parse(baseURL)
-	if err != nil || parsed.Hostname() == "" {
-		return "", "", fmt.Errorf("invalid base URL: %s", baseURL)
-	}
-	host := parsed.Hostname()
-	if host != "cisco.com" && !strings.HasSuffix(host, ".cisco.com") {
-		return "", "", fmt.Errorf("invalid base url for AI DEFENSE")
+	if err := spec.ValidateBaseURLHost(baseURL); err != nil {
+		return "", "", err
 	}
 
 	return apiKey, baseURL, nil

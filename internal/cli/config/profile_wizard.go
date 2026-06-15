@@ -53,7 +53,7 @@ func promptProfileSelection() (string, error) {
 				Value(&choice),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return "", err
 	}
 
@@ -128,7 +128,7 @@ func promptNewProfileName(existing []appconfig.ProfileInfo) (string, error) {
 				}),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(name), nil

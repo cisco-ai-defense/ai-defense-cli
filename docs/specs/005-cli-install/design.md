@@ -40,6 +40,14 @@ Unsupported combinations return usage error (exit 2).
 4. Verify checksum line for artifact filename
 5. Write to `<prefix>/aid-cisco-cli` (or `--prefix` + basename)
 
+## In-place replacement
+
+Default `--prefix` is the directory containing the running executable (`selfupdate.DefaultPrefix`). The install step atomically replaces `<prefix>/aid-cisco-cli` with the downloaded release binary.
+
+- **Unix (Linux/macOS):** Replacing the binary while a process is running is supported; the OS keeps the old inode for the running process. The new binary is used on the next launch.
+- **Windows:** Executable files may be locked while running; install may fail until other instances exit.
+- **Recommendation:** After install, run `aid-cisco-cli --version` in a new shell to confirm the updated build.
+
 ## Security
 
 - HTTPS only to `github.com` / `api.github.com`

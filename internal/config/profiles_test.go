@@ -51,7 +51,8 @@ func TestActiveProfilePriority(t *testing.T) {
 	}
 	t.Setenv("HOME", home)
 	t.Setenv("AI_DEFENSE_PROFILE", "")
-	SetProfileOverride("")
+	t.Cleanup(ResetProfileOverride)
+	ResetProfileOverride()
 
 	if err := WriteActiveProfile("work"); err != nil {
 		t.Fatal(err)
@@ -81,7 +82,8 @@ func TestResolveConfigPathWithProfile(t *testing.T) {
 	}
 	t.Setenv("HOME", home)
 	t.Setenv("AI_DEFENSE_CONFIG_PATH", "")
-	SetProfileOverride("")
+	t.Cleanup(ResetProfileOverride)
+	ResetProfileOverride()
 
 	workPath := ProfileConfigPath("work")
 	if err := os.WriteFile(workPath, []byte("[default]\n"), 0o600); err != nil {
@@ -158,7 +160,8 @@ func TestListAndDeleteProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("HOME", home)
-	SetProfileOverride("")
+	t.Cleanup(ResetProfileOverride)
+	ResetProfileOverride()
 
 	defPath := DefaultConfigPath()
 	if err := os.WriteFile(defPath, []byte("[default]\n"), 0o600); err != nil {

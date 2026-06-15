@@ -106,6 +106,11 @@ aid-cisco-cli install --prefix /usr/local/bin
 Supported platforms for self-update match release binaries: `linux-amd64`,
 `darwin-amd64`, `darwin-arm64`.
 
+By default, `install` replaces the binary in the same directory as the running
+executable (or `--prefix`). On Linux and macOS the file is swapped atomically;
+the running process keeps the old build until you start a new invocation. Run
+`aid-cisco-cli --version` after upgrade to confirm.
+
 Manual upgrade (download + replace) still works:
 
 1. Download the new release binary for your platform.

@@ -78,7 +78,7 @@ func RunEditHub() (*capabilities.WizardContext, error) {
 					Value(&choice),
 			),
 		)
-		if err := form.Run(); err != nil {
+		if err := tui.Run(form); err != nil {
 			return nil, err
 		}
 		if choice == editActionDone {
@@ -149,7 +149,7 @@ func editCapabilitySection(ctx *capabilities.WizardContext, m *appconfig.Manager
 				Value(&action),
 		),
 	)
-	if err := form.Run(); err != nil {
+	if err := tui.Run(form); err != nil {
 		return err
 	}
 

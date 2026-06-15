@@ -26,6 +26,7 @@
 | `config profile delete <name>` | Remove a named profile file (not `default`) |
 
 - Non-TTY wizard commands: exit `2` with manual TOML/env instructions
+- Interactive wizard Ctrl+C / cancel: exit `1` with message `Cancelled.` (not exit `2`; usage is reserved for invalid flags/args)
 - Config write mode `0600`
 - `config show --plain` forces redacted TOML even on a terminal
 

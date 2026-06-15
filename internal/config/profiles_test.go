@@ -95,6 +95,63 @@ func TestResolveConfigPathWithProfile(t *testing.T) {
 	}
 }
 
+func TestExistingConfigPathForProfile(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "user")
+	if err := os.MkdirAll(filepath.Join(home, homeConfigDirName, profilesSubdir), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+
+	workPath := ProfileConfigPath("work")
+	if err := os.WriteFile(workPath, []byte("[default]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := ExistingConfigPathForProfile("work")
+	if !ok || got != workPath {
+		t.Fatalf("work: got %q ok=%v", got, ok)
+	}
+	if _, ok := ExistingConfigPathForProfile("missing"); ok {
+		t.Fatal("expected missing profile to be absent")
+	}
+}
+
+func TestListProfilesForOnboarding(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "user")
+	if err := os.MkdirAll(filepath.Join(home, homeConfigDirName, profilesSubdir), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	if err := WriteActiveProfile("work"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(ProfileConfigPath("work"), []byte("[default]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := ListProfilesForOnboarding()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list) < 2 {
+		t.Fatalf("expected default + work, got %d", len(list))
+	}
+	var foundDefault, foundWork bool
+	for _, p := range list {
+		if p.Name == DefaultProfileName {
+			foundDefault = true
+		}
+		if p.Name == "work" {
+			foundWork = true
+			if !p.Active {
+				t.Fatal("work should be active")
+			}
+		}
+	}
+	if !foundDefault || !foundWork {
+		t.Fatalf("profiles: default=%v work=%v", foundDefault, foundWork)
+	}
+}
+
 func TestListAndDeleteProfile(t *testing.T) {
 	home := filepath.Join(t.TempDir(), "user")
 	if err := os.MkdirAll(filepath.Join(home, homeConfigDirName, profilesSubdir), 0o700); err != nil {

@@ -24,8 +24,8 @@ aid-cisco-cli onboard
 
 You'll configure:
 
-1. **Core** — base URL (preset or custom), API key (required for API commands)
-2. **Optional capabilities** — HuggingFace and AIBOM, one at a time (Configure or Skip). Progress is saved after each field; run `onboard` again to continue or start over.
+1. **Core** — choose profile (or use `--profile`); then base URL and API key
+2. **Optional capabilities** — HuggingFace and AIBOM, one at a time (Configure or Skip). Progress is saved after each field; run `onboard` again to continue or start over. Re-run shows existing profiles and which is active (`*`).
 
 Settings are saved to **`~/.ai-defense/`** — default profile in `config.toml`, or named profiles under `profiles/` (see [config.md](config.md#where-settings-live)).
 

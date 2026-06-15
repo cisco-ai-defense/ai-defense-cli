@@ -184,6 +184,63 @@ func ListProfiles() ([]ProfileInfo, error) {
 	return out, nil
 }
 
+// ExistingConfigPathForProfile returns an on-disk config for a specific profile, if any.
+func ExistingConfigPathForProfile(name string) (string, bool) {
+	if err := ValidateProfileName(name); err != nil {
+		return "", false
+	}
+	path := ProfileConfigPath(name)
+	if fileExists(path) {
+		return path, true
+	}
+	if name == DefaultProfileName {
+		for _, p := range []string{legacyXDGConfigPath(), legacyProjectConfigPath()} {
+			if p != "" && fileExists(p) {
+				return p, true
+			}
+		}
+	}
+	return "", false
+}
+
+// ListProfilesForOnboarding returns profiles for the onboard picker (always includes default).
+func ListProfilesForOnboarding() ([]ProfileInfo, error) {
+	storedActive := ReadStoredActiveProfile()
+	seen := map[string]bool{}
+	var out []ProfileInfo
+
+	add := func(name, path string) {
+		if seen[name] {
+			return
+		}
+		seen[name] = true
+		out = append(out, ProfileInfo{
+			Name:   name,
+			Path:   path,
+			Active: name == storedActive,
+			Exists: fileExists(path),
+		})
+	}
+
+	add(DefaultProfileName, DefaultConfigPath())
+
+	entries, err := os.ReadDir(ProfilesDir())
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".toml") {
+			continue
+		}
+		name := strings.TrimSuffix(e.Name(), ".toml")
+		if err := ValidateProfileName(name); err != nil {
+			continue
+		}
+		add(name, filepath.Join(ProfilesDir(), e.Name()))
+	}
+	return out, nil
+}
+
 // DeleteProfile removes a named profile file. default cannot be deleted.
 func DeleteProfile(name string) error {
 	if err := ValidateProfileName(name); err != nil {

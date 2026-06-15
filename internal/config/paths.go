@@ -88,6 +88,11 @@ func ConfigLocationLabel(path string) string {
 	return "Config (" + shortenHome(path) + ")"
 }
 
+// ProfileNameForPath returns the profile name for a config file path, or "" if unknown.
+func ProfileNameForPath(path string) string {
+	return profileNameForPath(path)
+}
+
 func profileNameForPath(path string) string {
 	if path == DefaultConfigPath() {
 		return DefaultProfileName
@@ -159,6 +164,11 @@ func fileExists(path string) bool {
 // FileExists reports whether path is a regular file.
 func FileExists(path string) bool {
 	return fileExists(path)
+}
+
+// ShortenHome replaces the user home directory prefix with ~ for display.
+func ShortenHome(path string) string {
+	return shortenHome(path)
 }
 
 func shortenHome(path string) string {

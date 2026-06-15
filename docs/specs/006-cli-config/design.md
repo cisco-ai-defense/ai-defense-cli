@@ -7,6 +7,7 @@
 ```mermaid
 flowchart TD
   entry[onboard or config init]
+  profile[Select profile or create new]
   existing{Config exists for profile?}
   pick[Continue or start over]
   core[Core fields: api_key then base_url]
@@ -14,7 +15,8 @@ flowchart TD
   modules[Capability fields one at a time]
   write[Write TOML 0600 after each step]
 
-  entry --> existing
+  entry --> profile
+  profile --> existing
   existing -->|yes| pick --> core
   existing -->|no| core
   core --> write
@@ -24,7 +26,7 @@ flowchart TD
   write --> complete[onboard.step = complete]
 ```
 
-- Config is written under `~/.ai-defense/` (active profile). No location picker.
+- `--profile` skips the profile step. Picker shows stored active profile and lists on-disk profiles (`*` = active).
 
 - No separate confirm screen per step; Enter on the select/input advances.
 - Cancel/interrupt leaves the last saved draft on disk.

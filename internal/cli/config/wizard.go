@@ -38,16 +38,22 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 		)
 	}
 
+	profileName, err := resolveWizardProfile(opts)
+	if err != nil {
+		return nil, err
+	}
+	opts.Profile = profileName
+
 	ctx := &capabilities.WizardContext{
 		Selected:   map[string]bool{},
 		Skipped:    map[string]bool{},
-		ConfigPath: appconfig.ProfileConfigPath(profileForWizard(opts)),
+		ConfigPath: appconfig.ProfileConfigPath(profileName),
 	}
 	var existing *appconfig.Manager
 
 	if !opts.Force {
-		if path, ok := appconfig.ExistingConfigPath(); ok {
-			resume, err := promptContinueOrFresh(path)
+		if path, ok := appconfig.ExistingConfigPathForProfile(profileName); ok {
+			resume, err := promptContinueOrFresh(path, profileName)
 			if err != nil {
 				return nil, err
 			}
@@ -90,7 +96,7 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 		}
 	}
 
-	if name := profileForWizard(opts); name != "" && name != appconfig.DefaultProfileName {
+	if name := profileForWizard(opts); name != "" {
 		if err := appconfig.WriteActiveProfile(name); err != nil {
 			return nil, clierror.Unexpected("set active profile: "+err.Error(), err)
 		}
@@ -119,7 +125,11 @@ func (d *draftSaver) save(ctx *capabilities.WizardContext) error {
 	} else {
 		prior = d.managerAt(path)
 		if prior == nil {
-			if readPath, ok := appconfig.ExistingConfigPath(); ok {
+			profile := appconfig.ProfileNameForPath(path)
+			if profile == "" {
+				profile = appconfig.DefaultProfileName
+			}
+			if readPath, ok := appconfig.ExistingConfigPathForProfile(profile); ok {
 				prior = d.managerAt(readPath)
 			}
 		}
@@ -177,10 +187,9 @@ func buildConfigData(ctx *capabilities.WizardContext, existing *appconfig.Manage
 	return data
 }
 
-func promptContinueOrFresh(configPath string) (resume bool, err error) {
+func promptContinueOrFresh(_ string, profileName string) (resume bool, err error) {
 	choice := "continue"
-	label := appconfig.ConfigLocationLabel(configPath)
-	desc := fmt.Sprintf("%s\n  %s\n\nContinue where you left off, or replace this file?", label, configPath)
+	desc := fmt.Sprintf("Profile %q has saved settings.\n\nContinue where you left off, or start over?", profileName)
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -359,7 +368,7 @@ func isTTY() bool {
 // PrintNextSteps writes post-onboard guidance to stdout.
 func PrintNextSteps(ctx *capabilities.WizardContext) {
 	profile := appconfig.ActiveProfile()
-	fmt.Fprintf(os.Stdout, "\nConfig saved to: %s", ctx.ConfigPath)
+	fmt.Fprintf(os.Stdout, "\nConfig saved to %s", appconfig.ShortenHome(ctx.ConfigPath))
 	if profile != "" {
 		fmt.Fprintf(os.Stdout, " (profile: %s)", profile)
 	}

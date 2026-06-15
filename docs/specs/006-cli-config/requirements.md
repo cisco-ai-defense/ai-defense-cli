@@ -35,6 +35,8 @@
 - Saves **draft progress after each wizard step** (each core field, each capability field)
 - Persists progress in `[onboard].step` (see REQ-07)
 - On re-run: prompt continue vs start over; resume skips completed steps
+- **REQ-03.1** Unless `--profile` is set, wizard opens with a profile picker (default pre-selected to stored active profile, usually `default`). Overview lists existing profiles and marks the active one (`*`).
+- **REQ-03.2** User may select an existing profile, create a new named profile, or pass `--profile` to skip the picker.
 
 ### REQ-04 — Modular capability hub
 

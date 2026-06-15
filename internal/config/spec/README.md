@@ -9,27 +9,32 @@ User secrets are **not** stored here — they live in user `config.toml` (see [d
 | File | Role |
 |------|------|
 | `config.spec.yaml` | Schema source (embedded at build time) |
-| `load.go` | Parse YAML, build integration registry (`ByID`, `Integrations`) |
-| `spec.go` | `IntegrationSpec` — resolve, apply, redact paths |
+| `load.go` | Parse YAML, build section registry (`Sections`, `ByID`, `OptionalSections`) |
+| `spec.go` | `SectionSpec` — resolve, apply, redact paths |
 | `wizard.go` | TUI field collection from spec |
 | `validators.go` | Named validators for complex rules (e.g. `aibom_llm`) |
 
-**`core.fields`** — persisted TOML keys; optional `options` + `allow_custom` drive the wizard (e.g. `base_url` regional presets).
+## Schema shape
 
-## Add a new integration
+One root section (`default`) whose `fields` mirror TOML `[default]`:
 
-1. Add an entry under `integrations:` in **`config.spec.yaml`** (fields, env, flags, optional presets/validate).
-2. For complex validation, register a handler in **`validators.go`** and reference it with `validator: my_validator` in YAML.
-3. Rebuild — wizard, capability hub, redaction, and `spec.Integrations()` pick it up automatically.
+- **Scalars** (`api_key`, `base_url`) — string/secret fields collected on every onboard
+- **`kind: group`** (`huggingface`, `aibom`) — nested TOML tables; `optional: true` registers them in the capability hub
 
-If a **command** must read the integration at runtime, look it up by id in that command package:
+At runtime, group fields are expanded into `SectionSpec` entries (`ByID("huggingface")`, etc.) for resolve/apply/wizard — same API as before.
+
+## Add a new optional capability
+
+1. Add a `kind: group` field under `default.fields` in **`config.spec.yaml`** with `optional: true`.
+2. For complex validation, register a handler in **`validators.go`** and reference `validator: my_validator` on the group.
+3. Rebuild — wizard, capability hub, redaction, and `spec.OptionalSections()` pick it up automatically.
+
+Commands look up groups by key:
 
 ```go
-ig := spec.MustByID("my_integration")
-value := ig.ResolveField("some_key", flagValue, mgr)
+sec := spec.MustByID("aibom")
+value := sec.ResolveField("llm_model", flagValue, mgr)
 ```
-
-No changes to `load.go` or new package-level variables are required.
 
 ## Docs
 

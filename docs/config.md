@@ -63,7 +63,7 @@ Optional sections are omitted when not configured. Files are written with mode `
 | `config edit` | Change existing config |
 | `config show` | Print resolved config (redacted) |
 | `config path` | Print active config path |
-| `config validate` | Verify required core fields and base URL |
+| `config validate` | Verify required section fields and base URL |
 
 Non-TTY environments: wizard commands exit with code `2`; use env vars or TOML instead.
 

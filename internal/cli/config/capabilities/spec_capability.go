@@ -76,7 +76,7 @@ func FormatIntegrationSummary(ctx *WizardContext) string {
 			continue
 		}
 		vals := ctx.IntegrationValues[sc.Spec.ID]
-		for _, f := range sc.Spec.Section.Fields {
+		for _, f := range sc.Spec.Fields {
 			if vals[f.Key] == "" {
 				continue
 			}

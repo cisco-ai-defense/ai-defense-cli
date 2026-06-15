@@ -156,9 +156,8 @@ func WriteConfig(path string, data map[string]interface{}) error {
 // RedactSecrets returns a copy of data with known secret fields masked.
 func RedactSecrets(data map[string]interface{}) map[string]interface{} {
 	out := cloneMap(data)
-	redactNested(out, "default", "api_key")
-	for _, integration := range spec.Integrations() {
-		for _, path := range integration.SecretTomlPaths() {
+	for _, sec := range spec.Sections() {
+		for _, path := range sec.SecretTomlPaths() {
 			redactNested(out, path...)
 		}
 	}

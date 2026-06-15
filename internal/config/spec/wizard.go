@@ -10,22 +10,13 @@ import (
 
 const wizardCustomValue = "__custom__"
 
-// CollectCoreFields prompts for all core fields in spec order (onboard / config init).
-func CollectCoreFields(existing map[string]string) (map[string]string, error) {
-	values := copyValues(existing)
-	for _, f := range CoreFields() {
-		current := values[f.Key]
-		v, err := f.CollectWizardValue(current)
-		if err != nil {
-			return nil, err
-		}
-		values[f.Key] = v
-	}
-	return values, nil
+// CollectRequiredSection prompts for the required section fields (onboard / config init).
+func CollectRequiredSection(existing map[string]string) (map[string]string, error) {
+	return RequiredSection().CollectWizard(existing)
 }
 
-// CollectWizard prompts for integration fields using the spec (and presets when defined).
-func (s IntegrationSpec) CollectWizard(existing map[string]string) (map[string]string, error) {
+// CollectWizard prompts for section fields using the spec (and presets when defined).
+func (s SectionSpec) CollectWizard(existing map[string]string) (map[string]string, error) {
 	values := copyValues(existing)
 
 	if len(s.Presets) > 0 {
@@ -34,7 +25,7 @@ func (s IntegrationSpec) CollectWizard(existing map[string]string) (map[string]s
 	return s.collectFields(values, s.RequiredFieldKeys())
 }
 
-func (s IntegrationSpec) collectWithPresets(values map[string]string) (map[string]string, error) {
+func (s SectionSpec) collectWithPresets(values map[string]string) (map[string]string, error) {
 	options := make([]huh.Option[string], len(s.Presets))
 	for i, p := range s.Presets {
 		options[i] = huh.NewOption(p.Label, p.ID)
@@ -60,7 +51,7 @@ func (s IntegrationSpec) collectWithPresets(values map[string]string) (map[strin
 	return s.collectFields(values, keys)
 }
 
-func (s IntegrationSpec) presetByID(id string) WizardPreset {
+func (s SectionSpec) presetByID(id string) WizardPreset {
 	for _, p := range s.Presets {
 		if p.ID == id {
 			return p
@@ -69,7 +60,7 @@ func (s IntegrationSpec) presetByID(id string) WizardPreset {
 	return WizardPreset{}
 }
 
-func (s IntegrationSpec) collectFields(values map[string]string, keys []string) (map[string]string, error) {
+func (s SectionSpec) collectFields(values map[string]string, keys []string) (map[string]string, error) {
 	for _, key := range keys {
 		field := s.FieldByKey(key)
 		if field == nil {
@@ -186,10 +177,10 @@ func copyValues(src map[string]string) map[string]string {
 }
 
 // LoadFromManager reads TOML-only values (no env) for wizard seeding.
-func (s IntegrationSpec) LoadFromManager(src ValueSource) map[string]string {
+func (s SectionSpec) LoadFromManager(src ValueSource) map[string]string {
 	out := make(map[string]string)
-	for _, f := range s.Section.Fields {
-		keys := append(append([]string{}, s.Section.TomlPath...), f.Key)
+	for _, f := range s.Fields {
+		keys := append(append([]string{}, s.TomlPath...), f.Key)
 		out[f.Key] = src.NestedString(keys...)
 	}
 	return out

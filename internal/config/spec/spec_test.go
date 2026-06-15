@@ -15,11 +15,16 @@ func TestEmbeddedSpecLoads(t *testing.T) {
 	if s.Meta.SchemaVersion != "1" {
 		t.Fatalf("schema version %q", s.Meta.SchemaVersion)
 	}
-	if len(s.Core.Fields) < 2 {
-		t.Fatalf("expected core fields")
+	if len(s.Sections) != 1 || s.Sections[0].ID != "default" {
+		t.Fatalf("expected single default root section")
 	}
+	groups := spec.GroupFields(s.Sections[0])
+	if len(groups) < 2 {
+		t.Fatalf("expected group fields under default")
+	}
+	req := spec.RequiredSection()
 	var baseURLField spec.FieldSpec
-	for _, f := range spec.CoreFields() {
+	for _, f := range req.Fields {
 		if f.Key == "base_url" {
 			baseURLField = f
 			break
@@ -28,18 +33,15 @@ func TestEmbeddedSpecLoads(t *testing.T) {
 	if baseURLField.Key != "base_url" || len(baseURLField.Options) != 4 || !baseURLField.AllowCustom {
 		t.Fatalf("base_url field: %+v", baseURLField)
 	}
-	if len(s.Integrations) < 2 {
-		t.Fatalf("expected integrations")
-	}
 }
 
-func TestIntegrationsFromSpec(t *testing.T) {
-	integrations := spec.Integrations()
-	if len(integrations) != 2 {
-		t.Fatalf("got %d integrations", len(integrations))
+func TestOptionalSectionsFromSpec(t *testing.T) {
+	optional := spec.OptionalSections()
+	if len(optional) != 2 {
+		t.Fatalf("got %d optional sections", len(optional))
 	}
 	hf, ok := spec.ByID("huggingface")
-	if !ok || hf.ID != "huggingface" || hf.Section.Fields[0].Key != "token" {
+	if !ok || hf.ID != "huggingface" || hf.Fields[0].Key != "token" {
 		t.Fatalf("huggingface spec: %+v", hf)
 	}
 	aibom := spec.MustByID("aibom")
@@ -49,9 +51,9 @@ func TestIntegrationsFromSpec(t *testing.T) {
 }
 
 func TestBaseURLOptions(t *testing.T) {
-	fields := spec.CoreFields()
+	req := spec.RequiredSection()
 	var baseURL spec.FieldSpec
-	for _, f := range fields {
+	for _, f := range req.Fields {
 		if f.Key == "base_url" {
 			baseURL = f
 			break
@@ -116,5 +118,16 @@ func TestApplyOmitsEmpty(t *testing.T) {
 	aibomSec := def["aibom"].(map[string]interface{})
 	if _, ok := aibomSec["llm_provider"]; ok {
 		t.Fatal("empty provider should be omitted")
+	}
+}
+
+func TestTomlPathInference(t *testing.T) {
+	hf := spec.MustByID("huggingface")
+	if len(hf.TomlPath) != 2 || hf.TomlPath[0] != "default" || hf.TomlPath[1] != "huggingface" {
+		t.Fatalf("got %v", hf.TomlPath)
+	}
+	def := spec.RequiredSection()
+	if len(def.TomlPath) != 1 || def.TomlPath[0] != "default" {
+		t.Fatalf("got %v", def.TomlPath)
 	}
 }

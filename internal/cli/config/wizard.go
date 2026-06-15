@@ -59,12 +59,11 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 		}
 	}
 
-	data := map[string]interface{}{
-		"default": map[string]interface{}{
-			"api_key":  ctx.APIKey,
-			"base_url": ctx.BaseURL,
-		},
-	}
+	data := map[string]interface{}{}
+	spec.RequiredSection().Apply(data, map[string]string{
+		"api_key":  ctx.APIKey,
+		"base_url": ctx.BaseURL,
+	})
 	for _, cap := range capabilities.All() {
 		if ctx.Selected[cap.ID()] {
 			cap.Apply(ctx, data)
@@ -156,7 +155,7 @@ func runCoreForms(ctx *capabilities.WizardContext, opts RunOptions) error {
 		"api_key":  ctx.APIKey,
 		"base_url": ctx.BaseURL,
 	}
-	core, err := spec.CollectCoreFields(existing)
+	core, err := spec.CollectRequiredSection(existing)
 	if err != nil {
 		return err
 	}

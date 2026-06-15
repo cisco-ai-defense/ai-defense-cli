@@ -12,10 +12,10 @@
 | Subcommand | Behavior |
 |------------|----------|
 | `config init` | Core wizard + capability hub; create file (fail if exists unless `--force`) |
-| `config edit` | Load existing; core + hub with configured capabilities pre-checked |
+| `config edit` | Load existing; required section + hub with configured capabilities pre-checked |
 | `config show` | Resolved config with secrets redacted |
 | `config path` | Print active or last-written config path |
-| `config validate` | Required core fields + `.cisco.com` base URL rule |
+| `config validate` | Required default section fields + `.cisco.com` base URL rule |
 
 - Non-TTY: exit `2` with manual TOML/env instructions
 - Config write mode `0600`

@@ -15,8 +15,8 @@ type llmFlagVars struct {
 
 func addLLMFlags(cmd *cobra.Command, v *llmFlagVars) {
 	ig := spec.MustByID(aibomIntegrationID)
-	v.byKey = make(map[string]*string, len(ig.Section.Fields))
-	for _, f := range ig.Section.Fields {
+	v.byKey = make(map[string]*string, len(ig.Fields))
+	for _, f := range ig.Fields {
 		if f.Flag == "" {
 			continue
 		}

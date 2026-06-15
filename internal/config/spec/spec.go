@@ -28,43 +28,43 @@ type FieldSpec struct {
 	Title       string
 	Description string
 	Kind        FieldKind
-	Required    bool // required when capability is enabled in wizard
+	Required    bool // required when section is enabled in wizard
 	Options     []FieldOption
 	AllowCustom bool // when true, wizard offers "Custom…" after options
-}
-
-// SectionSpec is a TOML section (e.g. [default.aibom]).
-type SectionSpec struct {
-	TomlPath []string // e.g. ["default", "aibom"]
-	Fields   []FieldSpec
 }
 
 // WizardPreset groups fields for provider-style onboarding flows.
 type WizardPreset struct {
 	ID          string
 	Label       string
-	SetFields   map[string]string // preset values applied before field collection
-	RequireKeys []string          // fields to prompt for (empty = infer from Required on fields)
-	OmitKeys    []string          // fields skipped even if Required
+	SetFields   map[string]string
+	RequireKeys []string
+	OmitKeys    []string
 }
 
-// IntegrationSpec describes an optional capability or integration block.
-type IntegrationSpec struct {
+// SectionSpec describes one config section (TOML path, fields, wizard metadata).
+type SectionSpec struct {
 	ID          string
 	Label       string
 	Description string
-	Section     SectionSpec
-	Presets     []WizardPreset // when set, wizard starts with preset picker
+	TomlPath    []string
+	Required    bool // always collected in onboard (not in optional capability hub)
+	Optional    bool // shown in capability hub; omitted from TOML when not selected
+	Fields      []FieldSpec
+	Presets     []WizardPreset
 	MissingHint string
 	NextSteps   []string
 	Validate    func(values map[string]string) error
 }
 
+// IntegrationSpec is an alias for optional/historical call sites (e.g. ByID("aibom")).
+type IntegrationSpec = SectionSpec
+
 // FieldByKey returns the field spec for key or nil.
-func (s IntegrationSpec) FieldByKey(key string) *FieldSpec {
-	for i := range s.Section.Fields {
-		if s.Section.Fields[i].Key == key {
-			return &s.Section.Fields[i]
+func (s SectionSpec) FieldByKey(key string) *FieldSpec {
+	for i := range s.Fields {
+		if s.Fields[i].Key == key {
+			return &s.Fields[i]
 		}
 	}
 	return nil
@@ -76,9 +76,9 @@ type ValueSource interface {
 }
 
 // Resolve applies flag → env → TOML precedence for all fields in the section.
-func (s IntegrationSpec) Resolve(flagValues map[string]string, src ValueSource) map[string]string {
-	out := make(map[string]string, len(s.Section.Fields))
-	for _, f := range s.Section.Fields {
+func (s SectionSpec) Resolve(flagValues map[string]string, src ValueSource) map[string]string {
+	out := make(map[string]string, len(s.Fields))
+	for _, f := range s.Fields {
 		v := ""
 		if flagValues != nil {
 			v = flagValues[f.Key]
@@ -87,7 +87,7 @@ func (s IntegrationSpec) Resolve(flagValues map[string]string, src ValueSource) 
 			v = os.Getenv(f.EnvVar)
 		}
 		if v == "" && src != nil {
-			keys := append(append([]string{}, s.Section.TomlPath...), f.Key)
+			keys := append(append([]string{}, s.TomlPath...), f.Key)
 			v = src.NestedString(keys...)
 		}
 		out[f.Key] = v
@@ -95,21 +95,21 @@ func (s IntegrationSpec) Resolve(flagValues map[string]string, src ValueSource) 
 	return out
 }
 
-// ResolveField applies flag → env → TOML for one field on an integration.
-func (s IntegrationSpec) ResolveField(fieldKey, flagValue string, src ValueSource) string {
+// ResolveField applies flag → env → TOML for one field on the section.
+func (s SectionSpec) ResolveField(fieldKey, flagValue string, src ValueSource) string {
 	flags := map[string]string{fieldKey: flagValue}
 	return s.Resolve(flags, src)[fieldKey]
 }
 
 // IsConfigured reports whether resolved values pass validation.
-func (s IntegrationSpec) IsConfigured(src ValueSource) bool {
+func (s SectionSpec) IsConfigured(src ValueSource) bool {
 	if s.Validate == nil {
 		return s.hasAnyValue(src)
 	}
 	return s.Validate(s.Resolve(nil, src)) == nil
 }
 
-func (s IntegrationSpec) hasAnyValue(src ValueSource) bool {
+func (s SectionSpec) hasAnyValue(src ValueSource) bool {
 	vals := s.Resolve(nil, src)
 	for _, v := range vals {
 		if v != "" {
@@ -119,10 +119,10 @@ func (s IntegrationSpec) hasAnyValue(src ValueSource) bool {
 	return false
 }
 
-// Apply writes non-empty field values into a TOML root map at Section.TomlPath.
-func (s IntegrationSpec) Apply(data map[string]interface{}, values map[string]string) {
+// Apply writes non-empty field values into a TOML root map at TomlPath.
+func (s SectionSpec) Apply(data map[string]interface{}, values map[string]string) {
 	section := map[string]interface{}{}
-	for _, f := range s.Section.Fields {
+	for _, f := range s.Fields {
 		if v := strings.TrimSpace(values[f.Key]); v != "" {
 			section[f.Key] = v
 		}
@@ -131,8 +131,8 @@ func (s IntegrationSpec) Apply(data map[string]interface{}, values map[string]st
 		return
 	}
 	cur := data
-	for i, key := range s.Section.TomlPath {
-		if i == len(s.Section.TomlPath)-1 {
+	for i, key := range s.TomlPath {
+		if i == len(s.TomlPath)-1 {
 			existing, _ := cur[key].(map[string]interface{})
 			if existing == nil {
 				existing = map[string]interface{}{}
@@ -153,21 +153,21 @@ func (s IntegrationSpec) Apply(data map[string]interface{}, values map[string]st
 }
 
 // SecretTomlPaths returns TOML paths for secret fields (for redaction).
-func (s IntegrationSpec) SecretTomlPaths() [][]string {
+func (s SectionSpec) SecretTomlPaths() [][]string {
 	var paths [][]string
-	for _, f := range s.Section.Fields {
+	for _, f := range s.Fields {
 		if f.Kind == FieldKindSecret {
-			path := append(append([]string{}, s.Section.TomlPath...), f.Key)
+			path := append(append([]string{}, s.TomlPath...), f.Key)
 			paths = append(paths, path)
 		}
 	}
 	return paths
 }
 
-// FlagUsage builds help text listing env vars for the integration.
-func (s IntegrationSpec) FlagUsage() string {
+// FlagUsage builds help text listing env vars for the section.
+func (s SectionSpec) FlagUsage() string {
 	var b strings.Builder
-	for _, f := range s.Section.Fields {
+	for _, f := range s.Fields {
 		if f.EnvVar != "" {
 			fmt.Fprintf(&b, "%s (env: %s); ", f.Key, f.EnvVar)
 		}
@@ -175,10 +175,10 @@ func (s IntegrationSpec) FlagUsage() string {
 	return strings.TrimSuffix(b.String(), "; ")
 }
 
-// RequiredFieldKeys returns keys marked Required on fields (for simple integrations).
-func (s IntegrationSpec) RequiredFieldKeys() []string {
+// RequiredFieldKeys returns keys marked Required on fields.
+func (s SectionSpec) RequiredFieldKeys() []string {
 	var keys []string
-	for _, f := range s.Section.Fields {
+	for _, f := range s.Fields {
 		if f.Required {
 			keys = append(keys, f.Key)
 		}
@@ -187,7 +187,7 @@ func (s IntegrationSpec) RequiredFieldKeys() []string {
 }
 
 // KeysForPreset returns which field keys to collect for a wizard preset.
-func (s IntegrationSpec) KeysForPreset(presetID string) []string {
+func (s SectionSpec) KeysForPreset(presetID string) []string {
 	for _, p := range s.Presets {
 		if p.ID == presetID {
 			if len(p.RequireKeys) > 0 {

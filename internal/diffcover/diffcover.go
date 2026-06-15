@@ -246,6 +246,9 @@ func parseCoverProfile(path string) (map[string][]coverBlock, error) {
 	return profile, nil
 }
 
+// repoRelativeCoverPath strips the module prefix from go cover profile paths so they
+// match git diff paths (e.g. api/foo.go). Intentionally keyed on the repo directory
+// name; update if github.com/cisco-ai-defense/ai-defense-cli is renamed in go.mod.
 func repoRelativeCoverPath(profilePath string) string {
 	const marker = "ai-defense-cli/"
 	if i := strings.Index(profilePath, marker); i >= 0 {
@@ -326,7 +329,7 @@ func DefaultSkipPath(rel string) bool {
 		return true
 	case strings.HasPrefix(rel, "internal/config/spec/"):
 		return true
-	case strings.HasPrefix(rel, "cmd/check-diff-coverage/"):
+	case strings.HasPrefix(rel, "cmd/"):
 		return true
 	default:
 		return false

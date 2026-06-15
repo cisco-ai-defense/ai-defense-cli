@@ -119,7 +119,7 @@ make test-cover-check  # enforce COVER_MIN (default 75%)
 make test-diff-cover-check DIFF_BASE=origin/main  # PR-style diff coverage on changed lines
 ```
 
-Coverage gate scope (`make test-cover` / `test-cover-check`) excludes `scripts/`, `main`,
+Coverage gate scope (`make test-cover` / `test-cover-check`) excludes `scripts/`, `main`, `cmd/`,
 test helpers, and TUI/onboarding packages (`install`, `onboard`, `config`, `internal/tui`,
 `internal/selfupdate`, `internal/config/spec`) until they have unit tests. `make test`
 still runs `./...`.

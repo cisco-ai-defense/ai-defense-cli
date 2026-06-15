@@ -50,7 +50,7 @@
 
 - **REQ-08.1** CI `test` job MUST run `make test-cover-check` after `build-go` (with `vet`).
 - **REQ-08.2** Default minimum statement coverage (`COVER_MIN`) is **75%** over packages in `GO_COVER_PKGS` (see `Makefile`). `make test` still runs `./...`; exclusions apply only to coverage measurement.
-- **REQ-08.3** Excluded from the gate until they have unit tests: `scripts/`, root `main`, `internal/testutil/`, and TUI/onboarding packages (`internal/tui`, `internal/selfupdate`, `internal/cli/config`, `internal/cli/install`, `internal/cli/onboard`, `internal/config/spec`).
+- **REQ-08.3** Excluded from the gate until they have unit tests: `scripts/`, root `main`, `cmd/`, `internal/testutil/`, and TUI/onboarding packages (`internal/tui`, `internal/selfupdate`, `internal/cli/config`, `internal/cli/install`, `internal/cli/onboard`, `internal/config/spec`).
 - **REQ-08.4** `scripts/check-coverage.sh` parses `coverage.out` from `make test-cover` and fails when total is below `COVER_MIN`.
 
 ### REQ-09 — PR diff coverage gate

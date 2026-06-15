@@ -84,7 +84,8 @@ func TestDefaultSkipPath(t *testing.T) {
 		"main.go":                          true,
 		"scripts/x.go":                     true,
 		"internal/tui/x.go":                true,
-		"cmd/check-diff-coverage/main.go":    true,
+		"cmd/check-diff-coverage/main.go": true,
+		"cmd/other/main.go":               true,
 		"api/client.go":                      false,
 	}
 	for path, want := range cases {

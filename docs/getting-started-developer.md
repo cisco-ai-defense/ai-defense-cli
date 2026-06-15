@@ -113,7 +113,7 @@ make test-diff-cover-check DIFF_BASE=origin/main  # changed-line coverage (PR CI
 ```
 
 CI runs `make build-go test-cover-check vet` on every push; pull requests also run
-`make test-diff-cover-check` against the merge base. Coverage gate scope excludes `scripts/`, `main`, test helpers, and TUI/onboarding packages until they have unit tests — see [CONTRIBUTING.md](../CONTRIBUTING.md). `make test` runs `./...`.
+`make test-diff-cover-check` against the merge base. Coverage gate scope excludes `scripts/`, `main`, `cmd/`, test helpers, and TUI/onboarding packages until they have unit tests — see [CONTRIBUTING.md](../CONTRIBUTING.md). `make test` runs `./...`.
 
 Command-layer HTTP tests use `internal/testutil/apitest` (httptest with a `*.cisco.com` base URL rewrite to satisfy API host validation). Inject a custom client via `api.Config.HTTPClient` and `cmdutil.APIConfigFactory` when testing commands.
 

@@ -111,7 +111,8 @@ test-cover-check: test-cover ## Enforce minimum coverage (COVER_MIN=75)
 	@chmod +x scripts/check-coverage.sh
 	COVER_MIN=$(COVER_MIN) ./scripts/check-coverage.sh $(COVERPROFILE)
 
-test-diff-cover-check: test-cover ## Enforce diff coverage on changed lines (DIFF_BASE=origin/main, DIFF_COVER_MIN=75)
+test-diff-cover-check: ## Enforce diff coverage on changed lines (DIFF_BASE=origin/main, DIFF_COVER_MIN=75; uses existing coverage.out)
+	@test -f $(COVERPROFILE) || $(MAKE) test-cover
 	$(GO) run ./cmd/check-diff-coverage --profile $(COVERPROFILE) --base $(DIFF_BASE) --min $(DIFF_COVER_MIN)
 
 smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/aid-cisco-cli)

@@ -25,7 +25,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   flags, redaction, and resolution share the same schema.
 - CI enforces minimum Go test coverage (`make test-cover-check`, default floor 70%).
   `scripts/check-coverage.sh` and `make test-cover` for local runs. Tooling under
-  `scripts/` and `main.go` are excluded from coverage. Command-layer HTTP tests use
+  `scripts/`, `main.go`, and TUI/onboarding packages (`install`, `onboard`, `config`,
+  `internal/tui`, `internal/selfupdate`, `internal/config/spec`) are excluded from
+  the gate until they have unit tests. Command-layer HTTP tests use
   `internal/testutil/apitest` (httptest + `*.cisco.com` base URL rewrite).
 
 ### Changed

@@ -180,9 +180,6 @@ exit 1
 func TestRunCmd_MissingLLMModel(t *testing.T) {
 	t.Setenv("AI_DEFENSE_API_KEY", "test-key")
 	t.Setenv("AI_DEFENSE_BASE_URL", apitest.TestBaseURL)
-	for _, env := range providerCredentialEnvVars {
-		t.Setenv(env, "")
-	}
 	t.Setenv("AIBOM_LLM_MODEL", "")
 	t.Setenv("AIBOM_LLM_API_KEY", "")
 
@@ -197,9 +194,6 @@ func TestRunCmd_MissingLLMModel(t *testing.T) {
 }
 
 func TestGenerateCmd_MissingModel(t *testing.T) {
-	for _, env := range providerCredentialEnvVars {
-		t.Setenv(env, "")
-	}
 	t.Setenv("AIBOM_LLM_MODEL", "")
 	t.Setenv("AIBOM_LLM_API_KEY", "sk-test")
 
@@ -215,10 +209,8 @@ func TestGenerateCmd_MissingModel(t *testing.T) {
 
 func TestGenerateCmd_MissingCredential(t *testing.T) {
 	t.Setenv("AIBOM_LLM_MODEL", "gpt-4")
-	for _, env := range providerCredentialEnvVars {
-		t.Setenv(env, "")
-	}
 	t.Setenv("AIBOM_LLM_API_KEY", "")
+	t.Setenv("OPENAI_API_KEY", "")
 
 	root := NewCmd(testCLI(t))
 	err := execSubcmd(t, root, "generate", "--source", ".")

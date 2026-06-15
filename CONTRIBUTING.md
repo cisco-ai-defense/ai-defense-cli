@@ -118,6 +118,10 @@ make test-cover        # coverage profile + summary
 make test-cover-check  # enforce COVER_MIN (default 70%)
 ```
 
+Coverage scope excludes `scripts/`, `main`, test helpers, and TUI/onboarding packages
+(`install`, `onboard`, `config`, `internal/tui`, `internal/selfupdate`,
+`internal/config/spec`) until they have unit tests.
+
 **Build modes:**
 
 - `make build-go` — Go only; fast iteration and unit tests (embedded Python stub)

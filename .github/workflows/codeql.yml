@@ -1,5 +1,6 @@
 # Advanced CodeQL setup: Go CLI + Python scripts. Disable default setup in
 # Settings → Code security to avoid duplicate analysis with dynamic/codeql.
+# Requires GitHub Code Security (Advanced Security) on this internal repo to upload SARIF.
 name: CodeQL
 
 on:
@@ -37,16 +38,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-
       - uses: actions/setup-go@v6
         if: matrix.language == 'go'
         with:
           go-version-file: go.mod
           cache: true
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Build Go (stub embed tag)
         if: matrix.language == 'go'

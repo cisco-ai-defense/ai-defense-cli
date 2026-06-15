@@ -4,33 +4,45 @@
 
 ### REQ-01 — Config file location
 
-- **REQ-01.1** Wizard prompts for save location: XDG `~/.config/aid-cisco-cli/config.toml` (recommended), project `./.config.toml`, or custom absolute path.
-- **REQ-01.2** Extend read order (lowest priority last): flags → env → `AI_DEFENSE_CONFIG_PATH` → cwd `.config.toml` → XDG config if exists.
+- **REQ-01.1** Default config path: `~/.ai-defense/config.toml` (directory mode `0700`, file `0600`).
+- **REQ-01.2** Value precedence (lowest last): flags → env → TOML file at resolved path.
+- **REQ-01.3** File resolution: `AI_DEFENSE_CONFIG_PATH` (bypasses profiles) → active profile path → legacy cwd `.config.toml` → legacy XDG (legacy only when profile is `default`). See REQ-08.
+- **REQ-01.4** Wizard always writes to `ConfigPathForWrite()` (`AI_DEFENSE_CONFIG_PATH` or default home path). Legacy files are read for resume/migration only.
+- **REQ-01.5** If a config file exists, `onboard` / `config init` prompts continue vs start over (no multi-file picker).
 
 ### REQ-02 — `aid-cisco-cli config` command group
 
 | Subcommand | Behavior |
 |------------|----------|
-| `config init` | Core wizard + capability hub; create file (fail if exists unless `--force`) |
-| `config edit` | Load existing; required section + hub with configured capabilities pre-checked |
-| `config show` | Resolved config with secrets redacted |
-| `config path` | Print active or last-written config path |
+| `config init` | Onboarding wizard; create file (prompt if exists unless `--force`) |
+| `config edit` | TTY: section menu (core API, each capability configure/edit/remove, Done). Non-TTY: exit `2` with manual instructions |
+| `config show` | TTY: interactive browser (overview, per-section, plain TOML option). Non-TTY or `--plain`: redacted TOML on stdout |
+| `config path` | Print active config file path |
 | `config validate` | Required default section fields + `.cisco.com` base URL rule |
+| `config profile list` | List profiles; mark active with `*` |
+| `config profile current` | Print active profile name and config path |
+| `config profile use <name>` | Set active profile |
+| `config profile create <name>` | Run onboarding wizard for a profile (`--force` to replace) |
+| `config profile delete <name>` | Remove a named profile file (not `default`) |
 
-- Non-TTY: exit `2` with manual TOML/env instructions
+- Non-TTY wizard commands: exit `2` with manual TOML/env instructions
 - Config write mode `0600`
+- `config show --plain` forces redacted TOML even on a terminal
 
 ### REQ-03 — `aid-cisco-cli onboard`
 
-- Wraps config init with welcome copy and personalized next steps
-- Idempotent when config already complete
+- Wraps `config init` with welcome copy and personalized next steps (public docs URL, not repo-relative paths)
+- Saves **draft progress after each wizard step** (each core field, each capability field)
+- Persists progress in `[onboard].step` (see REQ-07)
+- On re-run: prompt continue vs start over; resume skips completed steps
 
 ### REQ-04 — Modular capability hub
 
-- **REQ-04.1** Core (always): config location, `base_url` (preset or custom), API key
-- **REQ-04.2** Optional multi-select capabilities (v1):
+- **REQ-04.1** Core (always): `api_key`, `base_url` (preset or custom)
+- **REQ-04.2** Optional capabilities presented **one at a time** (v1):
   - `huggingface` — private HF repos → `[default.huggingface]`
   - `aibom` — local `ai-bom generate`/`run` → `[default.aibom]`
+  - Each step: Configure or Skip for now
 - **REQ-04.3** Unselected capabilities omitted from TOML (not empty sections)
 - **REQ-04.4** Extensible `Capability` interface for future modules
 
@@ -44,3 +56,19 @@
 
 - Charm `huh` for TUI (pinned in go.mod)
 - Integration schema in embedded `internal/config/spec/config.spec.yaml` (user config remains TOML)
+
+### REQ-07 — Onboarding progress metadata
+
+- `[onboard].step` records last completed step: `api_key`, `base_url`, capability ids (or `capability.field` mid-collection), `complete`
+- Legacy values `core` and `location` treated as completed core / not started respectively
+- Enables resume without re-prompting completed steps
+
+### REQ-08 — Config profiles
+
+- **REQ-08.1** Named profiles stored under `~/.ai-defense/profiles/<name>.toml`; the `default` profile uses `~/.ai-defense/config.toml` (backward compatible).
+- **REQ-08.2** Active profile persisted in `~/.ai-defense/profile` (single line, mode `0600`); missing file means `default`.
+- **REQ-08.3** Profile selection (highest first): `AI_DEFENSE_CONFIG_PATH` (bypasses profiles) → `--profile` flag → `AI_DEFENSE_PROFILE` → active profile file → `default`.
+- **REQ-08.4** Global `--profile` flag on all commands; `config profile` subcommands: `list`, `current`, `use`, `create`, `delete`.
+- **REQ-08.5** `onboard`, `config init`, and `config edit` accept `--profile` to target a named profile; `create` runs the wizard and sets the profile active.
+- **REQ-08.6** Profile names: `^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$`; reserved name `default` maps to the root config file.
+- **REQ-08.7** Legacy path fallbacks apply only when the active profile is `default`.

@@ -7,13 +7,23 @@ import (
 
 // WizardContext holds wizard state shared across core and capability modules.
 type WizardContext struct {
-	LocationKind config.LocationKind
-	CustomPath   string
-	ConfigPath   string
-	BaseURL      string
-	APIKey       string
+	ConfigPath string
+	BaseURL    string
+	APIKey     string
 
 	Selected map[string]bool
+
+	// Skipped marks capabilities explicitly skipped this session (omit from TOML).
+	Skipped map[string]bool
+
+	// StartFresh is true when the user chose to replace an existing config file.
+	StartFresh bool
+
+	// OnboardStep is the last completed onboarding step (persisted under [onboard] in config.toml).
+	OnboardStep string
+
+	// SaveProgress persists ctx after a wizard step (set by RunWizard).
+	SaveProgress func(step string) error
 
 	// IntegrationValues holds field values keyed by integration id (from spec).
 	IntegrationValues map[string]map[string]string

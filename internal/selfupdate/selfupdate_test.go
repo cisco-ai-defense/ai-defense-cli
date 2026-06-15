@@ -54,13 +54,14 @@ func TestInstallFromRelease(t *testing.T) {
 	sum := sha256Hex(payload)
 
 	mux := http.NewServeMux()
+	assetHost := ""
 	mux.HandleFunc("/repos/o/r/releases/latest", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
 			"tag_name": "v0.9.0",
 			"assets": [
-				{"name": "checksums.txt", "browser_download_url": "http://` + r.Host + `/checksums.txt"},
-				{"name": "` + artifact + `", "browser_download_url": "http://` + r.Host + `/bin"}
+				{"name": "checksums.txt", "browser_download_url": "http://` + assetHost + `/checksums.txt"},
+				{"name": "` + artifact + `", "browser_download_url": "http://` + assetHost + `/bin"}
 			]
 		}`))
 	})
@@ -73,6 +74,7 @@ func TestInstallFromRelease(t *testing.T) {
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
+	assetHost = srv.Listener.Addr().String()
 
 	transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		req.URL.Scheme = "http"

@@ -12,12 +12,19 @@ aid-cisco-cli [global flags] <command> <subcommand> [flags]
 Global Flags:
   --api-key string    API key (env: AI_DEFENSE_API_KEY)
   --base-url string   Base URL (env: AI_DEFENSE_BASE_URL)
+  --profile string    Config profile (env: AI_DEFENSE_PROFILE)
   --version           Print version
 
 Commands:
   install             Download and install a release build (self-update)
   onboard             Interactive setup for new users
-  config              Manage CLI configuration (init, edit, show, path, validate)
+  config              Manage CLI configuration
+    init              Create config interactively
+    edit              Edit existing config (TTY)
+    show              Show config (TTY browser or redacted TOML)
+    path              Print active config file path
+    validate          Validate required fields
+    profile           List, switch, create, and delete named profiles
   model-scan          Scan AI/ML models for security vulnerabilities
     trigger           Submit a model file or repo URL for cloud scanning
     list              List previous scans
@@ -52,11 +59,11 @@ Priority (highest to lowest):
 3. TOML config file
 
 Config file search order:
-- `AI_DEFENSE_CONFIG_PATH` environment variable (if set)
-- `.config.toml` in the current working directory (if it exists)
-- `$XDG_CONFIG_HOME/aid-cisco-cli/config.toml` or `~/.config/aid-cisco-cli/config.toml` (if it exists)
+- `AI_DEFENSE_CONFIG_PATH` environment variable (if set; bypasses profiles)
+- Active profile config (`~/.ai-defense/config.toml` for `default`, or `~/.ai-defense/profiles/<name>.toml`)
+- Legacy (only when active profile is `default`): cwd `.config.toml`, then XDG path
 
-When no file exists yet, the wizard defaults to the XDG path (recommended).
+Active profile: `~/.ai-defense/profile`, or `--profile` / `AI_DEFENSE_PROFILE`.
 
 ### Config File Format
 
@@ -77,7 +84,16 @@ llm_api_version = ""
 ```
 
 Optional sections (`huggingface`, `aibom`) are omitted when not configured via
-`aid-cisco-cli onboard` / `config init`.
+`aid-cisco-cli onboard` / `config init`. Wizard progress is stored under `[onboard]` (not read at runtime).
+
+### Config commands (TTY)
+
+| Command | TTY behavior |
+|---------|----------------|
+| `config show` | Section browser; `--plain` prints redacted TOML |
+| `config edit` | Menu: core API, each capability, Done |
+| `onboard` / `config init` | Step-by-step wizard with draft save per field (`--profile`) |
+| `config profile` | `list`, `current`, `use`, `create`, `delete` |
 
 ## Base URL Validation
 

@@ -294,7 +294,7 @@ The Go CLI mirrors the Python CLI's credential resolution order:
 |---|---|
 | 1 (highest) | CLI flags: `--api-key`, `--base-url` |
 | 2 | Environment variables: `AI_DEFENSE_API_KEY`, `AI_DEFENSE_BASE_URL` |
-| 3 | TOML config file: `.config.toml` or `AI_DEFENSE_CONFIG_PATH` |
+| 3 | TOML config file: `~/.ai-defense/` (active profile) or `AI_DEFENSE_CONFIG_PATH` |
 
 Implementation uses `go-toml/v2` with a `config.Manager` that loads once in the root command's `PersistentPreRun`. Base URL validation enforces `*.cisco.com` hostnames.
 
@@ -466,7 +466,7 @@ remaining opportunity is *tool discovery* rather than dependency wiring:
 |---|---|---|
 | **Structured output modes** | Low | Extend output formats (`table`/`yaml`) to all commands. Scan commands default to raw API JSON on stdout (`--envelope` for the normalized JSON/text verdict); exit codes unchanged — see `internal/verdict`, `internal/cmdutil`, and `internal/clierror` (AIFW-24131). |
 | **Shell completions** | Low | Generate bash/zsh/fish completions via Cobra |
-| **Profile management** | Medium | `--profile <name>` to switch between TOML config sections (multi-tenant support) |
+| **Profile management** | Done (006) | Named profiles under `~/.ai-defense/profiles/`; global `--profile` / `AI_DEFENSE_PROFILE` |
 | **Offline mode / cache** | Low | Cache scan results locally for disconnected review |
 | **Telemetry** | Medium | Opt-in usage telemetry for CLI command frequency and error rates |
 | **Interactive mode** | Low | TUI for browsing scan results (via bubbletea or similar) |

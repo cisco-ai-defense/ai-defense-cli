@@ -10,7 +10,7 @@
 |---------|------|
 | `internal/cli/` | Cobra command tree (`model-scan`, `mcp-scan`, `ai-bom`, `install`, `onboard`, `config`) |
 | `api/` | HTTP client (publishable import path) |
-| `internal/config` | Auth and endpoint resolution; TOML read/write |
+| `internal/config` | Auth and endpoint resolution; `~/.ai-defense/` paths, profiles, TOML read/write |
 | `internal/config/spec` | Embedded `config.spec.yaml` — wizard, env/flag bindings, validation |
 | `internal/selfupdate` | GitHub Releases download, checksum verify, atomic binary replace |
 | `internal/clierror` | Exit-code contract |
@@ -33,6 +33,10 @@ Further reading: [docs/README.md](../README.md) · [internal/config/README.md](.
 | `make build-embed` | `bin/aid-cisco-cli` (full embed) |
 | `make build-release-linux` | `dist/aid-cisco-cli-linux-*` (Docker) |
 | `make build-release-darwin` | `dist/aid-cisco-cli-darwin-*` (native) |
+
+## Configuration
+
+Settings live under `~/.ai-defense/` (default profile: `config.toml`; named profiles: `profiles/<name>.toml`). Resolution: flags → env → active profile TOML. See [config.md](../config.md) and [service-spec.md](../service-spec.md#configuration-resolution).
 
 ## Exit codes
 

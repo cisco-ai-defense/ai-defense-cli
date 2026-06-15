@@ -4,7 +4,7 @@ Runtime configuration: load user TOML, resolve paths, redact secrets.
 
 ## Owns
 
-- Config file **search order** and path helpers (`paths.go`)
+- Config file **search order**, **profiles**, and path helpers (`paths.go`, `profiles.go`)
 - **TOML** read/write with mode `0600` (`config.go`)
 - Core API key / base URL resolution (`GetAPIKey`, `GetBaseURL`, `ResolveAPIKeyAndBaseURL`)
 - Secret **redaction** for `config show` (driven by `spec` secret paths)
@@ -19,7 +19,7 @@ Runtime configuration: load user TOML, resolve paths, redact secrets.
 
 ## Read order
 
-1. `paths.go` — `ResolveConfigPath`, XDG vs project vs custom
+1. `paths.go` / `profiles.go` — `ResolveConfigPath`, `ActiveProfile`, `~/.ai-defense/`
 2. `config.go` — `Manager`, write/redact, integration lookups via `spec.ByID`
 3. `../config/spec/` — embedded `config.spec.yaml`
 

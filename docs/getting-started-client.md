@@ -24,18 +24,16 @@ aid-cisco-cli onboard
 
 You'll configure:
 
-1. **Core** — config file location, base URL (preset or custom), API key (required for API commands)
-2. **Optional capabilities** (pick any):
-   - **Private HuggingFace model repos** — token for gated/private models
-   - **Local AIBOM analysis** — LLM provider, model, and credentials for `ai-bom generate` / `run`
+1. **Core** — base URL (preset or custom), API key (required for API commands)
+2. **Optional capabilities** — HuggingFace and AIBOM, one at a time (Configure or Skip). Progress is saved after each field; run `onboard` again to continue or start over.
 
-Add capabilities later with `aid-cisco-cli config edit`. Inspect config with
-`aid-cisco-cli config show` (secrets redacted).
+Settings are saved to **`~/.ai-defense/`** — default profile in `config.toml`, or named profiles under `profiles/` (see [config.md](config.md#where-settings-live)).
 
-See [config.md](config.md) for paths, resolution order, and TOML format.
+Add or change settings later with `aid-cisco-cli config edit` (section menu). Inspect with
+`aid-cisco-cli config show` on a terminal, or `config show --plain` for redacted TOML.
 
 Non-interactive environments: set `AI_DEFENSE_API_KEY` / `AI_DEFENSE_BASE_URL` or
-create a `.config.toml` manually (see §2 below).
+create `~/.ai-defense/config.toml` manually (see §2 below).
 
 ---
 
@@ -112,8 +110,7 @@ export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
 ./aid-cisco-cli model-scan list
 ```
 
-**3. TOML config file** (`.config.toml` in the working directory, or point
-`AI_DEFENSE_CONFIG_PATH` at it):
+**3. TOML config file** (`~/.ai-defense/config.toml`, or set `AI_DEFENSE_CONFIG_PATH`):
 
 ```toml
 [default]

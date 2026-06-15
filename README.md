@@ -9,7 +9,7 @@ exit codes and machine-readable output for CI/CD.
 - **model-scan** — AI/ML model security scans
 - **mcp-scan** — MCP server registration and scanning
 - **ai-bom** — AI Bill of Materials (embedded `cisco-aibom` analyzer)
-- **onboard / config** — interactive setup and config management (TUI)
+- **onboard / config** — interactive setup; config stored under `~/.ai-defense/` with named profiles
 - **install** — checksum-verified self-update from GitHub Releases
 - **Exit codes** — operational (1–5) vs policy verdicts (10, 20)
 - **CI output** — raw API JSON by default; `--envelope` + `--fail-on` / `--block-on`

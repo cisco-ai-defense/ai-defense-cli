@@ -6,24 +6,38 @@ How `aid-cisco-cli` stores and resolves settings.
 
 ```bash
 aid-cisco-cli onboard          # interactive setup (recommended)
-aid-cisco-cli config show      # inspect config (secrets redacted)
+aid-cisco-cli config show      # TUI browser on a terminal (secrets redacted)
+aid-cisco-cli config show --plain   # redacted TOML (scripts / CI)
 aid-cisco-cli config validate  # check required fields
-aid-cisco-cli config edit      # add capabilities later
+aid-cisco-cli config edit      # section menu to change settings
 ```
 
 Non-interactive (CI): set environment variables or write a TOML file manually — see below.
 
 ## Where settings live
 
-The wizard can write to:
+All settings are stored under **`~/.ai-defense/`** (like `~/.aws` or `~/.ssh`):
 
-| Location | Path |
-|----------|------|
-| User config (recommended) | `~/.config/aid-cisco-cli/config.toml` |
-| Project local | `./.config.toml` in the current directory |
-| Custom | Any absolute path you choose |
+| Item | Path |
+|------|------|
+| Config file | `~/.ai-defense/config.toml` (default profile) |
+| Named profiles | `~/.ai-defense/profiles/<name>.toml` |
+| Active profile | `~/.ai-defense/profile` (which profile commands use) |
 
-Override the search path with `AI_DEFENSE_CONFIG_PATH`.
+Override with `AI_DEFENSE_CONFIG_PATH` (absolute path recommended; a leading `~/` is expanded on macOS and Linux). That bypasses profiles entirely.
+
+Select a profile with `--profile <name>`, `AI_DEFENSE_PROFILE`, or `aid-cisco-cli config profile use <name>`.
+
+```bash
+aid-cisco-cli config profile list
+aid-cisco-cli config profile create work    # guided setup for profile "work"
+aid-cisco-cli config profile use work
+aid-cisco-cli --profile staging model-scan list
+```
+
+The CLI resolves the home directory with Go's `os.UserHomeDir()` (typically `$HOME` on macOS and Ubuntu). Tilde (`~`) in docs is shorthand only — file I/O always uses the expanded absolute path.
+
+**Legacy paths** (`./.config.toml` in the working directory, or `~/.config/aid-cisco-cli/config.toml`) are still read for the **default** profile when `~/.ai-defense/config.toml` does not exist. Running `onboard` writes to the active profile under `~/.ai-defense/` and migrates settings on save.
 
 ## Resolution order
 
@@ -58,14 +72,21 @@ Optional sections are omitted when not configured. Files are written with mode `
 
 | Command | Purpose |
 |---------|---------|
-| `onboard` | First-time guided setup |
-| `config init` | Create config (`--force` to overwrite) |
-| `config edit` | Change existing config |
-| `config show` | Print resolved config (redacted) |
-| `config path` | Print active config path |
+| `onboard` | First-time guided setup (`--profile` to target a named profile) |
+| `config init` | Create config (`--force`, `--profile`) |
+| `config edit` | Interactive section menu (TTY); change core or capabilities (`--profile`) |
+| `config show` | TTY: browse sections; else redacted TOML (`--plain` to force TOML) |
+| `config path` | Print active config file path |
 | `config validate` | Verify required section fields and base URL |
+| `config profile list` | List profiles (`*` = stored active) |
+| `config profile current` | Show active profile name and config path |
+| `config profile use <name>` | Set the stored active profile |
+| `config profile create <name>` | Run onboarding wizard for a profile |
+| `config profile delete <name>` | Remove a named profile (not `default`) |
 
-Non-TTY environments: wizard commands exit with code `2`; use env vars or TOML instead.
+Global flag: `--profile <name>` on any command (env: `AI_DEFENSE_PROFILE`).
+
+Non-TTY environments: wizard commands exit with code `2`; use env vars, TOML, or `config show --plain`.
 
 ## For contributors
 

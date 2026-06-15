@@ -3,47 +3,173 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
-func TestXDGConfigPath(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(t.TempDir(), "xdg"))
-	got := XDGConfigPath()
-	want := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "aid-cisco-cli", "config.toml")
+func TestDefaultConfigPath(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "user")
+	if err := os.MkdirAll(home, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+
+	want := filepath.Join(home, homeConfigDirName, configFileName)
+	got := DefaultConfigPath()
 	if got != want {
 		t.Fatalf("got %q want %q", got, want)
 	}
+	if !filepath.IsAbs(got) {
+		t.Fatalf("expected absolute path, got %q", got)
+	}
+	if strings.Contains(got, "~") {
+		t.Fatalf("path must not contain tilde literal: %q", got)
+	}
 }
 
-func TestPathForLocation(t *testing.T) {
-	p, err := PathForLocation(LocationXDG, "")
-	if err != nil {
+func TestExpandHomeInConfigPathOverride(t *testing.T) {
+	home := filepath.Join(t.TempDir(), "ubuntu-user")
+	if err := os.MkdirAll(home, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if p != XDGConfigPath() {
-		t.Fatalf("got %q", p)
+	t.Setenv("HOME", home)
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", "~/.ai-defense/override.toml")
+
+	want := filepath.Join(home, ".ai-defense", "override.toml")
+	if got := ResolveConfigPath(); got != want {
+		t.Fatalf("ResolveConfigPath: got %q want %q", got, want)
+	}
+	if got := ConfigPathForWrite(); got != want {
+		t.Fatalf("ConfigPathForWrite: got %q want %q", got, want)
+	}
+}
+
+func TestHomeConfigDirUnixLike(t *testing.T) {
+	// Simulates macOS/Linux: HOME drives os.UserHomeDir().
+	cases := []struct {
+		name string
+		home string
+	}{
+		{"macos", filepath.Join(t.TempDir(), "psg07")},
+		{"ubuntu", filepath.Join(t.TempDir(), "ubuntu")},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := os.MkdirAll(tc.home, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("HOME", tc.home)
+			t.Setenv("AI_DEFENSE_CONFIG_PATH", "")
+
+			dir := HomeConfigDir()
+			if dir != filepath.Join(tc.home, homeConfigDirName) {
+				t.Fatalf("HomeConfigDir: got %q", dir)
+			}
+			if !filepath.IsAbs(dir) {
+				t.Fatal("expected absolute HomeConfigDir")
+			}
+
+			path := DefaultConfigPath()
+			if err := WriteConfig(path, map[string]interface{}{"default": map[string]interface{}{}}); err != nil {
+				t.Fatal(err)
+			}
+			if !fileExists(path) {
+				t.Fatalf("expected file at %q", path)
+			}
+		})
+	}
+}
+
+func TestResolveConfigPath(t *testing.T) {
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	if err := os.MkdirAll(home, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", "")
+
+	if got := ResolveConfigPath(); got != DefaultConfigPath() {
+		t.Fatalf("default: got %q want %q", got, DefaultConfigPath())
 	}
 
+	homePath := DefaultConfigPath()
+	if err := os.MkdirAll(filepath.Dir(homePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(homePath, []byte("[default]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := ResolveConfigPath(); got != homePath {
+		t.Fatalf("home: got %q want %q", got, homePath)
+	}
+
+	override := filepath.Join(dir, "custom.toml")
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", override)
+	if got := ResolveConfigPath(); got != override {
+		t.Fatalf("override: got %q want %q", got, override)
+	}
+}
+
+func TestResolveConfigPathLegacyFallback(t *testing.T) {
 	dir := t.TempDir()
-	wd, err := os.Getwd()
+	home := filepath.Join(dir, "home")
+	if err := os.MkdirAll(home, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", "")
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(dir, "xdg"))
+
+	xdgPath := legacyXDGConfigPath()
+	if err := os.MkdirAll(filepath.Dir(xdgPath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(xdgPath, []byte("[default]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := ResolveConfigPath(); got != xdgPath {
+		t.Fatalf("legacy xdg: got %q want %q", got, xdgPath)
+	}
+}
+
+func TestExistingConfigPath(t *testing.T) {
+	dir := t.TempDir()
+	home := filepath.Join(dir, "home")
+	if err := os.MkdirAll(home, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("HOME", home)
+	t.Setenv("AI_DEFENSE_CONFIG_PATH", "")
+
+	if _, ok := ExistingConfigPath(); ok {
+		t.Fatal("expected none")
+	}
+
+	homePath := DefaultConfigPath()
+	if err := os.MkdirAll(filepath.Dir(homePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(homePath, []byte("[default]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := ExistingConfigPath()
+	if !ok || got != homePath {
+		t.Fatalf("got %q ok=%v want %q", got, ok, homePath)
+	}
+}
+
+func TestConfigLocationLabel(t *testing.T) {
+	home, err := os.UserHomeDir()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chdir(dir); err != nil {
-		t.Fatal(err)
+	def := DefaultConfigPath()
+	if !strings.Contains(ConfigLocationLabel(def), "Profile default") {
+		t.Fatalf("home label: %q", ConfigLocationLabel(def))
 	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
-	p, err = PathForLocation(LocationProject, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := filepath.Join(dir, ".config.toml")
-	if p != want {
-		evalP, _ := filepath.EvalSymlinks(p)
-		evalWant, _ := filepath.EvalSymlinks(want)
-		if evalP != evalWant {
-			t.Fatalf("got %q want %q", p, want)
-		}
+	if !strings.Contains(shortenHome(filepath.Join(home, homeConfigDirName, configFileName)), "~") {
+		t.Fatal("expected home shortened")
 	}
 }
 
@@ -65,6 +191,13 @@ func TestWriteConfig(t *testing.T) {
 	}
 	if st.Mode().Perm() != 0o600 {
 		t.Fatalf("mode %o", st.Mode().Perm())
+	}
+	dirSt, err := os.Stat(filepath.Dir(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dirSt.Mode().Perm() != 0o700 {
+		t.Fatalf("dir mode %o", dirSt.Mode().Perm())
 	}
 	m := NewManagerFromPath(path)
 	if got := m.NestedString("default", "api_key"); got != "secret" {

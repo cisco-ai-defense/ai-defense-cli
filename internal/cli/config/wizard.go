@@ -3,62 +3,162 @@ package configcmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"golang.org/x/term"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/config/capabilities"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config/spec"
 )
 
-// RunOptions controls wizard execution.
+// RunOptions controls wizard execution (onboard / config init).
 type RunOptions struct {
-	Mode       string // init, edit
-	Force      bool
-	Onboard    bool
+	Force      bool // start over and replace an existing config file
 	ConfigPath string // output from last run
+	Profile    string // profile name (empty = active profile)
 }
 
-// RunWizard executes the core + capability hub TUI and writes config.
+func profileForWizard(opts RunOptions) string {
+	if opts.Profile != "" {
+		return opts.Profile
+	}
+	return appconfig.ActiveProfile()
+}
+
+// RunWizard executes the onboarding TUI and writes config.
 func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 	if !isTTY() {
 		return nil, clierror.Usage(
 			"interactive config wizard requires a terminal; set AI_DEFENSE_API_KEY and AI_DEFENSE_BASE_URL " +
-				"or create a .config.toml manually (see docs/getting-started-client.md)",
+				"or create ~/.ai-defense/config.toml manually — see " + cmdutil.ClientDocsURL,
 		)
 	}
 
-	ctx := &capabilities.WizardContext{Selected: map[string]bool{}}
+	ctx := &capabilities.WizardContext{
+		Selected:   map[string]bool{},
+		Skipped:    map[string]bool{},
+		ConfigPath: appconfig.ProfileConfigPath(profileForWizard(opts)),
+	}
 	var existing *appconfig.Manager
-	if opts.Mode == "edit" {
-		path := appconfig.ResolveConfigPath()
-		existing = appconfig.NewManagerFromPath(path)
-		if existing.ConfigPath() != "" {
-			ctx.ConfigPath = existing.ConfigPath()
-			seedFromExisting(ctx, existing)
+
+	if !opts.Force {
+		if path, ok := appconfig.ExistingConfigPath(); ok {
+			resume, err := promptContinueOrFresh(path)
+			if err != nil {
+				return nil, err
+			}
+			if !resume {
+				opts.Force = true
+				ctx.StartFresh = true
+			} else {
+				existing = appconfig.NewManagerFromPath(path)
+				seedFromExisting(ctx, existing)
+			}
 		}
 	}
 
-	if err := runCoreForms(ctx, opts); err != nil {
+	if opts.Force && existing == nil {
+		ctx.StartFresh = true
+	}
+
+	completed := ""
+	if existing != nil {
+		completed = completedOnboardStep(existing, ctx)
+	}
+
+	saver := newDraftSaver(&existing)
+	ctx.SaveProgress = func(step string) error {
+		ctx.OnboardStep = step
+		return saver.save(ctx)
+	}
+
+	if err := runCoreForms(ctx, saver, completed); err != nil {
 		return nil, err
 	}
-	if err := runCapabilityHub(ctx, existing, opts.Mode == "edit"); err != nil {
+	if err := runOptionalCapabilities(ctx, saver, completed); err != nil {
 		return nil, err
 	}
-	for _, cap := range capabilities.All() {
-		if !ctx.Selected[cap.ID()] {
-			continue
-		}
-		if err := cap.Collect(ctx); err != nil {
+
+	if !stepDone(ctx.OnboardStep, stepComplete) {
+		ctx.OnboardStep = stepComplete
+		if err := saver.save(ctx); err != nil {
 			return nil, err
 		}
-		if err := cap.Validate(ctx); err != nil {
-			return nil, clierror.Usage(err.Error())
+	}
+
+	if name := profileForWizard(opts); name != "" && name != appconfig.DefaultProfileName {
+		if err := appconfig.WriteActiveProfile(name); err != nil {
+			return nil, clierror.Unexpected("set active profile: "+err.Error(), err)
 		}
 	}
 
+	return ctx, nil
+}
+
+type draftSaver struct {
+	existing **appconfig.Manager
+}
+
+func newDraftSaver(existing **appconfig.Manager) *draftSaver {
+	return &draftSaver{existing: existing}
+}
+
+func (d *draftSaver) save(ctx *capabilities.WizardContext) error {
+	path := ctx.ConfigPath
+	if path == "" {
+		path = appconfig.ConfigPathForWrite()
+	}
+
+	var prior *appconfig.Manager
+	if ctx.StartFresh {
+		prior = nil
+	} else {
+		prior = d.managerAt(path)
+		if prior == nil {
+			if readPath, ok := appconfig.ExistingConfigPath(); ok {
+				prior = d.managerAt(readPath)
+			}
+		}
+	}
+	data := buildConfigData(ctx, prior)
+
+	// Start over before core fields: persist only onboard progress (replaces prior sections).
+	if ctx.StartFresh && ctx.APIKey == "" && ctx.BaseURL == "" {
+		data = map[string]interface{}{}
+		applyOnboardMeta(data, ctx.OnboardStep)
+	}
+
+	if err := appconfig.WriteConfig(path, data); err != nil {
+		return clierror.Unexpected("save config: "+err.Error(), err)
+	}
+	ctx.ConfigPath = path
+	m := appconfig.NewManagerFromPath(path)
+	*d.existing = m
+	return nil
+}
+
+func (d *draftSaver) managerAt(path string) *appconfig.Manager {
+	if m := d.manager(); m != nil && m.ConfigPath() == path {
+		return m
+	}
+	if appconfig.FileExists(path) {
+		return appconfig.NewManagerFromPath(path)
+	}
+	return nil
+}
+
+func (d *draftSaver) manager() *appconfig.Manager {
+	if d.existing == nil || *d.existing == nil {
+		return nil
+	}
+	return *d.existing
+}
+
+func buildConfigData(ctx *capabilities.WizardContext, existing *appconfig.Manager) map[string]interface{} {
 	data := map[string]interface{}{}
 	spec.RequiredSection().Apply(data, map[string]string{
 		"api_key":  ctx.APIKey,
@@ -69,180 +169,187 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 			cap.Apply(ctx, data)
 		}
 	}
-
-	if err := confirmSummary(ctx); err != nil {
-		return nil, err
+	if existing != nil {
+		mergePreservedCore(data, existing, ctx)
+		mergePreservedCapabilities(data, existing, ctx)
 	}
-
-	targetPath, err := appconfig.PathForLocation(ctx.LocationKind, ctx.CustomPath)
-	if err != nil {
-		return nil, clierror.Usage(err.Error())
-	}
-	if opts.Mode == "init" && !opts.Force {
-		if _, err := os.Stat(targetPath); err == nil {
-			return nil, clierror.Usage(fmt.Sprintf("config already exists at %s (use --force to overwrite)", targetPath))
-		}
-	}
-
-	if err := appconfig.WriteConfig(targetPath, data); err != nil {
-		return nil, clierror.Unexpected("write config: "+err.Error(), err)
-	}
-	ctx.ConfigPath = targetPath
-	return ctx, nil
+	applyOnboardMeta(data, ctx.OnboardStep)
+	return data
 }
 
-func runCoreForms(ctx *capabilities.WizardContext, opts RunOptions) error {
-	var locationChoice string
-	if ctx.ConfigPath == "" {
-		locationChoice = "xdg"
-	} else if ctx.LocationKind != "" {
-		switch ctx.LocationKind {
-		case appconfig.LocationXDG:
-			locationChoice = "xdg"
-		case appconfig.LocationProject:
-			locationChoice = "project"
-		default:
-			locationChoice = "custom"
-		}
-	}
-
-	customPath := ctx.CustomPath
+func promptContinueOrFresh(configPath string) (resume bool, err error) {
+	choice := "continue"
+	label := appconfig.ConfigLocationLabel(configPath)
+	desc := fmt.Sprintf("%s\n  %s\n\nContinue where you left off, or replace this file?", label, configPath)
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title("Config file location").
-				Description("Where should settings be saved?").
+				Title("Existing configuration").
+				Description(desc).
 				Options(
-					huh.NewOption("User config (~/.config/aid-cisco-cli/config.toml)", "xdg"),
-					huh.NewOption("Project local (./.config.toml in current directory)", "project"),
-					huh.NewOption("Custom absolute path", "custom"),
+					huh.NewOption("Continue", "continue"),
+					huh.NewOption("Start over", "fresh"),
 				).
-				Value(&locationChoice),
+				Value(&choice),
 		),
 	)
 	if err := form.Run(); err != nil {
-		return err
+		return false, err
 	}
+	return choice == "continue", nil
+}
 
-	switch locationChoice {
-	case "xdg":
-		ctx.LocationKind = appconfig.LocationXDG
-	case "project":
-		ctx.LocationKind = appconfig.LocationProject
-	case "custom":
-		ctx.LocationKind = appconfig.LocationCustom
-		customForm := huh.NewForm(
-			huh.NewGroup(
-				huh.NewInput().
-					Title("Custom config path").
-					Value(&customPath).
-					Validate(func(s string) error {
-						if s == "" {
-							return fmt.Errorf("path is required")
-						}
-						return nil
-					}),
-			),
-		)
-		if err := customForm.Run(); err != nil {
-			return err
-		}
-		ctx.CustomPath = customPath
-	}
+func runCoreForms(ctx *capabilities.WizardContext, saver *draftSaver, completed string) error {
+	return collectCoreFields(ctx, saver, completed)
+}
 
-	existing := map[string]string{
+func collectCoreFields(ctx *capabilities.WizardContext, saver *draftSaver, completed string) error {
+	sec := spec.RequiredSection()
+	values := map[string]string{
 		"api_key":  ctx.APIKey,
 		"base_url": ctx.BaseURL,
 	}
-	core, err := spec.CollectRequiredSection(existing)
-	if err != nil {
-		return err
+	skip := func(key string) bool {
+		return stepDone(completed, key)
 	}
-	ctx.APIKey = core["api_key"]
-	ctx.BaseURL = core["base_url"]
-	return nil
+	after := func(key string, vals map[string]string) error {
+		ctx.APIKey = vals["api_key"]
+		ctx.BaseURL = vals["base_url"]
+		ctx.OnboardStep = key
+		return saver.save(ctx)
+	}
+	_, err := sec.CollectWizardFunc(values, after, skip)
+	return err
 }
 
-func runCapabilityHub(ctx *capabilities.WizardContext, existing *appconfig.Manager, editMode bool) error {
-	caps := capabilities.All()
-	options := make([]huh.Option[string], 0, len(caps))
-	for _, c := range caps {
-		options = append(options, huh.NewOption(c.Label(), c.ID()))
+func mergePreservedCore(data map[string]interface{}, existing *appconfig.Manager, ctx *capabilities.WizardContext) {
+	def, _ := data["default"].(map[string]interface{})
+	if def == nil {
+		def = map[string]interface{}{}
 	}
+	if ctx.APIKey == "" {
+		if v := existing.NestedString("default", "api_key"); v != "" {
+			def["api_key"] = v
+		}
+	}
+	if ctx.BaseURL == "" {
+		if v := existing.NestedString("default", "base_url"); v != "" {
+			def["base_url"] = v
+		}
+	}
+	if len(def) > 0 {
+		data["default"] = def
+	}
+}
 
-	selected := make([]string, 0)
-	if editMode && existing != nil {
-		for _, c := range caps {
-			if c.IsConfigured(existing) {
-				selected = append(selected, c.ID())
-				ctx.Selected[c.ID()] = true
+func mergePreservedCapabilities(data map[string]interface{}, existing *appconfig.Manager, ctx *capabilities.WizardContext) {
+	for _, cap := range capabilities.All() {
+		if ctx.Selected[cap.ID()] {
+			continue
+		}
+		if ctx.Skipped != nil && ctx.Skipped[cap.ID()] {
+			continue
+		}
+		if !cap.IsConfigured(existing) {
+			continue
+		}
+		if sc, ok := cap.(capabilities.SpecCapability); ok {
+			sc.Spec.Apply(data, sc.Spec.LoadFromManager(existing))
+		}
+	}
+}
+
+const (
+	capabilityConfigure = "configure"
+	capabilitySkip      = "skip"
+)
+
+// runOptionalCapabilities walks each optional capability one at a time.
+func runOptionalCapabilities(ctx *capabilities.WizardContext, saver *draftSaver, completed string) error {
+	for _, cap := range capabilities.All() {
+		if stepDone(completed, cap.ID()) {
+			continue
+		}
+		id := cap.ID()
+		if strings.HasPrefix(completed, id+".") {
+			ctx.Selected[id] = true
+			sc, ok := cap.(capabilities.SpecCapability)
+			if !ok {
+				continue
 			}
+			if err := sc.ResumeCollect(ctx, completed); err != nil {
+				return err
+			}
+			if err := cap.Validate(ctx); err != nil {
+				return clierror.Usage(err.Error())
+			}
+			ctx.OnboardStep = id
+			if err := saver.save(ctx); err != nil {
+				return err
+			}
+			completed = ctx.OnboardStep
+			continue
 		}
-	}
-
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewMultiSelect[string]().
-				Title("Optional capabilities").
-				Description("Select any you need now; you can add more later with config edit").
-				Options(options...).
-				Value(&selected),
-		),
-	)
-	if err := form.Run(); err != nil {
-		return err
-	}
-
-	ctx.Selected = map[string]bool{}
-	for _, id := range selected {
-		ctx.Selected[id] = true
+		if err := promptOptionalCapability(ctx, cap, saver); err != nil {
+			return err
+		}
+		completed = ctx.OnboardStep
 	}
 	return nil
 }
 
-func confirmSummary(ctx *capabilities.WizardContext) error {
-	var enabled []string
-	for _, c := range capabilities.All() {
-		if ctx.Selected[c.ID()] {
-			enabled = append(enabled, c.Label())
-		}
-	}
-	summary := fmt.Sprintf("Base URL: %s\nAPI key: ***\n", ctx.BaseURL)
-	if len(enabled) > 0 {
-		summary += "Optional capabilities:\n"
-		for _, e := range enabled {
-			summary += "  - " + e + "\n"
-		}
-		if detail := capabilities.FormatIntegrationSummary(ctx); detail != "" {
-			summary += detail + "\n"
-		}
-	} else {
-		summary += "Optional capabilities: none"
-	}
-
-	var proceed bool
+func promptOptionalCapability(ctx *capabilities.WizardContext, cap capabilities.Capability, saver *draftSaver) error {
+	choice := capabilitySkip
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewConfirm().
-				Title("Save configuration?").
-				Description(summary).
-				Value(&proceed),
+			huh.NewSelect[string]().
+				Title(cap.Label()).
+				Description(cap.Description()).
+				Options(
+					huh.NewOption("Configure", capabilityConfigure),
+					huh.NewOption("Skip for now", capabilitySkip),
+				).
+				Value(&choice),
 		),
 	)
 	if err := form.Run(); err != nil {
 		return err
 	}
-	if !proceed {
-		return clierror.Usage("configuration not saved")
+
+	switch choice {
+	case capabilitySkip:
+		ctx.Selected[cap.ID()] = false
+		if ctx.Skipped == nil {
+			ctx.Skipped = map[string]bool{}
+		}
+		ctx.Skipped[cap.ID()] = true
+		if ctx.IntegrationValues != nil {
+			delete(ctx.IntegrationValues, cap.ID())
+		}
+	case capabilityConfigure:
+		ctx.Selected[cap.ID()] = true
+		if err := cap.Collect(ctx); err != nil {
+			return err
+		}
+		if err := cap.Validate(ctx); err != nil {
+			return clierror.Usage(err.Error())
+		}
 	}
-	return nil
+	ctx.OnboardStep = cap.ID()
+	return saver.save(ctx)
 }
 
 func seedFromExisting(ctx *capabilities.WizardContext, m *appconfig.Manager) {
 	ctx.APIKey = m.NestedString("default", "api_key")
 	ctx.BaseURL = m.NestedString("default", "base_url")
+	ctx.OnboardStep = m.NestedString("onboard", "step")
 	capabilities.SeedIntegrationValues(ctx, m)
+	for _, cap := range capabilities.All() {
+		if cap.IsConfigured(m) {
+			ctx.Selected[cap.ID()] = true
+		}
+	}
 }
 
 func isTTY() bool {
@@ -251,7 +358,17 @@ func isTTY() bool {
 
 // PrintNextSteps writes post-onboard guidance to stdout.
 func PrintNextSteps(ctx *capabilities.WizardContext) {
-	fmt.Fprintf(os.Stdout, "\nConfig saved to: %s\n\nNext steps:\n", ctx.ConfigPath)
+	profile := appconfig.ActiveProfile()
+	fmt.Fprintf(os.Stdout, "\nConfig saved to: %s", ctx.ConfigPath)
+	if profile != "" {
+		fmt.Fprintf(os.Stdout, " (profile: %s)", profile)
+	}
+	fmt.Fprintln(os.Stdout)
+	active := appconfig.ResolveConfigPath()
+	if active != "" && ctx.ConfigPath != "" && active != ctx.ConfigPath {
+		fmt.Fprintf(os.Stdout, "Note: commands load config from %s (higher priority than the file above).\n", active)
+	}
+	fmt.Fprintln(os.Stdout, "\nNext steps:")
 	fmt.Fprintf(os.Stdout, "  aid-cisco-cli model-scan list --limit 5\n")
 	for _, cap := range capabilities.All() {
 		if ctx.Selected[cap.ID()] {
@@ -260,5 +377,7 @@ func PrintNextSteps(ctx *capabilities.WizardContext) {
 			}
 		}
 	}
-	fmt.Fprintf(os.Stdout, "\nDocs: docs/getting-started-client.md\n")
+	fmt.Fprintf(os.Stdout, "\n  aid-cisco-cli --help       # command reference\n")
+	fmt.Fprintf(os.Stdout, "  aid-cisco-cli config show  # view saved settings\n")
+	fmt.Fprintf(os.Stdout, "\nUser guide: %s\n", cmdutil.ClientDocsURL)
 }

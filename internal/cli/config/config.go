@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	toml "github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
@@ -25,16 +24,19 @@ func NewCmd() *cobra.Command {
 	cmd.AddCommand(newShowCmd())
 	cmd.AddCommand(newPathCmd())
 	cmd.AddCommand(newValidateCmd())
+	cmd.AddCommand(newProfileCmd())
 	return cmd
 }
 
 func newInitCmd() *cobra.Command {
 	var force bool
+	var profile string
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Create a new configuration file interactively",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, err := RunWizard(RunOptions{Mode: "init", Force: force})
+			ApplyProfileFlag(profile)
+			ctx, err := RunWizard(RunOptions{Force: force, Profile: profile})
 			if err != nil {
 				return err
 			}
@@ -43,15 +45,18 @@ func newInitCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "Overwrite an existing config file")
+	ProfileFlag(cmd, &profile)
 	return cmd
 }
 
 func newEditCmd() *cobra.Command {
+	var profile string
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Edit an existing configuration file interactively",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, err := RunWizard(RunOptions{Mode: "edit", Force: true})
+			ApplyProfileFlag(profile)
+			ctx, err := RunEditHub()
 			if err != nil {
 				return err
 			}
@@ -59,10 +64,12 @@ func newEditCmd() *cobra.Command {
 			return nil
 		},
 	}
+	ProfileFlag(cmd, &profile)
 	return cmd
 }
 
 func newShowCmd() *cobra.Command {
+	var plain bool
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show resolved configuration (secrets redacted)",
@@ -71,33 +78,25 @@ func newShowCmd() *cobra.Command {
 			if err := m.LoadError(); err != nil {
 				return clierror.Usage(err.Error())
 			}
-			data := appconfig.RedactSecrets(m.Data())
-			raw, err := toml.Marshal(data)
-			if err != nil {
-				return clierror.Unexpected("encode config: "+err.Error(), err)
+			if plain || !isTTY() {
+				return printPlainConfig(m)
 			}
-			fmt.Println(string(raw))
-			return nil
+			return RunShowInteractive(m)
 		},
 	}
+	cmd.Flags().BoolVar(&plain, "plain", false, "Print redacted TOML instead of the interactive browser")
 	return cmd
 }
 
 func newPathCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "path",
 		Short: "Print the config file path in use",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			m := appconfig.NewManager()
-			path := m.ConfigPath()
-			if path == "" {
-				path = appconfig.ResolveConfigPath()
-			}
-			fmt.Println(path)
+			fmt.Println(appconfig.ResolveConfigPath())
 			return nil
 		},
 	}
-	return cmd
 }
 
 func newValidateCmd() *cobra.Command {

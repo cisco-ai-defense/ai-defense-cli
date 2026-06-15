@@ -20,7 +20,7 @@ type Manager struct {
 }
 
 // NewManager creates a config manager, loading the TOML file if present.
-// Search order: AI_DEFENSE_CONFIG_PATH, cwd .config.toml, XDG config path.
+// Search order: AI_DEFENSE_CONFIG_PATH → ~/.ai-defense/config.toml → legacy paths.
 func NewManager() *Manager {
 	return NewManagerFromPath(ResolveConfigPath())
 }

@@ -10,6 +10,9 @@ import (
 
 const wizardCustomValue = "__custom__"
 
+// WizardFieldCallback runs after each field is collected (onboarding draft save).
+type WizardFieldCallback func(fieldKey string, values map[string]string) error
+
 // CollectRequiredSection prompts for the required section fields (onboard / config init).
 func CollectRequiredSection(existing map[string]string) (map[string]string, error) {
 	return RequiredSection().CollectWizard(existing)
@@ -17,15 +20,69 @@ func CollectRequiredSection(existing map[string]string) (map[string]string, erro
 
 // CollectWizard prompts for section fields using the spec (and presets when defined).
 func (s SectionSpec) CollectWizard(existing map[string]string) (map[string]string, error) {
+	return s.CollectWizardFunc(existing, nil, nil)
+}
+
+// CollectWizardFunc prompts field-by-field; after each field optionally calls after.
+// skipField skips prompts for keys already completed when resuming onboarding.
+func (s SectionSpec) CollectWizardFunc(existing map[string]string, after WizardFieldCallback, skipField func(string) bool) (map[string]string, error) {
 	values := copyValues(existing)
 
 	if len(s.Presets) > 0 {
-		return s.collectWithPresets(values)
+		if hasAnyValue(values) {
+			return s.collectFields(values, s.keysForResume(values), after, skipField)
+		}
+		return s.collectWithPresets(values, after, skipField)
 	}
-	return s.collectFields(values, s.RequiredFieldKeys())
+	return s.collectFields(values, s.RequiredFieldKeys(), after, skipField)
 }
 
-func (s SectionSpec) collectWithPresets(values map[string]string) (map[string]string, error) {
+func hasAnyValue(values map[string]string) bool {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// keysForResume returns field keys to collect when resuming a preset-based section.
+func (s SectionSpec) keysForResume(values map[string]string) []string {
+	for _, p := range s.Presets {
+		if s.presetMatchesValues(p, values) {
+			return s.KeysForPreset(p.ID)
+		}
+	}
+	seen := map[string]bool{}
+	var keys []string
+	add := func(k string) {
+		if k == "" || seen[k] {
+			return
+		}
+		seen[k] = true
+		keys = append(keys, k)
+	}
+	for _, k := range s.RequiredFieldKeys() {
+		add(k)
+	}
+	for _, p := range s.Presets {
+		for _, k := range s.KeysForPreset(p.ID) {
+			add(k)
+		}
+	}
+	return keys
+}
+
+func (s SectionSpec) presetMatchesValues(p WizardPreset, values map[string]string) bool {
+	for k, want := range p.SetFields {
+		if values[k] != want {
+			return false
+		}
+	}
+	return true
+}
+
+func (s SectionSpec) collectWithPresets(values map[string]string, after WizardFieldCallback, skipField func(string) bool) (map[string]string, error) {
 	options := make([]huh.Option[string], len(s.Presets))
 	for i, p := range s.Presets {
 		options[i] = huh.NewOption(p.Label, p.ID)
@@ -48,7 +105,7 @@ func (s SectionSpec) collectWithPresets(values map[string]string) (map[string]st
 		values[k] = v
 	}
 	keys := s.KeysForPreset(presetID)
-	return s.collectFields(values, keys)
+	return s.collectFields(values, keys, after, skipField)
 }
 
 func (s SectionSpec) presetByID(id string) WizardPreset {
@@ -60,8 +117,11 @@ func (s SectionSpec) presetByID(id string) WizardPreset {
 	return WizardPreset{}
 }
 
-func (s SectionSpec) collectFields(values map[string]string, keys []string) (map[string]string, error) {
+func (s SectionSpec) collectFields(values map[string]string, keys []string, after WizardFieldCallback, skipField func(string) bool) (map[string]string, error) {
 	for _, key := range keys {
+		if skipField != nil && skipField(key) {
+			continue
+		}
 		field := s.FieldByKey(key)
 		if field == nil {
 			continue
@@ -72,6 +132,11 @@ func (s SectionSpec) collectFields(values map[string]string, keys []string) (map
 			return nil, err
 		}
 		values[key] = v
+		if after != nil {
+			if err := after(key, values); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return values, nil
 }

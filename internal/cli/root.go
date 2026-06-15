@@ -28,9 +28,10 @@ var (
 )
 
 var (
-	flagAPIKey  string
-	flagBaseURL string
-	cfgManager  *config.Manager
+	flagAPIKey   string
+	flagBaseURL  string
+	flagProfile  string
+	cfgManager   *config.Manager
 )
 
 var rootCmd = &cobra.Command{
@@ -44,6 +45,7 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		config.SetProfileOverride(flagProfile)
 		cfgManager = config.NewManager()
 	},
 }
@@ -53,6 +55,8 @@ func init() {
 		"API key for AI Defense service (env: AI_DEFENSE_API_KEY)")
 	rootCmd.PersistentFlags().StringVar(&flagBaseURL, "base-url", "",
 		"Base URL for AI Defense service (env: AI_DEFENSE_BASE_URL)")
+	rootCmd.PersistentFlags().StringVar(&flagProfile, "profile", "",
+		"Configuration profile name (env: AI_DEFENSE_PROFILE)")
 
 	// Flag-parse failures are usage errors (exit 2). Wrapping them here lets the
 	// handler treat them uniformly and still show usage.

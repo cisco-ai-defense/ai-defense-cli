@@ -22,7 +22,7 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] CI: fold `meta` into `test`; `checksums` job only on main/release push
 - [x] Release workflow: dispatch Release after GITHUB_TOKEN tag push (#6)
 - [x] CLI output parity (`fix/cli-output-parity`): raw API JSON default; model-scan list/info pass-through
-- [x] **AIFW-24339 (`feature/AIFW-24339`)** — `install` self-update, `onboard`/`config` TUI, spec-driven capability hub (`config.spec.yaml`), XDG config path; spec/code gates passed locally
+- [x] **AIFW-24339 (`feature/AIFW-24339`)** — `install` self-update; onboard/config TUI; `~/.ai-defense/` config home; named profiles (`config profile`, `--profile`)
 - [ ] Merge PR #3 after CI green (includes README evergreen + doc skill updates)
 
 ## Deferred (post-merge)

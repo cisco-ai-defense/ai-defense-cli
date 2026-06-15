@@ -2,17 +2,54 @@
 
 ## UX flow
 
+### Onboard / config init
+
 ```mermaid
 flowchart TD
-  entry[onboard or config init/edit]
-  required[Required section: location api_key base_url]
-  hub[Capability multi-select]
-  modules[Selected module forms]
-  summary[Redacted summary]
-  write[Write TOML 0600]
+  entry[onboard or config init]
+  existing{Config exists for profile?}
+  pick[Continue or start over]
+  core[Core fields: api_key then base_url]
+  hub[Each optional capability: Configure or Skip]
+  modules[Capability fields one at a time]
+  write[Write TOML 0600 after each step]
 
-  entry --> required --> hub --> modules --> summary --> write
+  entry --> existing
+  existing -->|yes| pick --> core
+  existing -->|no| core
+  core --> write
+  write --> hub
+  hub --> modules
+  modules --> write
+  write --> complete[onboard.step = complete]
 ```
+
+- Config is written under `~/.ai-defense/` (active profile). No location picker.
+
+- No separate confirm screen per step; Enter on the select/input advances.
+- Cancel/interrupt leaves the last saved draft on disk.
+
+### config edit
+
+```mermaid
+flowchart TD
+  menu[Section menu: Core / HuggingFace / AIBOM / Done]
+  core[Re-prompt api_key and base_url]
+  cap[Configure / Edit / Remove / Back]
+  write[Write full config from wizard state]
+
+  menu --> core --> write --> menu
+  menu --> cap --> write --> menu
+  menu --> Done
+```
+
+Edit writes the **full** config from wizard state (no merge of removed sections).
+
+### config show
+
+- TTY: menu → Overview | Core | each capability | Print plain TOML | Exit
+- Secrets redacted via `spec.SecretTomlPaths()`
+- Note in UI: env/flags override file values at runtime
 
 ## TOML shape
 
@@ -30,6 +67,9 @@ llm_provider = ""
 llm_api_key = "..."
 llm_api_base = ""
 llm_api_version = ""
+
+[onboard]  # wizard progress (not used at runtime)
+step = "complete"
 ```
 
 ## Spec-driven config
@@ -39,7 +79,7 @@ The `default` section's `fields` mirror TOML: scalars (`api_key`, `base_url`) an
 entries (`huggingface`, `aibom`) for nested tables. User secrets are written to **`config.toml`**.
 The YAML spec is embedded at build time and drives:
 
-- Onboarding wizard (`CollectWizard`, `CollectRequiredSection`)
+- Onboarding wizard (`CollectWizard`, `CollectWizardFunc`)
 - Runtime resolution (`Resolve`: flags → env → TOML)
 - Secret redaction (`SecretTomlPaths`)
 - Capability hub registration (`optional: true` on group fields)
@@ -67,13 +107,18 @@ validate:
 
 ```
 internal/config/spec/       declarative section specs (config.spec.yaml)
-internal/config/            paths, read/write, redact via spec
+internal/config/            paths, profiles, read/write, redact via spec
 internal/cli/config/
-  wizard.go
+  wizard.go                 onboard / config init
+  edit_tui.go               config edit hub
+  show_tui.go               config show browser
+  profile.go                config profile subcommands
+  progress.go               onboard.step ordering
   capabilities/
     registry.go
     spec_capability.go
 internal/cli/onboard/
+internal/cmdutil/doclinks.go  public user-guide URL for clients
 ```
 
 ## Capability interface
@@ -97,3 +142,25 @@ type Capability interface {
 `base_url` is a field on the required `default` section with wizard `options` (regional endpoints) and
 `allow_custom: true` so users can pick a preset or enter a custom `*.cisco.com` URL.
 Only `base_url` is stored in TOML — see `config.spec.yaml` under `default.fields`.
+
+## Config discovery
+
+`ExistingConfigPath()` returns the first on-disk config (home, legacy XDG, or legacy project) for onboarding resume.
+`ResolveConfigPath()` returns the path used at runtime (same priority, defaulting to `~/.ai-defense/config.toml`).
+`ConfigPathForWrite()` is where the wizard persists settings.
+
+## Profiles
+
+Layout:
+
+```
+~/.ai-defense/
+  config.toml           # default profile
+  profile               # active profile name (e.g. "work")
+  profiles/
+    work.toml
+    staging.toml
+```
+
+`ActiveProfile()` resolves from flag override → env → `profile` file → `default`.
+`ProfileConfigPath(name)` maps `default` → `config.toml`, else `profiles/<name>.toml`.

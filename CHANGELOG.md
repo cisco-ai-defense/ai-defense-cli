@@ -13,7 +13,12 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - **`aid-cisco-cli onboard`** and **`aid-cisco-cli config`** — interactive TUI wizard
   (Charm `huh`) for core credentials plus optional capability modules (private
   HuggingFace repos, local AIBOM LLM settings).
-- **XDG config path** — `~/.config/aid-cisco-cli/config.toml` in the config search order.
+- **Onboarding draft saves** — config written after each field; `[onboard].step`
+  tracks progress for resume.
+- **`config show`** — TUI section browser on a terminal; `--plain` for redacted TOML.
+- **`config edit`** — section menu to change core API or capabilities (configure / remove).
+- **Home config directory** — `~/.ai-defense/config.toml` (like `~/.aws`); wizard always writes here unless `AI_DEFENSE_CONFIG_PATH` is set. Legacy XDG and project `.config.toml` paths still read for migration.
+- **Config profiles** — named profiles in `~/.ai-defense/profiles/<name>.toml`; `config profile` commands and global `--profile` / `AI_DEFENSE_PROFILE`.
 - **AIBOM LLM from TOML** — `[default.aibom]` fields resolve after flags and env vars.
 - **Spec-driven integrations** — `internal/config/spec/config.spec.yaml` (embedded schema;
   user config remains `config.toml`) declares env/TOML/wizard fields; capabilities, CLI

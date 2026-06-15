@@ -59,14 +59,34 @@ def parse_unreleased(changelog: str) -> tuple[str, dict[str, list[str]], str]:
     sections: dict[str, list[str]] = {name: [] for name in SECTIONS}
 
     current: str | None = None
+    current_bullet: list[str] = []
+
+    def flush_bullet() -> None:
+        nonlocal current_bullet
+        if current and current_bullet:
+            sections[current].append("\n".join(current_bullet))
+        current_bullet = []
+
     for line in body.splitlines():
         heading = re.match(r"^### (Added|Changed|Fixed|Removed|Deprecated|Security)\s*$", line)
         if heading:
+            flush_bullet()
             current = heading.group(1)
             continue
-        if current and line.startswith("- "):
-            sections[current].append(line)
+        if current is None:
+            continue
+        if line.startswith("- "):
+            flush_bullet()
+            current_bullet = [line]
+            continue
+        if current_bullet and (line.startswith(" ") or line.startswith("\t")):
+            current_bullet.append(line)
+            continue
+        if line.strip() == "":
+            flush_bullet()
+            continue
 
+    flush_bullet()
     return before, sections, after
 
 

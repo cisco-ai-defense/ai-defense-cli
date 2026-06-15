@@ -1,3 +1,4 @@
+# Test PR (test/codeql-pr-check): validates CodeQL pull_request checks.
 # Advanced CodeQL setup: Go CLI + Python scripts. Disable default setup in
 # Settings → Code security to avoid duplicate analysis with dynamic/codeql.
 # Requires GitHub Code Security (Advanced Security) on this internal repo to upload SARIF.

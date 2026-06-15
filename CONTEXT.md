@@ -74,6 +74,7 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 ## Merge gate
 
-PRs require: `test`, `linux-amd64`, `darwin-amd64`, `darwin-arm64` only.
+PRs require: `test`, `Analyze (go)`, `Analyze (python)`, `linux-amd64`, `darwin-amd64`, `darwin-arm64`.
 
 Do not require `meta` (folded into `test`) or `checksums` (main/release push only).
+Disable CodeQL **default setup** to avoid duplicate scans alongside `.github/workflows/codeql.yml`.

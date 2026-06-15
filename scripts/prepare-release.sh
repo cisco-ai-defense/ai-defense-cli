@@ -69,9 +69,9 @@ if not unreleased_body.strip():
     )
 
 new_section = (
+    f"## [Unreleased]\n\n"
     f"## [{new}] - {release_date}\n\n"
     f"{unreleased_body}\n\n"
-    f"## [Unreleased]\n\n"
 )
 
 changelog_path.write_text(before + new_section + after.lstrip("\n"), encoding="utf-8")

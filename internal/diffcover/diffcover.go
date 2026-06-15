@@ -44,14 +44,8 @@ type coverBlock struct {
 
 // Check compares coverage.out against changed production Go lines since merge-base(BaseRef).
 func Check(cfg Config) (Result, error) {
-	if cfg.ProfilePath == "" {
-		return Result{}, fmt.Errorf("profile path is required")
-	}
-	if cfg.BaseRef == "" {
-		return Result{}, fmt.Errorf("base ref is required")
-	}
-	if cfg.MinPercent < 0 {
-		return Result{}, fmt.Errorf("min percent must be >= 0")
+	if err := validateConfig(cfg); err != nil {
+		return Result{}, err
 	}
 	if cfg.SkipPath == nil {
 		cfg.SkipPath = func(string) bool { return false }
@@ -66,7 +60,23 @@ func Check(cfg Config) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("git diff: %w", err)
 	}
+	return checkDiff(cfg, diff)
+}
 
+func validateConfig(cfg Config) error {
+	if cfg.ProfilePath == "" {
+		return fmt.Errorf("profile path is required")
+	}
+	if cfg.BaseRef == "" {
+		return fmt.Errorf("base ref is required")
+	}
+	if cfg.MinPercent < 0 {
+		return fmt.Errorf("min percent must be >= 0")
+	}
+	return nil
+}
+
+func checkDiff(cfg Config, diff string) (Result, error) {
 	changedLines, changedFiles, err := parseChangedLines(diff, cfg.SkipPath)
 	if err != nil {
 		return Result{}, err
@@ -77,22 +87,8 @@ func Check(cfg Config) (Result, error) {
 		return Result{}, err
 	}
 
-	var res Result
+	res := evaluateCoverage(changedLines, profile)
 	res.ChangedFiles = changedFiles
-	for file, lines := range changedLines {
-		blocks := profile[file]
-		if len(blocks) == 0 {
-			continue
-		}
-		for line := range lines {
-			covered, uncovered, ok := stmtCountForLine(blocks, line)
-			if !ok {
-				continue
-			}
-			res.CoveredStmts += covered
-			res.UncoveredStmts += uncovered
-		}
-	}
 
 	total := res.CoveredStmts + res.UncoveredStmts
 	if total == 0 {
@@ -103,6 +99,34 @@ func Check(cfg Config) (Result, error) {
 			res.Percent(), cfg.MinPercent, res.CoveredStmts, res.UncoveredStmts, res.ChangedFiles)
 	}
 	return res, nil
+}
+
+func evaluateCoverage(changedLines map[string]map[int]struct{}, profile map[string][]coverBlock) Result {
+	var res Result
+	for file, lines := range changedLines {
+		blocks := profile[file]
+		if len(blocks) == 0 {
+			continue
+		}
+		seen := make(map[int]struct{})
+		for line := range lines {
+			for i, b := range blocks {
+				if line < b.startLine || line > b.endLine {
+					continue
+				}
+				if _, ok := seen[i]; ok {
+					continue
+				}
+				seen[i] = struct{}{}
+				if b.count > 0 {
+					res.CoveredStmts += b.stmts
+				} else {
+					res.UncoveredStmts += b.stmts
+				}
+			}
+		}
+	}
+	return res
 }
 
 func gitOutput(args ...string) (string, error) {

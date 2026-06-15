@@ -2,9 +2,158 @@ package diffcover
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
+
+func TestCheckDiff(t *testing.T) {
+	dir := t.TempDir()
+	profile := filepath.Join(dir, "coverage.out")
+	diff := `diff --git a/api/foo.go b/api/foo.go
+--- a/api/foo.go
++++ b/api/foo.go
+@@ -0,0 +1,2 @@
++func added() {}
++func covered() {}
+`
+	if err := os.WriteFile(profile, []byte(`mode: atomic
+github.com/cisco-ai-defense/ai-defense-cli/api/foo.go:1.1,2.2 2 1
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := Config{ProfilePath: profile, BaseRef: "origin/main", MinPercent: 75, SkipPath: DefaultSkipPath}
+	res, err := checkDiff(cfg, diff)
+	if err != nil {
+		t.Fatalf("checkDiff: %v", err)
+	}
+	if res.CoveredStmts != 2 || res.ChangedFiles != 1 {
+		t.Fatalf("unexpected result: %+v", res)
+	}
+}
+
+func TestCheckDiff_BelowMinimum(t *testing.T) {
+	dir := t.TempDir()
+	profile := filepath.Join(dir, "coverage.out")
+	diff := `diff --git a/api/foo.go b/api/foo.go
+--- a/api/foo.go
++++ b/api/foo.go
+@@ -0,0 +1,2 @@
++func added() {}
++func missed() {}
+`
+	if err := os.WriteFile(profile, []byte(`mode: atomic
+github.com/cisco-ai-defense/ai-defense-cli/api/foo.go:1.1,1.10 1 1
+github.com/cisco-ai-defense/ai-defense-cli/api/foo.go:2.1,2.10 1 0
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := Config{ProfilePath: profile, BaseRef: "origin/main", MinPercent: 75, SkipPath: DefaultSkipPath}
+	_, err := checkDiff(cfg, diff)
+	if err == nil {
+		t.Fatal("expected below-minimum error")
+	}
+}
+
+func TestCheckDiff_NoCoverableChanges(t *testing.T) {
+	dir := t.TempDir()
+	profile := filepath.Join(dir, "coverage.out")
+	if err := os.WriteFile(profile, []byte("mode: atomic\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg := Config{ProfilePath: profile, BaseRef: "origin/main", MinPercent: 75, SkipPath: DefaultSkipPath}
+	res, err := checkDiff(cfg, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.CoveredStmts+res.UncoveredStmts != 0 {
+		t.Fatalf("expected skip, got %+v", res)
+	}
+}
+
+func TestValidateConfig(t *testing.T) {
+	if err := validateConfig(Config{}); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestDefaultSkipPath(t *testing.T) {
+	cases := map[string]bool{
+		"main.go":                          true,
+		"scripts/x.go":                     true,
+		"internal/tui/x.go":                true,
+		"cmd/check-diff-coverage/main.go":    true,
+		"api/client.go":                      false,
+	}
+	for path, want := range cases {
+		if got := DefaultSkipPath(path); got != want {
+			t.Fatalf("%s: got %v want %v", path, got, want)
+		}
+	}
+}
+
+func TestCheck_EndToEndGit(t *testing.T) {
+	root := t.TempDir()
+	runGit(t, root, "init")
+	runGit(t, root, "config", "user.email", "test@example.com")
+	runGit(t, root, "config", "user.name", "test")
+	if err := os.WriteFile(filepath.Join(root, "README"), []byte("base"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, root, "add", "README")
+	runGit(t, root, "commit", "-m", "base")
+
+	apiDir := filepath.Join(root, "api")
+	if err := os.MkdirAll(apiDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	goSrc := "package api\n\nfunc Added() {}\n"
+	if err := os.WriteFile(filepath.Join(apiDir, "foo.go"), []byte(goSrc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, root, "add", "api/foo.go")
+	runGit(t, root, "commit", "-m", "add foo")
+
+	profile := filepath.Join(root, "coverage.out")
+	if err := os.WriteFile(profile, []byte(`mode: atomic
+github.com/cisco-ai-defense/ai-defense-cli/api/foo.go:3.1,3.15 1 1
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(wd) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := Check(Config{
+		ProfilePath: profile,
+		BaseRef:     "HEAD~1",
+		MinPercent:  75,
+		SkipPath:    DefaultSkipPath,
+	})
+	if err != nil {
+		t.Fatalf("Check: %v", err)
+	}
+	if res.CoveredStmts == 0 {
+		t.Fatalf("expected covered statements, got %+v", res)
+	}
+}
+
+func runGit(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v in %s: %v\n%s", args, dir, err, out)
+	}
+}
 
 func TestParseChangedLines(t *testing.T) {
 	diff := `diff --git a/api/foo.go b/api/foo.go

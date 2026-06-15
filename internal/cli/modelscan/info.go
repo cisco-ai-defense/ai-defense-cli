@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	modelscansdk "github.com/cisco-ai-defense/ai-defense-cli/api/modelscan"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
@@ -37,7 +36,7 @@ Examples:
 				return err
 			}
 
-			config := api.NewConfig(baseURL)
+			config := cli.APIConfig(baseURL)
 			client := modelscansdk.NewClient(apiKey, config)
 
 			req := &modelscansdk.GetScanStatusRequest{

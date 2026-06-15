@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	aibomsdk "github.com/cisco-ai-defense/ai-defense-cli/api/aibom"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/output"
@@ -37,7 +36,7 @@ Examples:
 				return err
 			}
 
-			config := api.NewConfig(baseURL)
+			config := cli.APIConfig(baseURL)
 			client := aibomsdk.NewClient(apiKey, config)
 
 			req := &aibomsdk.ListBomsRequest{

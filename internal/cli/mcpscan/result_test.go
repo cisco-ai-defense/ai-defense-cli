@@ -74,6 +74,15 @@ func TestEmitScanResultMCP(t *testing.T) {
 	}
 }
 
+func TestEmitScanResultInvalidThreshold(t *testing.T) {
+	silenceStdout(t)
+	opts := &cmdutil.ScanResultOptions{FailOn: "bogus", BlockOn: "critical", Output: "json"}
+	err := emitScanResult("s", "COMPLETED", json.RawMessage(`{"status":"COMPLETED"}`), opts)
+	if got := clierror.Classify(err).Code; got != clierror.CodeUsage {
+		t.Fatalf("want usage error, got %d", got)
+	}
+}
+
 func TestEmitScanResultStdoutMode(t *testing.T) {
 	const scanID = "mcp-scan-1"
 	raw := json.RawMessage(`{"scan_id":"mcp-scan-1","status":"COMPLETED"}`)

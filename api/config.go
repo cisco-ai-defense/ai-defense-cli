@@ -1,5 +1,7 @@
 package api
 
+import "net/http"
+
 const (
 	DefaultAPIVersion = "v1"
 	APIPrefix         = "api/ai-defense"
@@ -24,6 +26,9 @@ type Config struct {
 	Timeout           int
 	UploadTimeout     int
 	APIVersion        string
+	// HTTPClient, when set, overrides the default client (used in tests to route
+	// requests to an httptest server while keeping a valid *.cisco.com base URL).
+	HTTPClient *http.Client
 }
 
 func NewConfig(managementBaseURL string) *Config {

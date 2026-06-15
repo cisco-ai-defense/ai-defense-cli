@@ -47,10 +47,16 @@ func NewBaseClient(apiKey string, config *Config) *BaseClient {
 	}
 	uploadHTTPClient := newUploadHTTPClient(uploadSecs)
 
+	httpClient := &http.Client{
+		Timeout: time.Duration(timeout) * time.Second,
+	}
+	if config.HTTPClient != nil {
+		httpClient = config.HTTPClient
+		uploadHTTPClient = config.HTTPClient
+	}
+
 	return &BaseClient{
-		HTTPClient: &http.Client{
-			Timeout: time.Duration(timeout) * time.Second,
-		},
+		HTTPClient:       httpClient,
 		UploadHTTPClient: uploadHTTPClient,
 		apiKey:           apiKey,
 		apiPrefix:        apiPrefix,

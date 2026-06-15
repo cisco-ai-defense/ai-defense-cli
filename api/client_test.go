@@ -250,6 +250,65 @@ func TestDoRawPUT_NilUploadClientUsesRedirectSafeFallback(t *testing.T) {
 	}
 }
 
+func TestPostWithParams(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if r.URL.Query().Get("page") != "2" {
+			t.Errorf("expected page=2, got %q", r.URL.Query().Get("page"))
+		}
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	c := NewBaseClient("k", NewConfig(srv.URL))
+	resp, err := c.PostWithParams("items", map[string][]string{"page": {"2"}}, map[string]string{"name": "x"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected non-nil response")
+	}
+}
+
+func TestPut(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("expected PUT, got %s", r.Method)
+		}
+		w.Write([]byte(`{"updated":true}`))
+	}))
+	defer srv.Close()
+
+	c := NewBaseClient("k", NewConfig(srv.URL))
+	resp, err := c.Put("items/1", map[string]string{"name": "y"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected non-nil response")
+	}
+}
+
+func TestNewBaseClient_CustomHTTPClient(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"via":"custom"}`))
+	}))
+	defer srv.Close()
+
+	cfg := NewConfig(srv.URL)
+	cfg.HTTPClient = srv.Client()
+	c := NewBaseClient("k", cfg)
+	resp, err := c.Get("ping", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(string(resp), "custom") {
+		t.Fatalf("expected custom client response, got %s", resp)
+	}
+}
+
 func TestDoRawPUT_RejectsRedirectToPrivateHost(t *testing.T) {
 	redirectSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://127.0.0.1/evil", http.StatusTemporaryRedirect)

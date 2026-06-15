@@ -6,7 +6,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	mcpscansdk "github.com/cisco-ai-defense/ai-defense-cli/api/mcpscan"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
@@ -60,7 +59,7 @@ Examples:
 				return err
 			}
 
-			config := api.NewConfig(baseURL)
+			config := cli.APIConfig(baseURL)
 			client := mcpscansdk.NewClient(apiKey, config)
 
 			req := &mcpscansdk.RegisterMCPServerRequest{

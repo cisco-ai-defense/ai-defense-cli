@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	aibomsdk "github.com/cisco-ai-defense/ai-defense-cli/api/aibom"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/output"
@@ -58,7 +57,7 @@ Examples:
 				return fmt.Errorf("failed to parse generated AIBOM: %w", err)
 			}
 
-			config := api.NewConfig(baseURL)
+			config := cli.APIConfig(baseURL)
 			client := aibomsdk.NewClient(apiKey, config)
 
 			fmt.Fprintln(os.Stderr, "Submitting AIBOM report...")

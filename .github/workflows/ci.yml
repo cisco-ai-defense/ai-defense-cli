@@ -42,8 +42,8 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: make build-go test vet
-        run: make build-go test vet
+      - name: make build-go test-cover-check vet
+        run: make build-go test-cover-check vet
 
       - name: Smoke test CLI (help/version)
         run: make smoke-test VERSION="$(tr -d '[:space:]' < VERSION)"

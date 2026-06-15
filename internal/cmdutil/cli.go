@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cisco-ai-defense/ai-defense-cli/api"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 )
@@ -15,6 +16,16 @@ type CLI struct {
 	ConfigManager func() *config.Manager
 	FlagAPIKey    func() string
 	FlagBaseURL   func() string
+	// APIConfigFactory overrides api.NewConfig (tests inject httptest HTTP clients).
+	APIConfigFactory func(baseURL string) *api.Config
+}
+
+// APIConfig returns SDK config for the resolved management base URL.
+func (c *CLI) APIConfig(baseURL string) *api.Config {
+	if c != nil && c.APIConfigFactory != nil {
+		return c.APIConfigFactory(baseURL)
+	}
+	return api.NewConfig(baseURL)
 }
 
 // ResolveAuth resolves the API key and base URL from flags, env vars, and config

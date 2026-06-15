@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/api"
@@ -182,5 +183,41 @@ func TestValidateServers(t *testing.T) {
 	}
 	if resp == nil {
 		t.Fatal("expected non-nil response")
+	}
+}
+
+func TestGetServer(t *testing.T) {
+	const body = `{"server_id":"srv-1","name":"Test"}`
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("expected GET, got %s", r.Method)
+		}
+		if !strings.Contains(r.URL.Path, "srv-1") {
+			t.Errorf("expected server id in path, got %s", r.URL.Path)
+		}
+		w.Write([]byte(body))
+	})
+
+	raw, err := c.GetServer("srv-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("expected %s, got %s", body, raw)
+	}
+}
+
+func TestGetScanStatusRaw(t *testing.T) {
+	const body = `{"scan_id":"scan-1","status":"COMPLETED"}`
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(body))
+	})
+
+	raw, err := c.GetScanStatusRaw("scan-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(raw) != body {
+		t.Fatalf("expected verbatim body, got %s", raw)
 	}
 }

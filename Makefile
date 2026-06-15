@@ -29,6 +29,11 @@ GOOS          ?= $(shell $(GO) env GOOS)
 GOARCH        ?= $(shell $(GO) env GOARCH)
 CGO_ENABLED   ?= 0
 
+# Packages under scripts/, test helpers, and main are excluded from coverage.
+GO_TEST_PKGS  := $(shell $(GO) list ./... 2>/dev/null | grep -vE '/scripts/|/internal/testutil/|^$(MODULE)$$')
+COVERPROFILE  ?= coverage.out
+COVER_MIN     ?= 70
+
 EMBED_PKG     := ./internal/embedded/python
 EMBED_BIN_DIR := internal/embedded/python/bin
 BUNDLE_TAR    := $(EMBED_BIN_DIR)/aid-py-bundle.tar.gz
@@ -38,7 +43,7 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
+.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
@@ -92,7 +97,16 @@ bundle-check:
 
 test: ## Run tests (stub python; no embed bundle required)
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
-	$(GO) test ./...
+	$(GO) test $(GO_TEST_PKGS)
+
+test-cover: ## Run tests and write coverage profile (COVERPROFILE=coverage.out)
+	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
+	$(GO) test $(GO_TEST_PKGS) -coverprofile=$(COVERPROFILE) -covermode=atomic
+	@$(GO) tool cover -func=$(COVERPROFILE) | tail -1
+
+test-cover-check: test-cover ## Enforce minimum coverage (COVER_MIN=65)
+	@chmod +x scripts/check-coverage.sh
+	COVER_MIN=$(COVER_MIN) ./scripts/check-coverage.sh $(COVERPROFILE)
 
 smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/aid-cisco-cli)
 	@$(MAKE) smoke-test-bin BIN="$(BIN_DIR)/$(BINARY_NAME)" VERSION="$(VERSION)"

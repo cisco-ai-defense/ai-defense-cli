@@ -54,7 +54,7 @@ Examples:
 				return err
 			}
 
-			config := api.NewConfig(baseURL)
+			config := cli.APIConfig(baseURL)
 			client := mcpscansdk.NewClient(apiKey, config)
 
 			req := &mcpscansdk.StartMCPServerScanRequest{

@@ -123,6 +123,8 @@ After install, run the interactive setup wizard:
 aid-cisco-cli onboard
 ```
 
+See [config.md](config.md) for paths, resolution order, and manual TOML setup.
+
 This writes a config file (core API credentials plus optional capabilities such as
 private HuggingFace repos and local AIBOM LLM settings). You can also set credentials
 manually — see [getting-started-client.md](getting-started-client.md):

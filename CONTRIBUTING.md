@@ -123,7 +123,17 @@ make build-go test vet
 
 For local AIBOM work without a full embed, use `make build-go` and set `AID_CLI_PYTHON` to a Python with `cisco-aibom[all]` installed.
 
-See [README.md](/README.md), `Makefile`, and `docs/` for architecture and release docs.
+See [README.md](/README.md), [docs/README.md](/docs/README.md), `Makefile`, and [architecture](docs/architecture/ai-defense-cli.md) for layout and release docs.
+
+### Documentation
+
+- **Index:** [docs/README.md](/docs/README.md) — which doc to read for install, config, specs, etc.
+- **Spec-first:** For user-visible behavior (commands, flags, exit codes, config), update `docs/specs/NNN-*/` **before** code. See [docs/specs/README.md](/docs/specs/README.md) for spec IDs.
+- **Co-change:** User-visible changes → [CHANGELOG.md](/CHANGELOG.md). Project status → [CONTEXT.md](/CONTEXT.md) (not README).
+- **One source of truth:** Put each fact in one canonical doc (see [docs/README.md](/docs/README.md#canonical-sources-avoid-duplicating)); link from other files instead of copying tables.
+- **Subsystem READMEs:** Complex areas (e.g. [internal/config/](/internal/config/README.md)) have short folder READMEs for navigation — link to specs, don’t duplicate requirements.
+
+Workflow details: `.cursor/skills/spec-driven-dev/SKILL.md` (maintainers using Cursor).
 
 ## Other Ways to Contribute
 

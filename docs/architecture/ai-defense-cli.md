@@ -19,6 +19,8 @@
 | `internal/embedded/python` | Relocatable CPython + `cisco-aibom` |
 | `scripts/` | Bundle build helpers |
 
+Further reading: [docs/README.md](../README.md) · [internal/config/README.md](../../internal/config/README.md)
+
 ## Embedded Python
 
 `ai-bom` runs `python -m aibom analyze` using embedded CPython in release builds.

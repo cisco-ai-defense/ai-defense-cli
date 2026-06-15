@@ -32,6 +32,8 @@ You'll configure:
 Add capabilities later with `aid-cisco-cli config edit`. Inspect config with
 `aid-cisco-cli config show` (secrets redacted).
 
+See [config.md](config.md) for paths, resolution order, and TOML format.
+
 Non-interactive environments: set `AI_DEFENSE_API_KEY` / `AI_DEFENSE_BASE_URL` or
 create a `.config.toml` manually (see §2 below).
 

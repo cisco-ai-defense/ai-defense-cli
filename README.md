@@ -42,7 +42,7 @@ aid-cisco-cli model-scan list --limit 5
 ```
 
 See [docs/getting-started-client.md](docs/getting-started-client.md) for the full command
-reference, output modes, and exit-code gating.
+reference, output modes, and exit-code gating. Documentation index: [docs/README.md](docs/README.md).
 
 ## Development
 

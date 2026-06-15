@@ -25,17 +25,15 @@ type metaDef struct {
 }
 
 type coreDef struct {
-	ID       string      `yaml:"id"`
-	Label    string      `yaml:"label"`
-	TomlPath []string    `yaml:"toml_path"`
-	Fields   []fieldDef  `yaml:"fields"`
-	Regions  []regionDef `yaml:"regions"`
+	ID       string     `yaml:"id"`
+	Label    string     `yaml:"label"`
+	TomlPath []string   `yaml:"toml_path"`
+	Fields   []fieldDef `yaml:"fields"`
 }
 
-type regionDef struct {
-	ID    string `yaml:"id"`
+type fieldOptionDef struct {
 	Label string `yaml:"label"`
-	URL   string `yaml:"url"`
+	Value string `yaml:"value"`
 }
 
 type integrationDef struct {
@@ -53,13 +51,15 @@ type integrationDef struct {
 }
 
 type fieldDef struct {
-	Key         string `yaml:"key"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Kind        string `yaml:"kind"`
-	Required    bool   `yaml:"required"`
-	Env         string `yaml:"env"`
-	Flag        string `yaml:"flag"`
+	Key         string           `yaml:"key"`
+	Title       string           `yaml:"title"`
+	Description string           `yaml:"description"`
+	Kind        string           `yaml:"kind"`
+	Required    bool             `yaml:"required"`
+	Env         string           `yaml:"env"`
+	Flag        string           `yaml:"flag"`
+	Options     []fieldOptionDef `yaml:"options"`
+	AllowCustom bool             `yaml:"allow_custom"`
 }
 
 type presetDef struct {
@@ -180,6 +180,10 @@ func (f fieldDef) toFieldSpec() FieldSpec {
 	if strings.EqualFold(f.Kind, "secret") {
 		kind = FieldKindSecret
 	}
+	opts := make([]FieldOption, len(f.Options))
+	for i, o := range f.Options {
+		opts[i] = FieldOption{Label: o.Label, Value: o.Value}
+	}
 	return FieldSpec{
 		Key:         f.Key,
 		EnvVar:      f.Env,
@@ -188,6 +192,8 @@ func (f fieldDef) toFieldSpec() FieldSpec {
 		Description: f.Description,
 		Kind:        kind,
 		Required:    f.Required,
+		Options:     opts,
+		AllowCustom: f.AllowCustom,
 	}
 }
 
@@ -246,18 +252,18 @@ func MustByID(id string) IntegrationSpec {
 	return ig
 }
 
-// CoreSchema returns the parsed core section (regions, fields).
-func CoreSchema() coreDef {
-	return schema.Core
+// CoreFields returns parsed core field specs (api_key, base_url, …).
+func CoreFields() []FieldSpec {
+	fields := make([]FieldSpec, len(schema.Core.Fields))
+	for i, f := range schema.Core.Fields {
+		fields[i] = f.toFieldSpec()
+	}
+	return fields
 }
 
-// RegionURLs returns region id → base URL from the spec.
-func RegionURLs() map[string]string {
-	out := make(map[string]string, len(schema.Core.Regions))
-	for _, r := range schema.Core.Regions {
-		out[r.ID] = r.URL
-	}
-	return out
+// CoreSchema returns the parsed core section.
+func CoreSchema() coreDef {
+	return schema.Core
 }
 
 // EmbeddedSpecRaw returns the embedded config.spec.yaml bytes (for docs/tests).

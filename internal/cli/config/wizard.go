@@ -13,10 +13,6 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config/spec"
 )
 
-func regionBaseURLs() map[string]string {
-	return spec.RegionURLs()
-}
-
 // RunOptions controls wizard execution.
 type RunOptions struct {
 	Mode       string // init, edit
@@ -111,17 +107,7 @@ func runCoreForms(ctx *capabilities.WizardContext, opts RunOptions) error {
 		}
 	}
 
-	var region string
-	if ctx.Region != "" {
-		region = ctx.Region
-	}
-	apiKey := ctx.APIKey
 	customPath := ctx.CustomPath
-
-	title := "Configure AI Defense CLI"
-	if opts.Onboard {
-		title = "Welcome — set up AI Defense CLI"
-	}
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -166,37 +152,16 @@ func runCoreForms(ctx *capabilities.WizardContext, opts RunOptions) error {
 		ctx.CustomPath = customPath
 	}
 
-	regionForm := huh.NewForm(
-		huh.NewGroup(
-			huh.NewSelect[string]().
-				Title(title).
-				Description("Select your AI Defense region").
-				Options(
-					huh.NewOption("United States (US)", "US"),
-					huh.NewOption("Europe (EU)", "EU"),
-					huh.NewOption("Asia Pacific (AP)", "AP"),
-					huh.NewOption("United Arab Emirates (UAE)", "UAE"),
-				).
-				Value(&region),
-			huh.NewInput().
-				Title("AI Defense API key").
-				EchoMode(huh.EchoModePassword).
-				Value(&apiKey).
-				Validate(func(s string) error {
-					if s == "" {
-						return fmt.Errorf("API key is required")
-					}
-					return nil
-				}),
-		),
-	)
-	if err := regionForm.Run(); err != nil {
+	existing := map[string]string{
+		"api_key":  ctx.APIKey,
+		"base_url": ctx.BaseURL,
+	}
+	core, err := spec.CollectCoreFields(existing)
+	if err != nil {
 		return err
 	}
-
-	ctx.Region = region
-	ctx.BaseURL = regionBaseURLs()[region]
-	ctx.APIKey = apiKey
+	ctx.APIKey = core["api_key"]
+	ctx.BaseURL = core["base_url"]
 	return nil
 }
 
@@ -244,7 +209,7 @@ func confirmSummary(ctx *capabilities.WizardContext) error {
 			enabled = append(enabled, c.Label())
 		}
 	}
-	summary := fmt.Sprintf("Core: region %s\nBase URL: %s\nAPI key: ***\n", ctx.Region, ctx.BaseURL)
+	summary := fmt.Sprintf("Base URL: %s\nAPI key: ***\n", ctx.BaseURL)
 	if len(enabled) > 0 {
 		summary += "Optional capabilities:\n"
 		for _, e := range enabled {
@@ -278,17 +243,7 @@ func confirmSummary(ctx *capabilities.WizardContext) error {
 func seedFromExisting(ctx *capabilities.WizardContext, m *appconfig.Manager) {
 	ctx.APIKey = m.NestedString("default", "api_key")
 	ctx.BaseURL = m.NestedString("default", "base_url")
-	ctx.Region = baseURLToRegion(ctx.BaseURL)
 	capabilities.SeedIntegrationValues(ctx, m)
-}
-
-func baseURLToRegion(baseURL string) string {
-	for region, url := range regionBaseURLs() {
-		if url == baseURL {
-			return region
-		}
-	}
-	return "US"
 }
 
 func isTTY() bool {

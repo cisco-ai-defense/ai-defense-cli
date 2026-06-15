@@ -29,20 +29,17 @@ core:
       required: true
       env: AI_DEFENSE_BASE_URL
       flag: base-url
-      description: Set automatically from region during onboard
-  regions:
-    - id: US
-      label: United States
-      url: https://us.api.aidefense.security.cisco.com
-    - id: EU
-      label: Europe
-      url: https://eu.api.aidefense.security.cisco.com
-    - id: AP
-      label: Asia Pacific
-      url: https://ap.api.aidefense.security.cisco.com
-    - id: UAE
-      label: United Arab Emirates
-      url: https://uae.api.aidefense.security.cisco.com
+      description: AI Defense API endpoint for your tenant
+      allow_custom: true
+      options:
+        - label: United States (US)
+          value: https://us.api.aidefense.security.cisco.com
+        - label: Europe (EU)
+          value: https://eu.api.aidefense.security.cisco.com
+        - label: Asia Pacific (AP)
+          value: https://ap.api.aidefense.security.cisco.com
+        - label: United Arab Emirates (UAE)
+          value: https://uae.api.aidefense.security.cisco.com
 
 # Optional integrations — capability hub; each maps to [default.<section>] in config.toml
 integrations:

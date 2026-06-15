@@ -24,7 +24,7 @@ aid-cisco-cli onboard
 
 You'll configure:
 
-1. **Core** — config file location, AI Defense region, API key (required for API commands)
+1. **Core** — config file location, base URL (preset or custom), API key (required for API commands)
 2. **Optional capabilities** (pick any):
    - **Private HuggingFace model repos** — token for gated/private models
    - **Local AIBOM analysis** — LLM provider, model, and credentials for `ai-bom generate` / `run`

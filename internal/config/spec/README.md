@@ -14,6 +14,8 @@ User secrets are **not** stored here — they live in user `config.toml` (see [d
 | `wizard.go` | TUI field collection from spec |
 | `validators.go` | Named validators for complex rules (e.g. `aibom_llm`) |
 
+**`core.fields`** — persisted TOML keys; optional `options` + `allow_custom` drive the wizard (e.g. `base_url` regional presets).
+
 ## Add a new integration
 
 1. Add an entry under `integrations:` in **`config.spec.yaml`** (fields, env, flags, optional presets/validate).

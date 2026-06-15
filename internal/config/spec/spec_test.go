@@ -15,8 +15,18 @@ func TestEmbeddedSpecLoads(t *testing.T) {
 	if s.Meta.SchemaVersion != "1" {
 		t.Fatalf("schema version %q", s.Meta.SchemaVersion)
 	}
-	if len(s.Core.Regions) != 4 {
-		t.Fatalf("expected 4 regions, got %d", len(s.Core.Regions))
+	if len(s.Core.Fields) < 2 {
+		t.Fatalf("expected core fields")
+	}
+	var baseURLField spec.FieldSpec
+	for _, f := range spec.CoreFields() {
+		if f.Key == "base_url" {
+			baseURLField = f
+			break
+		}
+	}
+	if baseURLField.Key != "base_url" || len(baseURLField.Options) != 4 || !baseURLField.AllowCustom {
+		t.Fatalf("base_url field: %+v", baseURLField)
 	}
 	if len(s.Integrations) < 2 {
 		t.Fatalf("expected integrations")
@@ -38,10 +48,20 @@ func TestIntegrationsFromSpec(t *testing.T) {
 	}
 }
 
-func TestRegionURLs(t *testing.T) {
-	urls := spec.RegionURLs()
-	if !strings.HasSuffix(urls["US"], ".cisco.com") {
-		t.Fatalf("got %v", urls)
+func TestBaseURLOptions(t *testing.T) {
+	fields := spec.CoreFields()
+	var baseURL spec.FieldSpec
+	for _, f := range fields {
+		if f.Key == "base_url" {
+			baseURL = f
+			break
+		}
+	}
+	if len(baseURL.Options) != 4 {
+		t.Fatalf("got %d options", len(baseURL.Options))
+	}
+	if !strings.HasSuffix(baseURL.Options[0].Value, ".cisco.com") {
+		t.Fatalf("got %v", baseURL.Options[0].Value)
 	}
 }
 

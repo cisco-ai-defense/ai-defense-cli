@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TD
   entry[onboard or config init/edit]
-  core[Core: location region api_key]
+  core[Core: location base_url api_key]
   hub[Capability multi-select]
   modules[Selected module forms]
   summary[Redacted summary]
@@ -91,11 +91,8 @@ type Capability interface {
 }
 ```
 
-## Region → base URL
+## Base URL field
 
-| Region | base_url |
-|--------|----------|
-| US | https://us.api.aidefense.security.cisco.com |
-| EU | https://eu.api.aidefense.security.cisco.com |
-| AP | https://ap.api.aidefense.security.cisco.com |
-| UAE | https://uae.api.aidefense.security.cisco.com |
+`base_url` is a normal core field with wizard `options` (regional endpoints) and
+`allow_custom: true` so users can pick a preset or enter a custom `*.cisco.com` URL.
+Only `base_url` is stored in TOML — see `config.spec.yaml` under `core.fields`.

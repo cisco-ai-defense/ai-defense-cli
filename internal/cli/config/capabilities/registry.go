@@ -10,7 +10,6 @@ type WizardContext struct {
 	LocationKind config.LocationKind
 	CustomPath   string
 	ConfigPath   string
-	Region       string
 	BaseURL      string
 	APIKey       string
 

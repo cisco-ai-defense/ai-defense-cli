@@ -14,6 +14,12 @@ const (
 	FieldKindSecret
 )
 
+// FieldOption is a preset value for wizard select fields (e.g. regional base URLs).
+type FieldOption struct {
+	Label string
+	Value string
+}
+
 // FieldSpec declares one TOML key with env/flag bindings and wizard metadata.
 type FieldSpec struct {
 	Key         string
@@ -23,6 +29,8 @@ type FieldSpec struct {
 	Description string
 	Kind        FieldKind
 	Required    bool // required when capability is enabled in wizard
+	Options     []FieldOption
+	AllowCustom bool // when true, wizard offers "Custom…" after options
 }
 
 // SectionSpec is a TOML section (e.g. [default.aibom]).

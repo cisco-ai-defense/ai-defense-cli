@@ -27,7 +27,7 @@
 
 ### REQ-04 — Modular capability hub
 
-- **REQ-04.1** Core (always): location, region → `base_url`, API key
+- **REQ-04.1** Core (always): config location, `base_url` (preset or custom), API key
 - **REQ-04.2** Optional multi-select capabilities (v1):
   - `huggingface` — private HF repos → `[default.huggingface]`
   - `aibom` — local `ai-bom generate`/`run` → `[default.aibom]`

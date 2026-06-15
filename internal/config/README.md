@@ -33,5 +33,5 @@ Runtime configuration: load user TOML, resolve paths, redact secrets.
 ## Docs
 
 - Users: [docs/config.md](../../docs/config.md)
-- Contract: [docs/specs/005-cli-config/](../../docs/specs/005-cli-config/)
+- Contract: [docs/specs/006-cli-config/](../../docs/specs/006-cli-config/)
 - Reference: [docs/service-spec.md](../../docs/service-spec.md)

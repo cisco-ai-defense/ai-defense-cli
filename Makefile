@@ -38,7 +38,7 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist
+.PHONY: help version build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
@@ -91,6 +91,15 @@ test: ## Run tests (stub python; no embed bundle required)
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
 	$(GO) test ./...
 
+smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/aid-cisco-cli)
+	@$(MAKE) smoke-test-bin BIN="$(BIN_DIR)/$(BINARY_NAME)" VERSION="$(VERSION)"
+
+smoke-test-bin: ## Post-build smoke on BIN= path (SMOKE_RUNNER=direct|docker, optional VERSION=)
+	@test -n "$(BIN)" || (echo "BIN required, e.g. make smoke-test-bin BIN=dist/aid-cisco-cli-..." && exit 1)
+	@test -f scripts/smoke-test-cli.sh || (echo "scripts/smoke-test-cli.sh missing" && exit 1)
+	@chmod +x scripts/smoke-test-cli.sh
+	VERSION="$(VERSION)" SMOKE_RUNNER="$(SMOKE_RUNNER)" ./scripts/smoke-test-cli.sh "$(BIN)"
+
 vet: ## Run go vet
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
 	$(GO) vet ./...
@@ -120,10 +129,10 @@ endif
 
 # PBS pins per linux arch (python-build-standalone 20250723 / cpython 3.12.11)
 PBS_TRIPLE_amd64  := x86_64-unknown-linux-gnu
-PBS_SHA256_amd64  := e5e828ba2c1a55400cdb07ff5f052908c46d5deb4f62d8b5825f8c24aeffcccb
+PBS_SHA256_amd64  := 7263ed87e9d2d4c52b01f1ad8cdca315cf859c0848b8ffdcb70de205fa8b0336
 # arm64 Linux PBS pins kept for optional local builds (not published in CI/releases).
 PBS_TRIPLE_arm64  := aarch64-unknown-linux-gnu
-PBS_SHA256_arm64  := 6344f857fab8453423cf0471a9bd1e74393947c9e3d59919d78eebc4c7eb8590
+PBS_SHA256_arm64  := 32b17b62fd621481bb4eab0ed5549cbad43d88780e29fc2c0a222a1722470c4b
 
 build-release-linux: ## Linux release binary via Docker (embed_python) → dist/
 	@mkdir -p $(DIST_DIR)

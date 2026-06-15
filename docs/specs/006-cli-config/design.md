@@ -1,4 +1,4 @@
-# 005 — CLI config design
+# 006 — CLI config design
 
 ## UX flow
 

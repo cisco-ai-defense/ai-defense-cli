@@ -32,6 +32,11 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   (pass-through), matching Python CLI output shape; paging serializes as
   `count`/`offset`/`total` instead of `limit`.
 
+### Changed
+
+- Embedded Python bundle uses python-build-standalone `install_only_stripped` assets, shared post-install pruning (`scripts/prune-python-bundle.sh`), and a root `.dockerignore` (smaller release artifacts and faster Linux Docker builds).
+- Post-build smoke tests (`make smoke-test`, `scripts/smoke-test-cli.sh`) verify `--version` and `--help` for every CLI command after embed and stub builds.
+
 ## [0.1.1] - 2026-06-12
 
 ### Fixed

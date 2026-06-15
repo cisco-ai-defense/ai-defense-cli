@@ -1,0 +1,12 @@
+# Keep Docker build context small — py-bundler rebuilds the embed bundle; do not
+# upload local bundle artifacts or staging trees (often 1GB+ combined).
+internal/embedded/python/bin/
+.build/
+dist/
+bin/
+.git/
+reviews/
+canvases/
+.env
+.env.*
+!.env.example

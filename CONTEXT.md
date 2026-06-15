@@ -45,8 +45,8 @@ internal/selfupdate/      # GitHub Releases install
 internal/embedded/python/ # CPython + cisco-aibom
 scripts/                  # bundle + docker helpers
 docs/specs/001-cli-core/
-docs/specs/004-cli-install/
-docs/specs/005-cli-config/
+docs/specs/005-cli-install/
+docs/specs/006-cli-config/
 Dockerfile                # linux release → dist/ binary
 Makefile                  # build-go, build-embed, build-release-*
 ```

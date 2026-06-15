@@ -1,4 +1,4 @@
-# 004 — CLI install and version changes
+# 005 — CLI install and version changes
 
 ## Requirements
 

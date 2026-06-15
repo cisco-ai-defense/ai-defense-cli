@@ -96,7 +96,7 @@ The CLI validates that the base URL hostname ends with `.cisco.com`. Other domai
 | 10 | Policy fail (`--fail-on`) |
 | 20 | Policy block (`--block-on`) |
 
-`install` and `config validate` follow the same mapping (see specs 004 and 005).
+`install` and `config validate` follow the same mapping (see specs 005 and 006).
 See [architecture/ai-defense-cli.md](architecture/ai-defense-cli.md) and [spec 001](specs/001-cli-core/design.md).
 
 ## Environment Variables

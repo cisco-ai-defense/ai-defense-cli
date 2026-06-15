@@ -31,5 +31,5 @@ No changes to `load.go` or new package-level variables are required.
 
 ## Docs
 
-- Design: [docs/specs/005-cli-config/design.md](../../../docs/specs/005-cli-config/design.md)
-- Requirements: [docs/specs/005-cli-config/requirements.md](../../../docs/specs/005-cli-config/requirements.md)
+- Design: [docs/specs/006-cli-config/design.md](../../../docs/specs/006-cli-config/design.md)
+- Requirements: [docs/specs/006-cli-config/requirements.md](../../../docs/specs/006-cli-config/requirements.md)

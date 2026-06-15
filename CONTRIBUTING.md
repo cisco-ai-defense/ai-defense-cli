@@ -49,8 +49,8 @@ Pull requests must pass all **required** CI checks before merge:
 | Check | What it validates |
 |-------|-------------------|
 | `test` | `make build-go test vet` |
-| `linux-amd64` | Full embed release binary (Docker) + `--version` smoke test |
-| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) + `--version` smoke test |
+| `linux-amd64` | Full embed release binary (Docker) + smoke test (`--version`, all `--help`) |
+| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) + smoke test |
 
 The `checksums` job runs only on **push to `main` or `release/*`** (when artifacts are
 published). It does not run on pull requests.

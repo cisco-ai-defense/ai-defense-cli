@@ -1,4 +1,4 @@
-# 004 — CLI install design
+# 005 — CLI install design
 
 ## Command tree
 

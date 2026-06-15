@@ -1,4 +1,4 @@
-# 005 — CLI config TUI and onboarding
+# 006 — CLI config TUI and onboarding
 
 ## Requirements
 

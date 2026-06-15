@@ -71,7 +71,7 @@ Non-TTY environments: wizard commands exit with code `2`; use env vars or TOML i
 
 | Topic | Location |
 |-------|----------|
-| Behavior spec (REQ-XX) | [specs/005-cli-config/](specs/005-cli-config/) |
+| Behavior spec (REQ-XX) | [specs/006-cli-config/](specs/006-cli-config/) |
 | Code layout | [../internal/config/README.md](../internal/config/README.md) |
 | Integration schema | [../internal/config/spec/README.md](../internal/config/spec/README.md) |
 

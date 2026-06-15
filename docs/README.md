@@ -39,6 +39,6 @@ docs/
 | Exit codes | [specs/001-cli-core/design.md](specs/001-cli-core/design.md) |
 | User TOML shape | [config.sample.toml](config.sample.toml) |
 | Config schema (YAML) | [../internal/config/spec/config.spec.yaml](../internal/config/spec/config.spec.yaml) |
-| Release / install artifacts | [specs/004-cli-install/](specs/004-cli-install/) |
+| Release / install artifacts | [specs/005-cli-install/](specs/005-cli-install/) |
 
 When updating docs, change the canonical file and add links elsewhere — do not copy tables into multiple places.

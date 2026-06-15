@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
 const wizardCustomValue = "__custom__"
@@ -88,7 +90,7 @@ func (s SectionSpec) collectWithPresets(values map[string]string, after WizardFi
 		options[i] = huh.NewOption(p.Label, p.ID)
 	}
 	var presetID string
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title(s.Label).
@@ -170,32 +172,48 @@ func (f FieldSpec) collectWithOptions(current string) (string, error) {
 	if f.Description != "" {
 		selectField = selectField.Description(f.Description)
 	}
-	if err := huh.NewForm(huh.NewGroup(selectField)).Run(); err != nil {
+
+	groups := []*huh.Group{huh.NewGroup(selectField)}
+
+	customURL := strings.TrimSpace(current)
+	if matchOptionValue(f.Options, customURL) != "" {
+		customURL = ""
+	}
+	if f.AllowCustom {
+		customInput := f.newInputField("Enter a *.cisco.com AI Defense API endpoint", &customURL)
+		customInput = customInput.Placeholder("https://us.api.aidefense.security.cisco.com")
+		groups = append(groups, huh.NewGroup(customInput).WithHideFunc(func() bool {
+			return choice != wizardCustomValue
+		}))
+	}
+
+	if err := tui.RunForm(groups...); err != nil {
 		return "", err
 	}
 
 	if choice != wizardCustomValue {
 		return choice, nil
 	}
-	custom := current
-	if matchOptionValue(f.Options, current) != "" {
-		custom = ""
-	}
-	return f.collectPlainInput(custom)
+	return strings.TrimSpace(customURL), nil
 }
 
-func (f FieldSpec) collectPlainInput(current string) (string, error) {
+func (f FieldSpec) newInputField(description string, value *string) *huh.Input {
 	input := huh.NewInput().
 		Title(f.Title).
-		Value(&current)
-	if f.Description != "" {
-		input = input.Description(f.Description)
+		Value(value)
+	if description != "" {
+		input = input.Description(description)
 	}
 	if f.Kind == FieldKindSecret {
 		input = input.EchoMode(huh.EchoModePassword)
 	}
+	return f.applyInputValidators(input)
+}
+
+func (f FieldSpec) applyInputValidators(input *huh.Input) *huh.Input {
+	var validators []func(string) error
 	if f.Required {
-		input = input.Validate(func(v string) error {
+		validators = append(validators, func(v string) error {
 			if strings.TrimSpace(v) == "" {
 				return fmt.Errorf("%s is required", f.Title)
 			}
@@ -203,9 +221,24 @@ func (f FieldSpec) collectPlainInput(current string) (string, error) {
 		})
 	}
 	if f.Key == "base_url" {
-		input = input.Validate(validateBaseURLHost)
+		validators = append(validators, validateBaseURLHost)
 	}
-	if err := huh.NewForm(huh.NewGroup(input)).Run(); err != nil {
+	if len(validators) == 0 {
+		return input
+	}
+	return input.Validate(func(v string) error {
+		for _, validate := range validators {
+			if err := validate(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (f FieldSpec) collectPlainInput(current string) (string, error) {
+	input := f.newInputField(f.Description, &current)
+	if err := tui.RunForm(huh.NewGroup(input)); err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(current), nil

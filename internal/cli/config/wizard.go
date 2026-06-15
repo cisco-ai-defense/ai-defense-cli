@@ -13,6 +13,7 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config/spec"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
 // RunOptions controls wizard execution (onboard / config init).
@@ -37,6 +38,8 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 				"or create ~/.ai-defense/config.toml manually — see " + cmdutil.ClientDocsURL,
 		)
 	}
+
+	tui.PrintBanner(os.Stdout, "Setup", "Configure API credentials and optional integrations.\n↑/↓ move · Enter select · Ctrl+C cancel")
 
 	profileName, err := resolveWizardProfile(opts)
 	if err != nil {
@@ -191,7 +194,7 @@ func promptContinueOrFresh(_ string, profileName string) (resume bool, err error
 	choice := "continue"
 	desc := fmt.Sprintf("Profile %q has saved settings.\n\nContinue where you left off, or start over?", profileName)
 
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("Existing configuration").
@@ -310,7 +313,7 @@ func runOptionalCapabilities(ctx *capabilities.WizardContext, saver *draftSaver,
 
 func promptOptionalCapability(ctx *capabilities.WizardContext, cap capabilities.Capability, saver *draftSaver) error {
 	choice := capabilitySkip
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title(cap.Label()).
@@ -368,25 +371,24 @@ func isTTY() bool {
 // PrintNextSteps writes post-onboard guidance to stdout.
 func PrintNextSteps(ctx *capabilities.WizardContext) {
 	profile := appconfig.ActiveProfile()
-	fmt.Fprintf(os.Stdout, "\nConfig saved to %s", appconfig.ShortenHome(ctx.ConfigPath))
+	var body strings.Builder
+	fmt.Fprintf(&body, "Config saved to %s", appconfig.ShortenHome(ctx.ConfigPath))
 	if profile != "" {
-		fmt.Fprintf(os.Stdout, " (profile: %s)", profile)
+		fmt.Fprintf(&body, " (profile: %s)", profile)
 	}
-	fmt.Fprintln(os.Stdout)
 	active := appconfig.ResolveConfigPath()
 	if active != "" && ctx.ConfigPath != "" && active != ctx.ConfigPath {
-		fmt.Fprintf(os.Stdout, "Note: commands load config from %s (higher priority than the file above).\n", active)
+		fmt.Fprintf(&body, "\n\nNote: commands load config from %s.", appconfig.ShortenHome(active))
 	}
-	fmt.Fprintln(os.Stdout, "\nNext steps:")
-	fmt.Fprintf(os.Stdout, "  aid-cisco-cli model-scan list --limit 5\n")
+	body.WriteString("\n\nTry:\n  aid-cisco-cli model-scan list --limit 5")
 	for _, cap := range capabilities.All() {
 		if ctx.Selected[cap.ID()] {
 			for _, step := range cap.NextSteps() {
-				fmt.Fprintf(os.Stdout, "  %s\n", step)
+				fmt.Fprintf(&body, "\n  %s", step)
 			}
 		}
 	}
-	fmt.Fprintf(os.Stdout, "\n  aid-cisco-cli --help       # command reference\n")
-	fmt.Fprintf(os.Stdout, "  aid-cisco-cli config show  # view saved settings\n")
+	body.WriteString("\n  aid-cisco-cli config show")
+	tui.PrintBanner(os.Stdout, "Complete", body.String())
 	fmt.Fprintf(os.Stdout, "\nUser guide: %s\n", cmdutil.ClientDocsURL)
 }

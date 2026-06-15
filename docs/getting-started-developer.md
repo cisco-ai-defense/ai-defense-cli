@@ -67,7 +67,7 @@ make bundle build-embed
 ./bin/aid-cisco-cli ai-bom generate ...
 ```
 
-On macOS this produces a darwin binary with embedded Python. First `make bundle` downloads python-build-standalone and pip packages (network required).
+On macOS this produces a darwin binary with embedded Python. First `make bundle` downloads python-build-standalone and pip packages (network required). Subsequent runs skip when inputs are unchanged; use `make bundle-force` to rebuild.
 
 ---
 

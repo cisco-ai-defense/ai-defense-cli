@@ -11,6 +11,8 @@ internal/embedded/python/bin/aid-py-bundle.id
 
 Invoked by `make bundle`. Uses [python-build-standalone](https://github.com/astral-sh/python-build-standalone) and `requirements-bundle.txt`. Post-install cleanup runs via `prune-python-bundle.sh` (also used in the Dockerfile `py-bundler` stage).
 
+**Local cache:** `make bundle` skips the full rebuild when inputs are unchanged (`requirements-bundle.txt`, `prune-python-bundle.sh`, PBS pins). Cached PBS tarballs live under `.build/cache/`; pip wheels under `.build/pip-cache/`. Force rebuild with `make bundle-force` or `BUNDLE_FORCE=1 make bundle`.
+
 Linux release builds (`make build-release-linux`) use a root `.dockerignore` so local bundle artifacts are not sent as Docker build context.
 
 ## Post-build smoke tests

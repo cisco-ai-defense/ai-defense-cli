@@ -14,6 +14,7 @@ Smaller embed artifacts reduce Docker build time, release download size, and col
 | Integrity | Update pinned SHA256 per triple (20250723 / 3.12.11) |
 | Pruning | Shared `scripts/prune-python-bundle.sh` after `pip install` (drop pip/setuptools/wheel, tests, strip `.so` on Linux) |
 | Docker context | Root `.dockerignore` excludes local bundle staging from `COPY . .` |
+| Local dev cache | `make bundle` skips when inputs unchanged (fingerprint of requirements + PBS pins + prune script); PBS and pip caches under `.build/`; `make bundle-force` to rebuild |
 
 ## Touchpoints
 

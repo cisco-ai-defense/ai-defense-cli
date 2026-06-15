@@ -12,6 +12,7 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config/spec"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
 const (
@@ -29,6 +30,8 @@ func RunShowInteractive(m *appconfig.Manager) error {
 	if err := m.LoadError(); err != nil {
 		return clierror.Usage(err.Error())
 	}
+
+	tui.PrintBanner(os.Stdout, "Configuration", "Browse saved settings (secrets redacted).\n↑/↓ move · Enter select · Ctrl+C cancel")
 
 	choice := showActionOverview
 	for choice != showActionExit {
@@ -49,11 +52,11 @@ func RunShowInteractive(m *appconfig.Manager) error {
 			huh.NewOption("Exit", showActionExit),
 		)
 
-		form := huh.NewForm(
+		form := tui.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
 					Title("Configuration").
-					Description(fmt.Sprintf("File: %s\n↑/↓ move · Enter to view", m.ConfigPath())).
+					Description(fmt.Sprintf("File: %s\n↑/↓ move · Enter to view", appconfig.ShortenHome(m.ConfigPath()))).
 					Options(menuOpts...).
 					Value(&choice),
 			),
@@ -71,7 +74,7 @@ func RunShowInteractive(m *appconfig.Manager) error {
 			}
 		default:
 			desc := sectionShowText(m, choice)
-			view := huh.NewForm(
+			view := tui.NewForm(
 				huh.NewGroup(
 					huh.NewNote().
 						Title(showSectionTitle(choice)).
@@ -114,7 +117,7 @@ func sectionShowText(m *appconfig.Manager, section string) string {
 
 func formatConfigOverview(m *appconfig.Manager, redacted map[string]interface{}) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "File: %s\n", m.ConfigPath())
+	fmt.Fprintf(&b, "File: %s\n", appconfig.ShortenHome(m.ConfigPath()))
 	fmt.Fprintln(&b, "\nEnvironment variables and CLI flags override file values at runtime.")
 	fmt.Fprintln(&b, "\n── Core API ──")
 	fmt.Fprintln(&b, formatCoreSection(redacted))

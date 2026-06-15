@@ -2,6 +2,7 @@ package configcmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/huh"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config/spec"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
 const (
@@ -51,6 +53,8 @@ func RunEditHub() (*capabilities.WizardContext, error) {
 		return saveConfigFromContext(ctx, &existing)
 	}
 
+	tui.PrintBanner(os.Stdout, "Configuration", "Edit saved settings.\n↑/↓ move · Enter select · Ctrl+C cancel")
+
 	choice := editActionCore
 	for choice != editActionDone {
 		menuOpts := []huh.Option[string]{
@@ -65,11 +69,11 @@ func RunEditHub() (*capabilities.WizardContext, error) {
 		}
 		menuOpts = append(menuOpts, huh.NewOption("Done", editActionDone))
 
-		form := huh.NewForm(
+		form := tui.NewForm(
 			huh.NewGroup(
 				huh.NewSelect[string]().
 					Title("Edit configuration").
-					Description(fmt.Sprintf("File: %s\nChoose a section to change.", ctx.ConfigPath)).
+					Description(fmt.Sprintf("File: %s\nChoose a section to change.", appconfig.ShortenHome(ctx.ConfigPath))).
 					Options(menuOpts...).
 					Value(&choice),
 			),
@@ -136,7 +140,7 @@ func editCapabilitySection(ctx *capabilities.WizardContext, m *appconfig.Manager
 		}
 	}
 
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title(cap.Label()).

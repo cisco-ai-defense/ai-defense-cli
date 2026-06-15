@@ -38,7 +38,7 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
+.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
@@ -77,11 +77,14 @@ build-embed: bundle-check ## Build CLI with embedded CPython + cisco-aibom
 		-o $(BIN_DIR)/$(BINARY_NAME) .
 	@printf "Built $(BIN_DIR)/$(BINARY_NAME) (embedded python + aibom)\n"
 
-bundle: ## Build relocatable CPython + cisco-aibom embed artifacts
+bundle: ## Build relocatable CPython + cisco-aibom embed artifacts (skips when inputs unchanged)
 	@test -f scripts/build-python-bundle.sh || \
 		(echo "scripts/build-python-bundle.sh missing" && exit 1)
 	@chmod +x scripts/build-python-bundle.sh
 	./scripts/build-python-bundle.sh
+
+bundle-force: ## Rebuild Python embed artifacts (ignore input fingerprint cache)
+	BUNDLE_FORCE=1 $(MAKE) bundle
 
 bundle-check:
 	@test -f $(BUNDLE_TAR) || (echo "Missing $(BUNDLE_TAR) — run: make bundle" && exit 1)
@@ -110,6 +113,7 @@ fmt: ## gofmt all Go files
 clean: ## Remove build outputs
 	rm -rf $(BIN_DIR)/$(BINARY_NAME)
 	rm -rf $(EMBED_BIN_DIR)/aid-py-bundle.tar.gz $(EMBED_BIN_DIR)/aid-py-bundle.id
+	rm -f .build/aid-py-bundle.fingerprint
 	$(GO) clean -cache -testcache 2>/dev/null || true
 
 DIST_DIR      ?= dist

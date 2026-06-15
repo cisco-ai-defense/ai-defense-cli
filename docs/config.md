@@ -72,7 +72,7 @@ Optional sections are omitted when not configured. Files are written with mode `
 
 | Command | Purpose |
 |---------|---------|
-| `onboard` | First-time guided setup (`--profile` to target a named profile) |
+| `onboard` | First-time guided setup; profile picker first (or `--profile` to skip) |
 | `config init` | Create config (`--force`, `--profile`) |
 | `config edit` | Interactive section menu (TTY); change core or capabilities (`--profile`) |
 | `config show` | TTY: browse sections; else redacted TOML (`--plain` to force TOML) |

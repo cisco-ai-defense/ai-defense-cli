@@ -115,11 +115,13 @@ internal/cli/config/
   edit_tui.go               config edit hub
   show_tui.go               config show browser
   profile.go                config profile subcommands
+  profile_wizard.go         onboard profile picker
   progress.go               onboard.step ordering
   capabilities/
     registry.go
     spec_capability.go
 internal/cli/onboard/
+internal/tui/                 shared huh theme + form helpers (matches --help styling)
 internal/cmdutil/doclinks.go  public user-guide URL for clients
 ```
 

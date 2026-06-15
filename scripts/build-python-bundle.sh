@@ -5,6 +5,13 @@
 #   internal/embedded/python/bin/aid-py-bundle.tar.gz
 #   internal/embedded/python/bin/aid-py-bundle.id
 #
+# Cache (gitignored under .build/):
+#   .build/cache/              — python-build-standalone tarball
+#   .build/pip-cache/          — pip wheel cache between rebuilds
+#   .build/aid-py-bundle.fingerprint — input hash; skip when unchanged
+#
+# Set BUNDLE_FORCE=1 to rebuild even when inputs are unchanged.
+#
 # Requires: curl, tar, gzip, sha256sum (or shasum), python3 with pip (build host only)
 
 set -euo pipefail
@@ -12,7 +19,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="${ROOT}/internal/embedded/python/bin"
 REQ_FILE="${ROOT}/scripts/requirements-bundle.txt"
+PRUNE_SCRIPT="${ROOT}/scripts/prune-python-bundle.sh"
 STAGING="${ROOT}/.build/aid-py-bundle"
+CACHE_DIR="${ROOT}/.build/cache"
+PIP_CACHE="${ROOT}/.build/pip-cache"
+FINGERPRINT_FILE="${ROOT}/.build/aid-py-bundle.fingerprint"
+BUNDLE_FORCE="${BUNDLE_FORCE:-0}"
 
 # Pinned python-build-standalone (https://github.com/astral-sh/python-build-standalone)
 PBS_RELEASE="${PBS_RELEASE:-20250723}"
@@ -51,20 +63,53 @@ sha256_file() {
   fi
 }
 
+bundle_input_fingerprint() {
+  {
+    printf 'pbs_release=%s\n' "${PBS_RELEASE}"
+    printf 'python_version=%s\n' "${PYTHON_VERSION}"
+    printf 'pbs_triple=%s\n' "${PBS_TRIPLE}"
+    sha256_file "${REQ_FILE}"
+    sha256_file "${PRUNE_SCRIPT}"
+  } | sha256_file | awk '{print $1}'
+}
+
 if [[ ! -f "${REQ_FILE}" ]]; then
   echo "Missing ${REQ_FILE}" >&2
   exit 1
 fi
+if [[ ! -f "${PRUNE_SCRIPT}" ]]; then
+  echo "Missing ${PRUNE_SCRIPT}" >&2
+  exit 1
+fi
 
-mkdir -p "${OUT_DIR}" "${STAGING}"
+mkdir -p "${OUT_DIR}" "${STAGING}" "${CACHE_DIR}" "${PIP_CACHE}"
+
+bundle_tar="${OUT_DIR}/aid-py-bundle.tar.gz"
+bundle_id="${OUT_DIR}/aid-py-bundle.id"
+input_fp="$(bundle_input_fingerprint)"
+
+if [[ "${BUNDLE_FORCE}" != "1" ]] \
+  && [[ -f "${FINGERPRINT_FILE}" ]] \
+  && [[ -f "${bundle_tar}" ]] \
+  && [[ -f "${bundle_id}" ]] \
+  && [[ "$(tr -d '[:space:]' < "${FINGERPRINT_FILE}")" == "${input_fp}" ]]; then
+  echo "Python bundle up to date (inputs ${input_fp:0:16}…); skipping rebuild."
+  echo "  ${bundle_tar}"
+  echo "Set BUNDLE_FORCE=1 to rebuild."
+  exit 0
+fi
 
 asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only_stripped.tar.gz"
 base="https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_RELEASE}"
-archive="${STAGING}/${asset}"
+archive="${CACHE_DIR}/${asset}"
 
-echo "Downloading relocatable CPython: ${asset}"
-curl -fsSL --retry 5 --retry-all-errors -o "${archive}" "${base}/${asset}"
-echo "${PBS_SHA256}  ${archive}" | sha256_file -c -
+if [[ -f "${archive}" ]] && echo "${PBS_SHA256}  ${archive}" | sha256_file -c - >/dev/null 2>&1; then
+  echo "Using cached relocatable CPython: ${archive}"
+else
+  echo "Downloading relocatable CPython: ${asset}"
+  curl -fsSL --retry 5 --retry-all-errors -o "${archive}" "${base}/${asset}"
+  echo "${PBS_SHA256}  ${archive}" | sha256_file -c -
+fi
 
 rm -rf "${STAGING}/python"
 mkdir -p "${STAGING}"
@@ -77,17 +122,16 @@ if [[ ! -x "${PYBIN}" ]]; then
 fi
 
 echo "Installing Python deps from ${REQ_FILE}"
-"${PYBIN}" -m pip install --no-warn-script-location --no-cache-dir \
+export PIP_CACHE_DIR="${PIP_CACHE}"
+"${PYBIN}" -m pip install --no-warn-script-location \
   --timeout 60 --retries 10 \
   -r "${REQ_FILE}"
 
-bash "${ROOT}/scripts/prune-python-bundle.sh" "${STAGING}/python"
-
-bundle_tar="${OUT_DIR}/aid-py-bundle.tar.gz"
-bundle_id="${OUT_DIR}/aid-py-bundle.id"
+bash "${PRUNE_SCRIPT}" "${STAGING}/python"
 
 tar -czf "${bundle_tar}" -C "${STAGING}" python
 sha256_file "${bundle_tar}" | cut -c1-16 > "${bundle_id}"
+printf '%s\n' "${input_fp}" > "${FINGERPRINT_FILE}"
 
 echo "Wrote ${bundle_tar} ($(wc -c < "${bundle_tar}") bytes)"
 echo "Wrote ${bundle_id} (id: $(cat "${bundle_id}"))"

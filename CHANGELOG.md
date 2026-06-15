@@ -18,7 +18,7 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - **`config show`** — TUI section browser on a terminal; `--plain` for redacted TOML.
 - **`config edit`** — section menu to change core API or capabilities (configure / remove).
 - **Home config directory** — `~/.ai-defense/config.toml` (like `~/.aws`); wizard always writes here unless `AI_DEFENSE_CONFIG_PATH` is set. Legacy XDG and project `.config.toml` paths still read for migration.
-- **Config profiles** — named profiles in `~/.ai-defense/profiles/<name>.toml`; `config profile` commands and global `--profile` / `AI_DEFENSE_PROFILE`.
+- **Config profiles** — named profiles in `~/.ai-defense/profiles/<name>.toml`; `config profile` commands and global `--profile` / `AI_DEFENSE_PROFILE`; onboard opens a profile picker (active profile pre-selected) unless `--profile` is set.
 - **AIBOM LLM from TOML** — `[default.aibom]` fields resolve after flags and env vars.
 - **Spec-driven integrations** — `internal/config/spec/config.spec.yaml` (embedded schema;
   user config remains `config.toml`) declares env/TOML/wizard fields; capabilities, CLI
@@ -31,6 +31,11 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   `Usage:`, bold-cyan option names, bold-green short flags, bold-yellow type
   metavars — so native and aibom-backed help look consistent. Color is gated to
   the destination stream being a TTY and honors `NO_COLOR` / `FORCE_COLOR`.
+- **`make bundle`** — skips rebuild when Python bundle inputs are unchanged; use
+  `make bundle-force` or `BUNDLE_FORCE=1` to rebuild. Caches PBS tarball and pip
+  wheels under `.build/`.
+- **Onboard/config TUI** — interactive wizard and config browse/edit use the same
+  Typer/Rich-style colors as `--help` (honors `NO_COLOR` / `FORCE_COLOR`).
 
 ## [0.1.2] - 2026-06-12
 

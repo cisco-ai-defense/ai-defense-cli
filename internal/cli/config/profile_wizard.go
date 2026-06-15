@@ -8,6 +8,7 @@ import (
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
 const profileCreateNew = "__new__"
@@ -43,7 +44,7 @@ func promptProfileSelection() (string, error) {
 
 	desc := formatProfileOverview(profiles, storedActive)
 
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("Configuration profile").
@@ -102,7 +103,7 @@ func promptNewProfileName(existing []appconfig.ProfileInfo) (string, error) {
 		known[p.Name] = true
 	}
 
-	form := huh.NewForm(
+	form := tui.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
 				Title("New profile name").

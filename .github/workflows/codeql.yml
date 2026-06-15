@@ -1,0 +1,57 @@
+# Advanced CodeQL setup: Go CLI + Python scripts. Disable default setup in
+# Settings → Code security to avoid duplicate analysis with dynamic/codeql.
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: manual
+          - language: python
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - uses: actions/setup-go@v6
+        if: matrix.language == 'go'
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build Go (stub embed tag)
+        if: matrix.language == 'go'
+        run: go build -tags=!embed_python ./...
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

@@ -6,6 +6,19 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+
+- **`aid-cisco-cli install`** — download and verify release binaries from GitHub
+  Releases (`--version`, `--check`, `--prefix`).
+- **`aid-cisco-cli onboard`** and **`aid-cisco-cli config`** — interactive TUI wizard
+  (Charm `huh`) for core credentials plus optional capability modules (private
+  HuggingFace repos, local AIBOM LLM settings).
+- **XDG config path** — `~/.config/aid-cisco-cli/config.toml` in the config search order.
+- **AIBOM LLM from TOML** — `[default.aibom]` fields resolve after flags and env vars.
+- **Spec-driven integrations** — `internal/config/spec/config.spec.yaml` (embedded schema;
+  user config remains `config.toml`) declares env/TOML/wizard fields; capabilities, CLI
+  flags, redaction, and resolution share the same schema.
+
 ## [0.1.2] - 2026-06-12
 
 ### Changed

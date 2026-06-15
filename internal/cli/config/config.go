@@ -1,0 +1,127 @@
+package configcmd
+
+import (
+	"fmt"
+	"os"
+
+	toml "github.com/pelletier/go-toml/v2"
+	"github.com/spf13/cobra"
+
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
+	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
+)
+
+const clierrorHintAuth = "Run aid-cisco-cli onboard or set AI_DEFENSE_API_KEY and AI_DEFENSE_BASE_URL."
+
+// NewCmd returns the config command group.
+func NewCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "config",
+		Short: "Manage CLI configuration",
+		Long:  "Create, edit, and inspect the AI Defense CLI configuration file.",
+	}
+	cmd.AddCommand(newInitCmd())
+	cmd.AddCommand(newEditCmd())
+	cmd.AddCommand(newShowCmd())
+	cmd.AddCommand(newPathCmd())
+	cmd.AddCommand(newValidateCmd())
+	return cmd
+}
+
+func newInitCmd() *cobra.Command {
+	var force bool
+	cmd := &cobra.Command{
+		Use:   "init",
+		Short: "Create a new configuration file interactively",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, err := RunWizard(RunOptions{Mode: "init", Force: force})
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stdout, "Wrote config to %s\n", ctx.ConfigPath)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&force, "force", false, "Overwrite an existing config file")
+	return cmd
+}
+
+func newEditCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "edit",
+		Short: "Edit an existing configuration file interactively",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, err := RunWizard(RunOptions{Mode: "edit", Force: true})
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stdout, "Updated config at %s\n", ctx.ConfigPath)
+			return nil
+		},
+	}
+	return cmd
+}
+
+func newShowCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "show",
+		Short: "Show resolved configuration (secrets redacted)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m := appconfig.NewManager()
+			if err := m.LoadError(); err != nil {
+				return clierror.Usage(err.Error())
+			}
+			data := appconfig.RedactSecrets(m.Data())
+			raw, err := toml.Marshal(data)
+			if err != nil {
+				return clierror.Unexpected("encode config: "+err.Error(), err)
+			}
+			fmt.Println(string(raw))
+			return nil
+		},
+	}
+	return cmd
+}
+
+func newPathCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "path",
+		Short: "Print the config file path in use",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m := appconfig.NewManager()
+			path := m.ConfigPath()
+			if path == "" {
+				path = appconfig.ResolveConfigPath()
+			}
+			fmt.Println(path)
+			return nil
+		},
+	}
+	return cmd
+}
+
+func newValidateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "validate",
+		Short: "Validate required configuration fields",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			m := appconfig.NewManager()
+			if err := m.LoadError(); err != nil {
+				return clierror.Usage(err.Error())
+			}
+			if _, err := m.GetAPIKey(); err != nil {
+				return clierror.Auth(err.Error(), clierrorHintAuth, err)
+			}
+			if _, err := m.GetBaseURL(); err != nil {
+				return clierror.Auth(err.Error(), clierrorHintAuth, err)
+			}
+			_, _, err := appconfig.ResolveAPIKeyAndBaseURL("", "", m)
+			if err != nil {
+				return clierror.Auth(err.Error(), clierrorHintAuth, err)
+			}
+			fmt.Fprintln(os.Stdout, "Configuration is valid.")
+			return nil
+		},
+	}
+	return cmd
+}

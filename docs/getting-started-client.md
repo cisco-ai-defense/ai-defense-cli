@@ -14,6 +14,29 @@ This guide gets you from zero to your first scan with `aid-cisco-cli`. It is for
 
 ---
 
+## 0. Onboarding (recommended)
+
+After installing the binary, run the interactive wizard:
+
+```bash
+aid-cisco-cli onboard
+```
+
+You'll configure:
+
+1. **Core** — config file location, AI Defense region, API key (required for API commands)
+2. **Optional capabilities** (pick any):
+   - **Private HuggingFace model repos** — token for gated/private models
+   - **Local AIBOM analysis** — LLM provider, model, and credentials for `ai-bom generate` / `run`
+
+Add capabilities later with `aid-cisco-cli config edit`. Inspect config with
+`aid-cisco-cli config show` (secrets redacted).
+
+Non-interactive environments: set `AI_DEFENSE_API_KEY` / `AI_DEFENSE_BASE_URL` or
+create a `.config.toml` manually (see §2 below).
+
+---
+
 ## 1. Get the binary
 
 Release builds ship a **single self-contained binary** per OS/architecture. The

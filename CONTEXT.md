@@ -1,6 +1,6 @@
 # AI Defense CLI — Project Context
 
-Last updated: 2026-06-12
+Last updated: 2026-06-15
 
 ## Purpose
 
@@ -22,6 +22,7 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] CI: fold `meta` into `test`; `checksums` job only on main/release push
 - [x] Release workflow: dispatch Release after GITHUB_TOKEN tag push (#6)
 - [x] CLI output parity (`fix/cli-output-parity`): raw API JSON default; model-scan list/info pass-through
+- [x] **AIFW-24339 (`feature/AIFW-24339`)** — `install` self-update, `onboard`/`config` TUI, spec-driven capability hub (`config.spec.yaml`), XDG config path; spec/code gates passed locally
 - [ ] Merge PR #3 after CI green (includes README evergreen + doc skill updates)
 
 ## Deferred (post-merge)
@@ -38,10 +39,14 @@ internal/cli/             # Cobra commands
 internal/cmdutil/         # shared CLI context (avoids import cycle)
 internal/clierror/        # exit codes
 internal/verdict/         # scan envelope
-internal/config/          # flags > env > TOML
+internal/config/          # flags > env > TOML; paths, write, redact
+internal/config/spec/     # embedded config.spec.yaml
+internal/selfupdate/      # GitHub Releases install
 internal/embedded/python/ # CPython + cisco-aibom
 scripts/                  # bundle + docker helpers
 docs/specs/001-cli-core/
+docs/specs/004-cli-install/
+docs/specs/005-cli-config/
 Dockerfile                # linux release → dist/ binary
 Makefile                  # build-go, build-embed, build-release-*
 ```

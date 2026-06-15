@@ -1,0 +1,120 @@
+# config.spec.yaml — CLI configuration schema for aid-cisco-cli
+#
+# Like OpenAPI defines HTTP APIs, this file defines the CLI config contract:
+#   - TOML sections and field keys (maps to user config.toml)
+#   - Environment variables and CLI flags
+#   - Onboarding wizard labels, presets, and validation rules
+#
+# User secrets live in config.toml (mode 0600). This file is schema only.
+
+meta:
+  schema_version: "1"
+  name: aid-cisco-cli-config
+  description: Configuration schema for Cisco AI Defense CLI
+
+# Core — required for all API commands; written to [default] in config.toml
+core:
+  id: default
+  label: AI Defense
+  toml_path: [default]
+  fields:
+    - key: api_key
+      title: AI Defense API key
+      kind: secret
+      required: true
+      env: AI_DEFENSE_API_KEY
+      flag: api-key
+    - key: base_url
+      title: Base URL
+      required: true
+      env: AI_DEFENSE_BASE_URL
+      flag: base-url
+      description: Set automatically from region during onboard
+  regions:
+    - id: US
+      label: United States
+      url: https://us.api.aidefense.security.cisco.com
+    - id: EU
+      label: Europe
+      url: https://eu.api.aidefense.security.cisco.com
+    - id: AP
+      label: Asia Pacific
+      url: https://ap.api.aidefense.security.cisco.com
+    - id: UAE
+      label: United Arab Emirates
+      url: https://uae.api.aidefense.security.cisco.com
+
+# Optional integrations — capability hub; each maps to [default.<section>] in config.toml
+integrations:
+  - id: huggingface
+    label: Private HuggingFace model repos
+    description: Access gated or private models on huggingface.co
+    toml_path: [default, huggingface]
+    optional: true
+    missing_hint: Run 'aid-cisco-cli config edit' and enable Private HuggingFace model repos
+    next_steps:
+      - "Scan a private model: aid-cisco-cli model-scan trigger --repo-url https://huggingface.co/org/model"
+    fields:
+      - key: token
+        title: HuggingFace token
+        description: Paste a token with read access to your private repos (hf_...)
+        kind: secret
+        required: true
+    validate:
+      - type: non_empty
+        field: token
+        message: huggingface token is required
+
+  - id: aibom
+    label: Local AIBOM analysis
+    description: Generate AI Bills of Materials from source on this machine
+    toml_path: [default, aibom]
+    optional: true
+    missing_hint: Run 'aid-cisco-cli config edit' and enable Local AIBOM analysis
+    next_steps:
+      - "Generate locally: aid-cisco-cli ai-bom generate --source ."
+    validator: aibom_llm
+    fields:
+      - key: llm_model
+        title: LLM model
+        description: "Example: gpt-5.4"
+        required: true
+        env: AIBOM_LLM_MODEL
+        flag: llm-model
+      - key: llm_provider
+        title: LLM provider
+        env: AIBOM_LLM_PROVIDER
+        flag: llm-provider
+      - key: llm_api_key
+        title: LLM API key
+        kind: secret
+        env: AIBOM_LLM_API_KEY
+        flag: llm-api-key
+      - key: llm_api_base
+        title: LLM API base URL
+        description: Azure endpoint or local URL (e.g. http://localhost:11434)
+        env: AIBOM_LLM_API_BASE
+        flag: llm-api-base
+      - key: llm_api_version
+        title: LLM API version
+        env: AIBOM_LLM_API_VERSION
+        flag: llm-api-version
+    presets:
+      - id: cloud
+        label: OpenAI / Anthropic / Google
+        set:
+          llm_provider: ""
+        prompt: [llm_model, llm_api_key]
+      - id: azure
+        label: Azure OpenAI
+        prompt: [llm_model, llm_api_key, llm_api_base, llm_api_version]
+      - id: bedrock
+        label: AWS Bedrock
+        set:
+          llm_provider: bedrock
+        prompt: [llm_model]
+        omit: [llm_api_key]
+      - id: local
+        label: Ollama / local endpoint
+        prompt: [llm_model, llm_api_base]
+        omit: [llm_api_key]

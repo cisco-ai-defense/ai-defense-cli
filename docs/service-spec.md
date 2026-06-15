@@ -15,6 +15,9 @@ Global Flags:
   --version           Print version
 
 Commands:
+  install             Download and install a release build (self-update)
+  onboard             Interactive setup for new users
+  config              Manage CLI configuration (init, edit, show, path, validate)
   model-scan          Scan AI/ML models for security vulnerabilities
     trigger           Submit a model file or repo URL for cloud scanning
     list              List previous scans
@@ -49,8 +52,11 @@ Priority (highest to lowest):
 3. TOML config file
 
 Config file search order:
-- `AI_DEFENSE_CONFIG_PATH` environment variable
-- `.config.toml` in the current working directory
+- `AI_DEFENSE_CONFIG_PATH` environment variable (if set)
+- `.config.toml` in the current working directory (if it exists)
+- `$XDG_CONFIG_HOME/aid-cisco-cli/config.toml` or `~/.config/aid-cisco-cli/config.toml` (if it exists)
+
+When no file exists yet, the wizard defaults to the XDG path (recommended).
 
 ### Config File Format
 
@@ -61,7 +67,17 @@ base_url = "https://us.api.aidefense.security.cisco.com"
 
 [default.huggingface]
 token = "hf_xxx"
+
+[default.aibom]
+llm_model = "gpt-5.4"
+llm_provider = ""
+llm_api_key = "..."
+llm_api_base = ""
+llm_api_version = ""
 ```
+
+Optional sections (`huggingface`, `aibom`) are omitted when not configured via
+`aid-cisco-cli onboard` / `config init`.
 
 ## Base URL Validation
 
@@ -71,8 +87,17 @@ The CLI validates that the base URL hostname ends with `.cisco.com`. Other domai
 
 | Code | Meaning |
 |------|---------|
-| 0    | Success |
-| 1    | Error (auth failure, API error, validation error, etc.) |
+| 0 | Success |
+| 1 | Unexpected error |
+| 2 | Usage error (bad flags/args; non-TTY wizard; unsupported install platform) |
+| 3 | Auth/config error (missing API key, invalid base URL) |
+| 4 | Connectivity/timeout (install download, API network) |
+| 5 | Scan failed |
+| 10 | Policy fail (`--fail-on`) |
+| 20 | Policy block (`--block-on`) |
+
+`install` and `config validate` follow the same mapping (see specs 004 and 005).
+See [architecture/ai-defense-cli.md](architecture/ai-defense-cli.md) and [spec 001](specs/001-cli-core/design.md).
 
 ## Environment Variables
 
@@ -98,9 +123,7 @@ The CLI validates that the base URL hostname ends with `.cisco.com`. Other domai
 `cisco-aibom` analyzer, whose `analyze` command requires an LLM to classify
 scanner candidates. Therefore:
 
-- `--llm-model` (or `AIBOM_LLM_MODEL`) is **required** — the CLI fails fast with a
-  clear error if it is missing (matching the analyzer, which also rejects a run
-  without a model).
+- `--llm-model` (or `AIBOM_LLM_MODEL`, or `[default.aibom].llm_model` in config) is **required**
 - A resolvable credential for the model is required, and the CLI fails fast if
   none is found: `--llm-api-key` / `AIBOM_LLM_API_KEY` (OpenAI, Azure, Anthropic,
   Google), the provider's native credential chain (e.g. AWS credentials for

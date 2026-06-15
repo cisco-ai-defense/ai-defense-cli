@@ -13,7 +13,7 @@ func newGenerateCmd(cli *cmdutil.CLI) *cobra.Command {
 	var sources []string
 	var outputFile string
 	var customCatalog string
-	var llm llmOptions
+	var llm llmFlagVars
 
 	cmd := &cobra.Command{
 		Use:   "generate",
@@ -28,12 +28,13 @@ Examples:
   aid-cisco-cli ai-bom generate --source ./my-app --llm-model gpt-5.4 --llm-api-key sk-...
   aid-cisco-cli ai-bom generate --source ./app --source ./lib --output-file report.json --llm-model gpt-5.4 --llm-api-key sk-...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := llm.validate(); err != nil {
+			resolved := llm.resolve(cli)
+			if err := ValidateLLM(resolved); err != nil {
 				return err
 			}
 
 			fmt.Fprintln(os.Stderr, "Generating AIBOM...")
-			result, err := generateReport(sources, customCatalog, llm)
+			result, err := generateReport(sources, customCatalog, resolved)
 			if err != nil {
 				return fmt.Errorf("AIBOM generation failed: %w", err)
 			}

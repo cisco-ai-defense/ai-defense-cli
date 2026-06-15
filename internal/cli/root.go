@@ -8,8 +8,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/aibom"
+	cliconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/cli/config"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/install"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/mcpscan"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/modelscan"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/onboard"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/config"
@@ -69,7 +72,13 @@ func init() {
 	rootCmd.AddCommand(modelscan.NewDeprecatedScanCmd(cli))
 	rootCmd.AddCommand(mcpscan.NewCmd(cli))
 	rootCmd.AddCommand(aibom.NewCmd(cli))
+	rootCmd.AddCommand(install.NewCmd(version))
+	rootCmd.AddCommand(cliconfig.NewCmd())
+	rootCmd.AddCommand(onboard.NewCmd())
 }
+
+// VersionString returns the CLI version baked in at build time.
+func VersionString() string { return version }
 
 // Execute runs the root command and returns the raw, unclassified error. It is
 // kept for tests and embedders; the binary entry point uses Run, which applies

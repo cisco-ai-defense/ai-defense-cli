@@ -93,6 +93,21 @@ as official-looking binaries).
 
 ## Upgrade
 
+After the initial install from GitHub Releases, change versions with the built-in
+install command (checksum-verified download from Releases):
+
+```bash
+aid-cisco-cli install                  # latest release
+aid-cisco-cli install --version 0.1.2  # pin a version
+aid-cisco-cli install --check          # show available update without installing
+aid-cisco-cli install --prefix /usr/local/bin
+```
+
+Supported platforms for self-update match release binaries: `linux-amd64`,
+`darwin-amd64`, `darwin-arm64`.
+
+Manual upgrade (download + replace) still works:
+
 1. Download the new release binary for your platform.
 2. Verify the checksum line from `checksums.txt`.
 3. Replace the existing binary on your `PATH`.
@@ -102,7 +117,15 @@ To pin a version in CI, download a specific release URL and verify the checksum 
 
 ## Configuration
 
-After install, set credentials (see [getting-started-client.md](getting-started-client.md)):
+After install, run the interactive setup wizard:
+
+```bash
+aid-cisco-cli onboard
+```
+
+This writes a config file (core API credentials plus optional capabilities such as
+private HuggingFace repos and local AIBOM LLM settings). You can also set credentials
+manually — see [getting-started-client.md](getting-started-client.md):
 
 ```bash
 export AI_DEFENSE_API_KEY="<key>"

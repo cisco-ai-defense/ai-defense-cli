@@ -9,6 +9,8 @@ exit codes and machine-readable output for CI/CD.
 - **model-scan** — AI/ML model security scans
 - **mcp-scan** — MCP server registration and scanning
 - **ai-bom** — AI Bill of Materials (embedded `cisco-aibom` analyzer)
+- **onboard / config** — interactive setup and config management (TUI)
+- **install** — checksum-verified self-update from GitHub Releases
 - **Exit codes** — operational (1–5) vs policy verdicts (10, 20)
 - **CI output** — raw API JSON by default; `--envelope` + `--fail-on` / `--block-on`
 
@@ -29,10 +31,14 @@ make build-go
 ## Quick start
 
 ```bash
+# After install from Releases:
+aid-cisco-cli onboard
+
+# Or set credentials manually:
 export AI_DEFENSE_API_KEY="your-api-key"
 export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
 
-./bin/aid-cisco-cli model-scan list --limit 5
+aid-cisco-cli model-scan list --limit 5
 ```
 
 See [docs/getting-started-client.md](docs/getting-started-client.md) for the full command

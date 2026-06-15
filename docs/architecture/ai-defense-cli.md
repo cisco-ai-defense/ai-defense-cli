@@ -8,9 +8,11 @@
 
 | Package | Role |
 |---------|------|
-| `internal/cli/` | Cobra command tree |
+| `internal/cli/` | Cobra command tree (`model-scan`, `mcp-scan`, `ai-bom`, `install`, `onboard`, `config`) |
 | `api/` | HTTP client (publishable import path) |
-| `internal/config` | Auth and endpoint resolution |
+| `internal/config` | Auth and endpoint resolution; TOML read/write |
+| `internal/config/spec` | Embedded `config.spec.yaml` — wizard, env/flag bindings, validation |
+| `internal/selfupdate` | GitHub Releases download, checksum verify, atomic binary replace |
 | `internal/clierror` | Exit-code contract |
 | `internal/verdict` | Scan result envelope |
 | `internal/cmdutil` | `--fail-on`, `--block-on`, `--output`, `--raw` (default true), `--envelope` |

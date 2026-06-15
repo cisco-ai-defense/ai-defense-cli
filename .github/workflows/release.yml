@@ -59,6 +59,9 @@ jobs:
       - name: make build-go test vet
         run: make build-go test vet
 
+      - name: Smoke test CLI (help/version)
+        run: make smoke-test VERSION="$(tr -d '[:space:]' < VERSION)"
+
   linux-amd64:
     name: linux-amd64
     needs: [test]
@@ -69,10 +72,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
       - uses: docker/setup-buildx-action@v4
 
       - name: Build release binary
         run: make build-release-linux GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - name: Smoke test release binary
+        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-linux-amd64" VERSION="$VERSION"
 
       - uses: actions/upload-artifact@v6
         with:
@@ -100,6 +111,9 @@ jobs:
           make bundle
           make build-release-darwin GOARCH=arm64 VERSION="$VERSION" COMMIT="$COMMIT"
 
+      - name: Smoke test release binary
+        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-darwin-arm64" VERSION="$VERSION"
+
       - uses: actions/upload-artifact@v6
         with:
           name: aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
@@ -125,6 +139,9 @@ jobs:
         run: |
           make bundle
           make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
+
+      - name: Smoke test release binary
+        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-darwin-amd64" VERSION="$VERSION"
 
       - uses: actions/upload-artifact@v6
         with:

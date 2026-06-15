@@ -9,7 +9,19 @@ internal/embedded/python/bin/aid-py-bundle.tar.gz
 internal/embedded/python/bin/aid-py-bundle.id
 ```
 
-Invoked by `make bundle`. Uses [python-build-standalone](https://github.com/astral-sh/python-build-standalone) and `requirements-bundle.txt`.
+Invoked by `make bundle`. Uses [python-build-standalone](https://github.com/astral-sh/python-build-standalone) and `requirements-bundle.txt`. Post-install cleanup runs via `prune-python-bundle.sh` (also used in the Dockerfile `py-bundler` stage).
+
+Linux release builds (`make build-release-linux`) use a root `.dockerignore` so local bundle artifacts are not sent as Docker build context.
+
+## Post-build smoke tests
+
+| Target | Binary | Use |
+|--------|--------|-----|
+| `make smoke-test` | `bin/aid-cisco-cli` (after `build-go`) | Local / CI: all `--help` paths |
+| `make smoke-test-bin BIN=dist/…` | Release or embed binary | After `build-release-*` |
+| `SMOKE_RUNNER=docker` | Linux binary on macOS | `make smoke-test-bin BIN=dist/…-linux-amd64 SMOKE_RUNNER=docker` |
+
+Command paths are defined once in `internal/cli/smoke.go` and shared with `go test` (`TestSmokeHelpAllCommands`).
 
 ## Makefile build modes
 

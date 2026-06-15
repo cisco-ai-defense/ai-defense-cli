@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12.11
 ARG TARGETARCH=amd64
 # Set per-arch from Makefile build-release-linux (see SHA256SUMS in PBS release).
 ARG PBS_TRIPLE=x86_64-unknown-linux-gnu
-ARG PBS_SHA256=e5e828ba2c1a55400cdb07ff5f052908c46d5deb4f62d8b5825f8c24aeffcccb
+ARG PBS_SHA256=7263ed87e9d2d4c52b01f1ad8cdca315cf859c0848b8ffdcb70de205fa8b0336
 
 COPY scripts/docker/install-build-deps.sh /tmp/install-build-deps.sh
 RUN chmod +x /tmp/install-build-deps.sh && /tmp/install-build-deps.sh
@@ -18,7 +18,7 @@ RUN chmod +x /tmp/install-build-deps.sh && /tmp/install-build-deps.sh
 ENV AID_PY_HOME=/opt/aid-py
 RUN mkdir -p ${AID_PY_HOME}
 
-RUN asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only.tar.gz" && \
+RUN asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only_stripped.tar.gz" && \
     base="https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_RELEASE}" && \
     curl -fsSL --retry 5 --retry-all-errors -o /tmp/python.tar.gz "${base}/${asset}" && \
     echo "${PBS_SHA256}  /tmp/python.tar.gz" | sha256sum -c - && \
@@ -28,13 +28,14 @@ RUN asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only.t
 ENV PYBIN=${AID_PY_HOME}/python/bin/python3
 
 COPY scripts/requirements-bundle.txt /tmp/requirements-bundle.txt
+COPY scripts/prune-python-bundle.sh /tmp/prune-python-bundle.sh
 RUN --mount=type=cache,target=/root/.cache/pip \
-    ${PYBIN} -m pip install --no-warn-script-location \
+    ${PYBIN} -m pip install --no-warn-script-location --no-cache-dir \
         --timeout 60 --retries 10 \
         -r /tmp/requirements-bundle.txt
 
-RUN find ${AID_PY_HOME}/python -depth -type d -name '__pycache__' -exec rm -rf {} + && \
-    rm -rf ${AID_PY_HOME}/python/lib/python*/site-packages/pip/_vendor/*/tests 2>/dev/null || true
+RUN chmod +x /tmp/prune-python-bundle.sh && \
+    /tmp/prune-python-bundle.sh ${AID_PY_HOME}/python
 
 RUN tar -czf /aid-py-bundle.tar.gz -C ${AID_PY_HOME} . && \
     sha256sum /aid-py-bundle.tar.gz | cut -c1-16 > /aid-py-bundle.id

@@ -29,13 +29,13 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
-# Pinned SHA256 per PBS asset (cpython 3.12.11 + release 20250723); override with PBS_SHA256.
+# Pinned SHA256 per PBS asset (cpython 3.12.11 + release 20250723, install_only_stripped); override with PBS_SHA256.
 if [[ -z "${PBS_SHA256:-}" ]]; then
   case "${PBS_TRIPLE}" in
-    x86_64-unknown-linux-gnu)   PBS_SHA256=e5e828ba2c1a55400cdb07ff5f052908c46d5deb4f62d8b5825f8c24aeffcccb ;;
-    aarch64-unknown-linux-gnu)  PBS_SHA256=6344f857fab8453423cf0471a9bd1e74393947c9e3d59919d78eebc4c7eb8590 ;;
-    x86_64-apple-darwin)        PBS_SHA256=1f152ee0dcc6ac5db93e39d74f0c50e319863d65fea0aab04e2e1b3f49b87f5f ;;
-    aarch64-apple-darwin)       PBS_SHA256=141272e6c6ae945b61fcf4073b7419451f8227187b3667b01ea9ec8993e0d7e9 ;;
+    x86_64-unknown-linux-gnu)   PBS_SHA256=7263ed87e9d2d4c52b01f1ad8cdca315cf859c0848b8ffdcb70de205fa8b0336 ;;
+    aarch64-unknown-linux-gnu)  PBS_SHA256=32b17b62fd621481bb4eab0ed5549cbad43d88780e29fc2c0a222a1722470c4b ;;
+    x86_64-apple-darwin)        PBS_SHA256=de7786cb936a0ae87ee8b89906ba7a5e02b2880d8665f7ba5d3ecff5f5e14d1f ;;
+    aarch64-apple-darwin)       PBS_SHA256=ba814d8d611898aee3c6daed53a535a93345a6b4984ebe62f9aa38646255a5bf ;;
     *)
       echo "No default PBS_SHA256 for PBS_TRIPLE=${PBS_TRIPLE}; set PBS_SHA256 explicitly." >&2
       exit 1
@@ -58,7 +58,7 @@ fi
 
 mkdir -p "${OUT_DIR}" "${STAGING}"
 
-asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only.tar.gz"
+asset="cpython-${PYTHON_VERSION}+${PBS_RELEASE}-${PBS_TRIPLE}-install_only_stripped.tar.gz"
 base="https://github.com/astral-sh/python-build-standalone/releases/download/${PBS_RELEASE}"
 archive="${STAGING}/${asset}"
 
@@ -77,11 +77,11 @@ if [[ ! -x "${PYBIN}" ]]; then
 fi
 
 echo "Installing Python deps from ${REQ_FILE}"
-"${PYBIN}" -m pip install --no-warn-script-location \
+"${PYBIN}" -m pip install --no-warn-script-location --no-cache-dir \
   --timeout 60 --retries 10 \
   -r "${REQ_FILE}"
 
-find "${STAGING}/python" -depth -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+bash "${ROOT}/scripts/prune-python-bundle.sh" "${STAGING}/python"
 
 bundle_tar="${OUT_DIR}/aid-py-bundle.tar.gz"
 bundle_id="${OUT_DIR}/aid-py-bundle.id"

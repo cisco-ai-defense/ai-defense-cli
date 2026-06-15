@@ -39,3 +39,9 @@
 
 - **REQ-06.1** Feature/fix PRs SHOULD update `[Unreleased]` under Keep a Changelog headings.
 - **REQ-06.2** Repo admins restrict **Prepare release** and **Create release tag** to trusted roles.
+
+### REQ-07 — Post-build smoke tests
+
+- **REQ-07.1** After `build-go` and each embed release build, CI MUST run smoke tests: `--version` and `--help` for every command path in `internal/cli.SmokeCommandPaths()`.
+- **REQ-07.2** `scripts/smoke-test-cli.sh` is the release-binary entry point; command paths MUST come from `scripts/list-smoke-commands` (same list as unit tests).
+- **REQ-07.3** `make smoke-test` (stub build) and `make smoke-test-bin BIN=…` MUST be available for local verification; `SMOKE_RUNNER=docker` supports Linux binaries built on non-Linux hosts.

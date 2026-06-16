@@ -1,6 +1,7 @@
 package configcmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -39,73 +40,81 @@ func RunWizard(opts RunOptions) (*capabilities.WizardContext, error) {
 		)
 	}
 
-	tui.PrintBanner(os.Stdout, "Setup", "Configure API credentials and optional integrations.\n↑/↓ move · Enter select · Ctrl+C cancel")
+	tui.PrintBanner(os.Stdout, "Setup", "Configure API credentials and optional integrations.\n↑/↓ move · Enter select · esc back · Ctrl+C cancel")
 
-	profileName, err := resolveWizardProfile(opts)
-	if err != nil {
-		return nil, err
-	}
-	opts.Profile = profileName
-
-	ctx := &capabilities.WizardContext{
-		Selected:   map[string]bool{},
-		Skipped:    map[string]bool{},
-		ConfigPath: appconfig.ProfileConfigPath(profileName),
-	}
-	var existing *appconfig.Manager
-
-	if !opts.Force {
-		if path, ok := appconfig.ExistingConfigPathForProfile(profileName); ok {
-			resume, err := promptContinueOrFresh(path, profileName)
-			if err != nil {
-				return nil, err
-			}
-			if !resume {
-				opts.Force = true
-				ctx.StartFresh = true
-			} else {
-				existing = appconfig.NewManagerFromPath(path)
-				seedFromExisting(ctx, existing)
-			}
-		}
-	}
-
-	if opts.Force && existing == nil {
-		ctx.StartFresh = true
-	}
-
-	completed := ""
-	if existing != nil {
-		completed = completedOnboardStep(existing, ctx)
-	}
-
-	saver := newDraftSaver(&existing)
-	ctx.SaveProgress = func(step string) error {
-		ctx.OnboardStep = step
-		return saver.save(ctx)
-	}
-
-	if err := runCoreForms(ctx, saver, completed); err != nil {
-		return nil, err
-	}
-	if err := runOptionalCapabilities(ctx, saver, completed); err != nil {
-		return nil, err
-	}
-
-	if !stepDone(ctx.OnboardStep, stepComplete) {
-		ctx.OnboardStep = stepComplete
-		if err := saver.save(ctx); err != nil {
+	for {
+		profileName, err := resolveWizardProfile(opts)
+		if err != nil {
 			return nil, err
 		}
-	}
+		opts.Profile = profileName
 
-	if name := profileForWizard(opts); name != "" {
-		if err := appconfig.WriteActiveProfile(name); err != nil {
-			return nil, clierror.Unexpected("set active profile: "+err.Error(), err)
+		ctx := &capabilities.WizardContext{
+			Selected:   map[string]bool{},
+			Skipped:    map[string]bool{},
+			ConfigPath: appconfig.ProfileConfigPath(profileName),
 		}
-	}
+		var existing *appconfig.Manager
 
-	return ctx, nil
+		if !opts.Force {
+			if path, ok := appconfig.ExistingConfigPathForProfile(profileName); ok {
+				resume, err := promptContinueOrFresh(path, profileName)
+				if err != nil {
+					return nil, err
+				}
+				if !resume {
+					opts.Force = true
+					ctx.StartFresh = true
+				} else {
+					existing = appconfig.NewManagerFromPath(path)
+					seedFromExisting(ctx, existing)
+				}
+			}
+		}
+
+		if opts.Force && existing == nil {
+			ctx.StartFresh = true
+		}
+
+		completed := ""
+		if existing != nil {
+			completed = completedOnboardStep(existing, ctx)
+		}
+
+		saver := newDraftSaver(&existing)
+		ctx.SaveProgress = func(step string) error {
+			ctx.OnboardStep = step
+			return saver.save(ctx)
+		}
+
+		if err := runCoreForms(ctx, saver, completed); errors.Is(err, tui.ErrFormBack) {
+			opts.Profile = ""
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+		if err := runOptionalCapabilities(ctx, saver, completed); errors.Is(err, tui.ErrFormBack) {
+			opts.Profile = ""
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+
+		if !stepDone(ctx.OnboardStep, stepComplete) {
+			ctx.OnboardStep = stepComplete
+			if err := saver.save(ctx); err != nil {
+				return nil, err
+			}
+		}
+
+		if name := profileForWizard(opts); name != "" {
+			if err := appconfig.WriteActiveProfile(name); err != nil {
+				return nil, clierror.Unexpected("set active profile: "+err.Error(), err)
+			}
+		}
+
+		return ctx, nil
+	}
 }
 
 type draftSaver struct {
@@ -279,8 +288,11 @@ const (
 
 // runOptionalCapabilities walks each optional capability one at a time.
 func runOptionalCapabilities(ctx *capabilities.WizardContext, saver *draftSaver, completed string) error {
-	for _, cap := range capabilities.All() {
+	caps := capabilities.All()
+	for i := 0; i < len(caps); {
+		cap := caps[i]
 		if stepDone(completed, cap.ID()) {
+			i++
 			continue
 		}
 		id := cap.ID()
@@ -288,9 +300,21 @@ func runOptionalCapabilities(ctx *capabilities.WizardContext, saver *draftSaver,
 			ctx.Selected[id] = true
 			sc, ok := cap.(capabilities.SpecCapability)
 			if !ok {
+				i++
 				continue
 			}
-			if err := sc.ResumeCollect(ctx, completed); err != nil {
+			if err := sc.ResumeCollect(ctx, completed); errors.Is(err, tui.ErrFormBack) {
+				restart, err := wizardBackFrom(ctx, saver, id)
+				if errors.Is(err, tui.ErrFormBack) {
+					return err
+				}
+				if err != nil {
+					return err
+				}
+				completed = ctx.OnboardStep
+				i = restart
+				continue
+			} else if err != nil {
 				return err
 			}
 			if err := cap.Validate(ctx); err != nil {
@@ -301,55 +325,92 @@ func runOptionalCapabilities(ctx *capabilities.WizardContext, saver *draftSaver,
 				return err
 			}
 			completed = ctx.OnboardStep
+			i++
 			continue
 		}
-		if err := promptOptionalCapability(ctx, cap, saver); err != nil {
+		if err := promptOptionalCapability(ctx, cap, saver); errors.Is(err, tui.ErrFormBack) {
+			restart, err := wizardBackFrom(ctx, saver, id)
+			if errors.Is(err, tui.ErrFormBack) {
+				return err
+			}
+			if err != nil {
+				return err
+			}
+			completed = ctx.OnboardStep
+			i = restart
+			continue
+		} else if err != nil {
 			return err
 		}
 		completed = ctx.OnboardStep
+		i++
 	}
 	return nil
 }
 
-func promptOptionalCapability(ctx *capabilities.WizardContext, cap capabilities.Capability, saver *draftSaver) error {
-	choice := capabilitySkip
-	form := tui.NewForm(
-		huh.NewGroup(
-			huh.NewSelect[string]().
-				Title(cap.Label()).
-				Description(cap.Description()).
-				Options(
-					huh.NewOption("Configure", capabilityConfigure),
-					huh.NewOption("Skip for now", capabilitySkip),
-				).
-				Value(&choice),
-		),
-	)
-	if err := tui.Run(form); err != nil {
+func recollectCoreField(ctx *capabilities.WizardContext, saver *draftSaver, key string) error {
+	sec := spec.RequiredSection()
+	values := map[string]string{
+		"api_key":  ctx.APIKey,
+		"base_url": ctx.BaseURL,
+	}
+	after := func(fieldKey string, vals map[string]string) error {
+		ctx.APIKey = vals["api_key"]
+		ctx.BaseURL = vals["base_url"]
+		ctx.OnboardStep = fieldKey
+		return saver.save(ctx)
+	}
+	if err := sec.CollectFieldKey(key, values, after); err != nil {
 		return err
 	}
+	ctx.APIKey = values["api_key"]
+	ctx.BaseURL = values["base_url"]
+	return nil
+}
 
-	switch choice {
-	case capabilitySkip:
-		ctx.Selected[cap.ID()] = false
-		if ctx.Skipped == nil {
-			ctx.Skipped = map[string]bool{}
-		}
-		ctx.Skipped[cap.ID()] = true
-		if ctx.IntegrationValues != nil {
-			delete(ctx.IntegrationValues, cap.ID())
-		}
-	case capabilityConfigure:
-		ctx.Selected[cap.ID()] = true
-		if err := cap.Collect(ctx); err != nil {
+func promptOptionalCapability(ctx *capabilities.WizardContext, cap capabilities.Capability, saver *draftSaver) error {
+	for {
+		choice := capabilitySkip
+		selectField := huh.NewSelect[string]().
+			Title(cap.Label()).
+			Description(cap.Description() + "\nPress esc to go back.").
+			Options(
+				huh.NewOption("Configure", capabilityConfigure),
+				huh.NewOption("Skip for now", capabilitySkip),
+			).
+			Value(&choice)
+		if err := tui.RunFormEscBack(huh.NewGroup(selectField)); errors.Is(err, tui.ErrFormBack) {
+			return tui.ErrFormBack
+		} else if err != nil {
 			return err
 		}
-		if err := cap.Validate(ctx); err != nil {
-			return clierror.Usage(err.Error())
+
+		switch choice {
+		case capabilitySkip:
+			ctx.Selected[cap.ID()] = false
+			if ctx.Skipped == nil {
+				ctx.Skipped = map[string]bool{}
+			}
+			ctx.Skipped[cap.ID()] = true
+			if ctx.IntegrationValues != nil {
+				delete(ctx.IntegrationValues, cap.ID())
+			}
+			ctx.OnboardStep = cap.ID()
+			return saver.save(ctx)
+		case capabilityConfigure:
+			ctx.Selected[cap.ID()] = true
+			if err := cap.Collect(ctx); errors.Is(err, tui.ErrFormBack) {
+				continue
+			} else if err != nil {
+				return err
+			}
+			if err := cap.Validate(ctx); err != nil {
+				return clierror.Usage(err.Error())
+			}
+			ctx.OnboardStep = cap.ID()
+			return saver.save(ctx)
 		}
 	}
-	ctx.OnboardStep = cap.ID()
-	return saver.save(ctx)
 }
 
 func seedFromExisting(ctx *capabilities.WizardContext, m *appconfig.Manager) {

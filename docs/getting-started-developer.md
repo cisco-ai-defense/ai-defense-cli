@@ -16,6 +16,7 @@ Build, run, and extend `aid-cisco-cli` locally. For using released binaries, see
 | `internal/cli/` | Cobra command tree (`modelscan`, `mcpscan`, `aibom`) |
 | `api/` | Public HTTP client (`github.com/cisco-ai-defense/ai-defense-cli/api`) |
 | `internal/cmdutil/` | Shared CLI context and scan flags |
+| `internal/cliexitdoc/` | Exit-code scenario registry; generates client handbook |
 | `internal/embedded/python/` | Embedded CPython bundle (build tag `embed_python`) |
 | `scripts/` | Python bundle build (`build-python-bundle.sh`) |
 
@@ -125,3 +126,26 @@ Command-layer HTTP tests use `internal/testutil/apitest` (httptest with a `*.cis
 - **Python-backed:** pin in `scripts/requirements-bundle.txt`, invoke via `internal/embedded/python`
 
 See [spec 001](specs/001-cli-core/design.md).
+
+---
+
+## 9. Exit-code documentation
+
+Per-command exit scenarios are **not** parsed from godoc comments. Go has no
+standard machine-readable “errors this function returns” annotation (unlike
+OpenAPI response codes). Instead:
+
+1. Add or update rows in **`internal/cliexitdoc/registry.go`** (use
+   `clierror.Code*` constants).
+2. Regenerate the client handbook:
+
+```bash
+make gen-exit-docs
+```
+
+3. CI can run `make check-exit-docs` to fail on a stale handbook.
+
+Runtime behavior lives in command handlers and `internal/clierror.Classify`;
+the registry is the documentation contract. See
+[ADR 0001](adr/0001-exit-docs-from-registry.md) and
+[exit-codes-handbook.md](exit-codes-handbook.md).

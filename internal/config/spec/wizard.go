@@ -122,16 +122,29 @@ func (s SectionSpec) presetByID(id string) WizardPreset {
 }
 
 func (s SectionSpec) collectFields(values map[string]string, keys []string, after WizardFieldCallback, skipField func(string) bool) (map[string]string, error) {
-	for _, key := range keys {
-		if skipField != nil && skipField(key) {
+	forcePrompt := false
+	for i := 0; i < len(keys); {
+		key := keys[i]
+		if skipField != nil && skipField(key) && !forcePrompt {
+			i++
 			continue
 		}
+		forcePrompt = false
 		field := s.FieldByKey(key)
 		if field == nil {
+			i++
 			continue
 		}
 		current := values[key]
 		v, err := field.CollectWizardValue(current)
+		if errors.Is(err, tui.ErrFormBack) {
+			if i == 0 {
+				return values, tui.ErrFormBack
+			}
+			i--
+			forcePrompt = true
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -141,6 +154,7 @@ func (s SectionSpec) collectFields(values map[string]string, keys []string, afte
 				return nil, err
 			}
 		}
+		i++
 	}
 	return values, nil
 }
@@ -183,10 +197,14 @@ func (f FieldSpec) collectWithOptions(current string) (string, error) {
 			Options(opts...).
 			Value(&presetChoice)
 		if f.Description != "" {
-			selectField = selectField.Description(f.Description)
+			selectField = selectField.Description(f.Description + "\nPress esc to go back.")
+		} else {
+			selectField = selectField.Description("Press esc to go back.")
 		}
 
-		if err := tui.RunForm(huh.NewGroup(selectField)); err != nil {
+		if err := tui.RunFormEscBack(huh.NewGroup(selectField)); errors.Is(err, tui.ErrFormBack) {
+			return "", tui.ErrFormBack
+		} else if err != nil {
 			return "", err
 		}
 		choice = presetChoice
@@ -288,11 +306,58 @@ func (f FieldSpec) applyInputValidators(input *huh.Input) *huh.Input {
 }
 
 func (f FieldSpec) collectPlainInput(current string) (string, error) {
-	input := f.newInputField(f.Description, &current)
-	if err := tui.RunForm(huh.NewGroup(input)); err != nil {
+	desc := f.Description
+	if desc != "" {
+		desc += "\n\n"
+	}
+	desc += "Press esc to go back."
+	input := f.newInputField(desc, &current)
+	if err := tui.RunFormEscBack(huh.NewGroup(input)); errors.Is(err, tui.ErrFormBack) {
+		return "", tui.ErrFormBack
+	} else if err != nil {
 		return "", err
 	}
 	return strings.TrimSpace(current), nil
+}
+
+// CollectFieldKey prompts for a single section field (used to revise a prior step).
+func (s SectionSpec) CollectFieldKey(key string, values map[string]string, after WizardFieldCallback) error {
+	field := s.FieldByKey(key)
+	if field == nil {
+		return fmt.Errorf("unknown field %q", key)
+	}
+	for {
+		v, err := field.CollectWizardValue(values[key])
+		if errors.Is(err, tui.ErrFormBack) {
+			prev, ok := s.previousRequiredKey(key)
+			if !ok {
+				return tui.ErrFormBack
+			}
+			key = prev
+			field = s.FieldByKey(key)
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		values[key] = v
+		if after != nil {
+			if err := after(key, values); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func (s SectionSpec) previousRequiredKey(key string) (string, bool) {
+	keys := s.RequiredFieldKeys()
+	for i, k := range keys {
+		if k == key && i > 0 {
+			return keys[i-1], true
+		}
+	}
+	return "", false
 }
 
 func matchOptionValue(options []FieldOption, value string) string {

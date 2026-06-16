@@ -6,13 +6,19 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+
+- **`internal/cliexitdoc`** + **`make gen-exit-docs`** — machine-readable exit-code
+  scenario registry; generates `docs/exit-codes-handbook.md` (see ADR 0001).
+- **`docs/exit-codes-handbook.md`** — per-command exit codes and error scenarios
+  (client/operator handbook); linked from service spec and getting-started guide.
+
 ### Changed
 
 - **`model-scan run`** — removed; exits with usage error (2) directing users to
   `model-scan trigger` (Python `aidcli` migration). Unknown `model-scan`
   subcommands continue to exit 2.
-- **Onboard/config base URL wizard** — custom URL step allows going back to the
-  region preset list with **esc** (fixes stuck navigation on the custom endpoint page).
+- **Onboard/config wizard** — **esc** goes back one step during setup: between core fields, between optional capabilities (AIBOM → HuggingFace → base URL), from custom URL to the region preset list, and from the first core field back to the profile picker. Rewinding clears later capability answers so they are re-prompted.
 
 ## [0.1.3] - 2026-06-15
 

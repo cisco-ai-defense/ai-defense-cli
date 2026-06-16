@@ -46,7 +46,7 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check test-diff-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin
+.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check test-diff-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin gen-exit-docs check-exit-docs
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
@@ -127,6 +127,19 @@ smoke-test-bin: ## Post-build smoke on BIN= path (SMOKE_RUNNER=direct|docker, op
 vet: ## Run go vet
 	@test -f go.mod || (echo "go.mod not found — migrate CLI source first" && exit 1)
 	$(GO) vet ./...
+
+gen-exit-docs: ## Regenerate docs/exit-codes-handbook.md from internal/cliexitdoc
+	@test -f go.mod || (echo "go.mod not found" && exit 1)
+	$(GO) run ./cmd/gen-exit-docs -o docs/exit-codes-handbook.md
+
+check-exit-docs: ## Fail if exit-codes handbook is out of date
+	@test -f go.mod || (echo "go.mod not found" && exit 1)
+	@$(GO) run ./cmd/gen-exit-docs -o docs/exit-codes-handbook.md.generated
+	@diff -u docs/exit-codes-handbook.md docs/exit-codes-handbook.md.generated || \
+		(rm -f docs/exit-codes-handbook.md.generated && \
+		 echo "exit-codes handbook is stale — run: make gen-exit-docs" && exit 1)
+	@rm -f docs/exit-codes-handbook.md.generated
+	@echo "exit-codes handbook is up to date"
 
 fmt: ## gofmt all Go files
 	@gofmt -w $$(find . -name '*.go' -not -path './vendor/*')

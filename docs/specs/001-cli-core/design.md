@@ -26,6 +26,8 @@
 | 10 | Policy fail (`--fail-on`) |
 | 20 | Policy block (`--block-on`) |
 
+Per-command scenarios and remediation: [exit-codes-handbook.md](../../exit-codes-handbook.md).
+
 Scan commands emit raw API JSON on stdout by default (Python CLI parity).
 `--envelope` prints the normalized verdict (`--output json|text`); gating still applies.
 

@@ -110,8 +110,8 @@ This guide walks through two adoption paths: **getting the CLI onto a machine** 
   ```
   Walk through the wizard:
   - [ ] **Profile** — pick default or create a new one (or pass `--profile <name>` to skip the picker)
-  - [ ] **Core** — API key and base URL (regional presets available)
-  - [ ] **Optional capabilities** — HuggingFace token, AIBOM LLM settings, etc. (Configure or Skip each)
+  - [ ] **Core** — API key and base URL (regional presets available). Press **esc** to go back one step (e.g. fix base URL after advancing, or return to profile from API key).
+  - [ ] **Optional capabilities** — HuggingFace token, AIBOM LLM settings, etc. (Configure or Skip each). Press **esc** on a capability prompt to go back (AIBOM → HuggingFace → base URL).
   - [ ] **Custom base URL** — if you pick Custom…, press **esc** to return to the region list
   **While running, point out:**
   - Progress saves after each step — safe to resume if interrupted

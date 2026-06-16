@@ -210,6 +210,8 @@ Use `--llm-provider` to force a provider when the model name is ambiguous.
 
 ## 6. Use exit codes in CI/CD
 
+Full per-command reference: **[exit-codes-handbook.md](exit-codes-handbook.md)**.
+
 Scan commands (`model-scan trigger`/`info`, `mcp-scan run`/`info --scan-id`) print
 **raw API JSON on stdout by default** (same shape as the Python `aidcli`). They
 also set a deterministic exit code so your pipeline can branch on `$?`. Use

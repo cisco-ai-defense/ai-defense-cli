@@ -11,6 +11,8 @@ Spec-driven development for ai-defense-cli. Update specs **before** code changes
 | [005-cli-install](005-cli-install/) | Install command, self-update | Active |
 | [006-cli-config](006-cli-config/) | Config TUI, onboard, capabilities | Active |
 
+Per-command scenarios and remediation: [exit-codes-handbook.md](../../exit-codes-handbook.md) (generated via `make gen-exit-docs`).
+
 Each spec directory should contain:
 
 - `design.md` — structure, data flow, contracts

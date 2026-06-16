@@ -42,4 +42,4 @@ Settings live under `~/.ai-defense/` (default profile: `config.toml`; named prof
 
 0 success; 2 usage; 3 auth; 4 connectivity; 5 scan failed; 10 fail; 20 block.
 
-See [spec 001](../specs/001-cli-core/design.md).
+Per-command scenarios: [exit-codes-handbook.md](../exit-codes-handbook.md). Summary: [spec 001](../specs/001-cli-core/design.md).

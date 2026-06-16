@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	defaultOwner = "cisco-ai-defense"
-	defaultRepo  = "ai-defense-cli"
-	binaryName   = "cisco-aid-cli"
+	defaultOwner     = "cisco-ai-defense"
+	defaultRepo      = "ai-defense-cli"
+	binaryName       = "cisco-aid-cli"
+	legacyBinaryName = "aid-cisco-cli" // release artifacts before the rename (≤ v0.1.3)
 )
 
 // Options controls a self-update install.
@@ -95,9 +96,9 @@ func Check(opts Options, currentVersion string) (*Result, error) {
 		return nil, err
 	}
 	target := strings.TrimPrefix(release.TagName, "v")
-	artifact := artifactName(target, suffix)
-	if !hasAsset(release, artifact) {
-		return nil, fmt.Errorf("release %s has no asset %s", release.TagName, artifact)
+	artifact, err := resolveArtifact(release, target, suffix)
+	if err != nil {
+		return nil, err
 	}
 	installPath := filepath.Join(opts.Prefix, binaryName)
 	return &Result{
@@ -123,7 +124,10 @@ func Install(opts Options) (*Result, error) {
 		return nil, err
 	}
 	target := strings.TrimPrefix(release.TagName, "v")
-	artifact := artifactName(target, suffix)
+	artifact, err := resolveArtifact(release, target, suffix)
+	if err != nil {
+		return nil, err
+	}
 	checksumsURL, err := assetURL(release, "checksums.txt")
 	if err != nil {
 		return nil, err
@@ -176,6 +180,29 @@ func normalizeVersion(v string) string {
 
 func artifactName(version, suffix string) string {
 	return fmt.Sprintf("%s-%s-%s", binaryName, version, suffix)
+}
+
+func legacyArtifactName(version, suffix string) string {
+	return fmt.Sprintf("%s-%s-%s", legacyBinaryName, version, suffix)
+}
+
+// resolveArtifact picks a release asset for the platform, preferring the current
+// binary prefix and falling back to aid-cisco-cli for releases published before
+// the rename (ADR 0002).
+func resolveArtifact(release *ghRelease, version, suffix string) (string, error) {
+	candidates := []string{
+		artifactName(version, suffix),
+		legacyArtifactName(version, suffix),
+	}
+	for _, name := range candidates {
+		if hasAsset(release, name) {
+			return name, nil
+		}
+	}
+	return "", fmt.Errorf(
+		"release %s has no asset %q or %q",
+		release.TagName, candidates[0], candidates[1],
+	)
 }
 
 func fetchRelease(opts Options, version string) (*ghRelease, error) {

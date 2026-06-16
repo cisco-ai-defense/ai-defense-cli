@@ -27,7 +27,7 @@ model-scan, mcp-scan, ai-bom with deterministic exit codes and release binaries.
 - [x] **`model-scan run` deprecation** — usage error (2) directing to `trigger`; unknown `model-scan` subcommands error (2)
 - [x] **Config/onboard wizard esc back-nav** — full step rewind (core fields + capability chain); Ctrl+C still cancels (`RunFormEscBack`)
 - [x] **Exit-code handbook** — `internal/cliexitdoc` registry + `make gen-exit-docs` → `docs/exit-codes-handbook.md`; CI `make check-exit-docs`; contract tests for `model-scan`, `config validate`, `mcp-scan`, `ai-bom`
-- [x] **Binary rename (ADR 0002)** — `aid-cisco-cli` → `cisco-aid-cli` (command + release artifacts)
+- [x] **Binary rename (ADR 0002)** — `aid-cisco-cli` → `cisco-aid-cli` (command + release artifacts); `install --version` falls back to legacy artifact names
 - [x] **Coverage gate (PR #14)** — CI `make test-cover-check` (75% floor on scoped packages); `internal/testutil/apitest`; expanded command HTTP tests. TUI/onboarding packages excluded from gate until unit-tested.
 - [ ] **Diff coverage gate (PR #15, `feature/diff-coverage-gate`)** — PR CI `make test-diff-cover-check` (75% on changed production lines vs merge base); `internal/diffcover`, `cmd/check-diff-coverage`, REQ-09
 - [ ] **CodeQL advanced setup** — `.github/workflows/codeql.yml` (Go + Python); disable repo default setup; **requires org GitHub Code Security license** for SARIF upload on this internal repo

@@ -23,6 +23,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - **Binary renamed** — `aid-cisco-cli` → **`cisco-aid-cli`** (command name, release
   artifacts `cisco-aid-cli-<version>-<os>-<arch>`, install path). Update scripts and
   CI invocations; see [§7.1](getting-started-client.md#71-renamed-from-aid-cisco-cli).
+  `cisco-aid-cli install --version` still downloads releases published as
+  `aid-cisco-cli-*` (through v0.1.3).
 - **`model-scan run`** — removed; exits with usage error (2) directing users to
   `model-scan trigger` (Python `aidcli` migration). Unknown `model-scan`
   subcommands continue to exit 2. Bare `model-scan` (no subcommand) still shows
@@ -32,9 +34,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 ## [0.1.3] - 2026-06-15
 
 ### Added
-- **`cisco-aid-cli install`** — download and verify release binaries from GitHub
+- **`aid-cisco-cli install`** — download and verify release binaries from GitHub
   Releases (`--version`, `--check`, `--prefix`).
-- **`cisco-aid-cli onboard`** and **`cisco-aid-cli config`** — interactive TUI wizard
+- **`aid-cisco-cli onboard`** and **`aid-cisco-cli config`** — interactive TUI wizard
   (Charm `huh`) for core credentials plus optional capability modules (private
   HuggingFace repos, local AIBOM LLM settings).
 - **Onboarding draft saves** — config written after each field; `[onboard].step`
@@ -101,7 +103,7 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - **Release on merge** — auto-tag when a prepare PR merges to `main` or `release/**`.
 - **Create release tag** workflow (`workflow_dispatch`) — dry-run or manual tag escape hatch.
 - **Semantic versioning** — `VERSION` file, `make version`, versioned release binaries
-  (`cisco-aid-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
+  (`aid-cisco-cli-<version>-<os>-<arch>`), `checksums.txt`, and `manifest.json`.
 - **GitHub Release workflow** — push tag `v*` to publish versioned downloads.
 - **Public repository** with Vault-inspired layout (`api/`, `internal/cli/`).
 - **Multi-platform CI** — Linux and macOS embed builds on every PR; versioned artifacts

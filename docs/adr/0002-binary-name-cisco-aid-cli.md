@@ -21,14 +21,15 @@ The GitHub repository (`ai-defense-cli`) and Go module path are unchanged; only 
 4. **Spec REQ-01** updated accordingly.
 
 No symlink or alias for `aid-cisco-cli` in v1 of this rename — users update scripts
-and PATH once. Published releases before this change remain under the old artifact
-names; `install` from those builds cannot self-update across the rename boundary
-without a manual download.
+and PATH once. Published releases before the rename use `aid-cisco-cli-*` artifacts;
+`cisco-aid-cli install --version` resolves either prefix. Old `aid-cisco-cli install`
+cannot self-update across the rename boundary without a manual download.
 
 ## Consequences
 
 - Breaking change for CI, docs, and operator scripts using `aid-cisco-cli`.
-- `internal/selfupdate` artifact matching uses the new basename.
+- `internal/selfupdate` artifact matching prefers `cisco-aid-cli-*`, falls back to
+  `aid-cisco-cli-*` for pinned installs of pre-rename releases.
 - Migration note in `docs/getting-started-client.md` §7.1.
 
 ## Alternatives considered

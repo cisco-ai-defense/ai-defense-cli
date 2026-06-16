@@ -6,7 +6,8 @@ for release builds.
 
 ## Supported platforms
 
-Release binaries are named `cisco-aid-cli-<version>-<os>-<arch>`. For version `0.1.0`:
+Release binaries are named `cisco-aid-cli-<version>-<os>-<arch>` (releases before
+the rename used `aid-cisco-cli-<version>-<os>-<arch>`). For version `0.1.0`:
 
 | OS | Architecture | Artifact name |
 |----|--------------|---------------|

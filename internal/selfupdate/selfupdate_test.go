@@ -43,6 +43,99 @@ func TestVerifySHA256(t *testing.T) {
 	}
 }
 
+func TestResolveArtifactPrefersCurrentPrefix(t *testing.T) {
+	release := &ghRelease{
+		TagName: "v1.0.0",
+		Assets: []releaseAsset{
+			{Name: "cisco-aid-cli-1.0.0-linux-amd64", BrowserDownloadURL: "https://github.com/o/r/releases/download/v1.0.0/cisco-aid-cli-1.0.0-linux-amd64"},
+			{Name: "aid-cisco-cli-1.0.0-linux-amd64", BrowserDownloadURL: "https://github.com/o/r/releases/download/v1.0.0/aid-cisco-cli-1.0.0-linux-amd64"},
+		},
+	}
+	got, err := resolveArtifact(release, "1.0.0", "linux-amd64")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "cisco-aid-cli-1.0.0-linux-amd64" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestResolveArtifactLegacyFallback(t *testing.T) {
+	const version = "0.1.3"
+	legacy := legacyArtifactName(version, "linux-amd64")
+	release := &ghRelease{
+		TagName: "v" + version,
+		Assets: []releaseAsset{
+			{Name: "checksums.txt", BrowserDownloadURL: "https://github.com/o/r/releases/download/v0.1.3/checksums.txt"},
+			{Name: legacy, BrowserDownloadURL: "https://github.com/o/r/releases/download/v0.1.3/" + legacy},
+		},
+	}
+	got, err := resolveArtifact(release, version, "linux-amd64")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != legacy {
+		t.Fatalf("got %q, want %q", got, legacy)
+	}
+}
+
+func TestInstallLegacyArtifactFromRelease(t *testing.T) {
+	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
+		t.Skip("install integration test runs on linux-amd64 only")
+	}
+
+	const version = "0.1.2"
+	legacy := legacyArtifactName(version, "linux-amd64")
+	payload := []byte("#!/bin/sh\necho legacy\n")
+	sum := sha256Hex(payload)
+
+	mux := http.NewServeMux()
+	assetHost := ""
+	mux.HandleFunc("/repos/o/r/releases/tags/v0.1.2", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"tag_name": "v0.1.2",
+			"assets": [
+				{"name": "checksums.txt", "browser_download_url": "http://` + assetHost + `/checksums.txt"},
+				{"name": "` + legacy + `", "browser_download_url": "http://` + assetHost + `/bin"}
+			]
+		}`))
+	})
+	mux.HandleFunc("/checksums.txt", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(sum + "  " + legacy + "\n"))
+	})
+	mux.HandleFunc("/bin", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write(payload)
+	})
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	assetHost = srv.Listener.Addr().String()
+
+	transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		req.URL.Scheme = "http"
+		req.URL.Host = srv.Listener.Addr().String()
+		if req.URL.Path == "/repos/cisco-ai-defense/ai-defense-cli/releases/tags/v0.1.2" {
+			req.URL.Path = "/repos/o/r/releases/tags/v0.1.2"
+		}
+		return http.DefaultTransport.RoundTrip(req)
+	})
+	client := &http.Client{Transport: transport}
+
+	dir := t.TempDir()
+	res, err := Install(Options{
+		Version: version,
+		Prefix:  dir,
+		Client:  client,
+	})
+	if err != nil {
+		t.Fatalf("Install: %v", err)
+	}
+	if res.Artifact != legacy {
+		t.Fatalf("artifact %q, want %q", res.Artifact, legacy)
+	}
+}
+
 func TestInstallFromRelease(t *testing.T) {
 	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
 		t.Skip("install integration test runs on linux-amd64 only")

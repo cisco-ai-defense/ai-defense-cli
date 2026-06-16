@@ -152,6 +152,7 @@ func mcpScanScenarios() CommandGroup {
 }
 func ModelScanRows() []MultiRow {
 	return []MultiRow{
+		{Cols: []string{"`(parent)`", "No subcommand — show help", "0", "Intentional; unknown subcommand exits 2"}},
 		{Cols: []string{"`run`", "Deprecated", "2", "Use `trigger`"}},
 		{Cols: []string{"`trigger`", "Success, policy pass", "0", "Raw API JSON on stdout"}},
 		{Cols: []string{"`trigger`", "Missing `file-path` / `repo-url` / both set", "2", ""}},

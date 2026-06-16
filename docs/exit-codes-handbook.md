@@ -164,6 +164,7 @@ Report findings without failing the step: `--fail-on none --block-on none`.
 
 | Command | Scenario | Code | Notes |
 |----------|----------|----------|----------|
+| `(parent)` | No subcommand — show help | 0 | Intentional; unknown subcommand exits 2 |
 | `run` | Deprecated | 2 | Use `trigger` |
 | `trigger` | Success, policy pass | 0 | Raw API JSON on stdout |
 | `trigger` | Missing `file-path` / `repo-url` / both set | 2 |  |

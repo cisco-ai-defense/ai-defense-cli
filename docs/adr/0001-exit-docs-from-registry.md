@@ -42,8 +42,9 @@ documented codes are allowed contract values.
 ## Consequences
 
 - New commands or exit paths: add registry rows + run `make gen-exit-docs`.
-- Phase 2 (optional): table-driven exit tests that import registry rows; AST
-  check that explicit `clierror` calls in a file are documented.
+- Phase 2 (optional): AST check that explicit `clierror` calls in a file are
+  documented. Table-driven contract tests import registry rows for
+  `model-scan` and `config validate` (`internal/cli/exit_contract_test.go`).
 
 ## References
 

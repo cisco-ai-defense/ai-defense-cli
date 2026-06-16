@@ -53,7 +53,7 @@ func RunEditHub() (*capabilities.WizardContext, error) {
 		return saveConfigFromContext(ctx, &existing)
 	}
 
-	tui.PrintBanner(os.Stdout, "Configuration", "Edit saved settings.\n↑/↓ move · Enter select · Ctrl+C cancel")
+	tui.PrintBanner(os.Stdout, "Configuration", "Edit saved settings.\n↑/↓ move · Enter select · esc back · Ctrl+C cancel")
 
 	choice := editActionCore
 	for choice != editActionDone {

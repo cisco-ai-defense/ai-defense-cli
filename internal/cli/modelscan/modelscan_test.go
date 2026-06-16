@@ -12,7 +12,7 @@ func TestNewDeprecatedScanCmd_Structure(t *testing.T) {
 	if alias.Use != "scan" {
 		t.Fatalf("Use = %q, want scan", alias.Use)
 	}
-	if len(alias.Commands()) != 3 {
-		t.Fatalf("expected 3 subcommands, got %d", len(alias.Commands()))
+	if len(alias.Commands()) != 4 {
+		t.Fatalf("expected 4 subcommands, got %d", len(alias.Commands()))
 	}
 }

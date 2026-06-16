@@ -19,10 +19,18 @@ func NewCmd(cli *cmdutil.CLI) *cobra.Command {
 Available commands:
   trigger   Submit a model to the cloud for server-side scanning
   list      List previous scans with pagination
-  info      Get details of a specific scan`,
+  info      Get details of a specific scan
+
+Deprecated:
+  run       Use trigger instead (exits with usage error)`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
 	}
 
 	cmd.AddCommand(newTriggerCmd(cli))
+	cmd.AddCommand(newDeprecatedRunCmd())
 	cmd.AddCommand(newListCmd(cli))
 	cmd.AddCommand(newInfoCmd(cli))
 
@@ -39,9 +47,14 @@ func NewDeprecatedScanCmd(cli *cmdutil.CLI) *cobra.Command {
 
 Deprecated: use "model-scan" instead.`,
 		Hidden: true,
+		Args:   cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
 	}
 
 	alias.AddCommand(newTriggerCmd(cli))
+	alias.AddCommand(newDeprecatedRunCmd())
 	alias.AddCommand(newListCmd(cli))
 	alias.AddCommand(newInfoCmd(cli))
 	alias.PersistentPreRun = func(cmd *cobra.Command, args []string) {

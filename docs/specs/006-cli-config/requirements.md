@@ -41,7 +41,7 @@
 
 ### REQ-04 — Modular capability hub
 
-- **REQ-04.1** Core (always): `api_key`, `base_url` (preset or custom)
+- **REQ-04.1** Core (always): `api_key`, `base_url` (preset or custom). Custom base URL flow must allow returning to the region preset list (back from custom URL entry).
 - **REQ-04.2** Optional capabilities presented **one at a time** (v1):
   - `huggingface` — private HF repos → `[default.huggingface]`
   - `aibom` — local `ai-bom generate`/`run` → `[default.aibom]`

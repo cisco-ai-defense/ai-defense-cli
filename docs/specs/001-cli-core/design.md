@@ -9,7 +9,7 @@
 
 | Group | Purpose |
 |-------|---------|
-| `model-scan` | Trigger and retrieve AI/ML model security scans |
+| `model-scan` | Trigger and retrieve AI/ML model security scans (`trigger`, `list`, `info`; `run` deprecated — usage error) |
 | `mcp-scan` | Register and scan MCP servers |
 | `ai-bom` | Generate and manage AI Bill of Materials (local analyzer via embedded Python) |
 

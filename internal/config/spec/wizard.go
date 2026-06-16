@@ -9,7 +9,11 @@ import (
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
-const wizardCustomValue = "__custom__"
+const (
+	wizardCustomValue    = "__custom__"
+	wizardBackToPresets  = "__back__"
+	wizardEnterCustomURL = "__enter__"
+)
 
 // WizardFieldCallback runs after each field is collected (onboarding draft save).
 type WizardFieldCallback func(fieldKey string, values map[string]string) error
@@ -164,36 +168,95 @@ func (f FieldSpec) collectWithOptions(current string) (string, error) {
 		opts = append(opts, huh.NewOption("Custom…", wizardCustomValue))
 	}
 
-	selectField := huh.NewSelect[string]().
-		Title(f.Title).
-		Options(opts...).
-		Value(&choice)
-	if f.Description != "" {
-		selectField = selectField.Description(f.Description)
-	}
-
-	groups := []*huh.Group{huh.NewGroup(selectField)}
-
 	customURL := strings.TrimSpace(current)
 	if matchOptionValue(f.Options, customURL) != "" {
 		customURL = ""
 	}
-	if f.AllowCustom {
-		customInput := f.newInputField("Enter a *.cisco.com AI Defense API endpoint", &customURL)
-		customInput = customInput.Placeholder("https://us.api.aidefense.security.cisco.com")
-		groups = append(groups, huh.NewGroup(customInput).WithHideFunc(func() bool {
-			return choice != wizardCustomValue
-		}))
-	}
 
-	if err := tui.RunForm(groups...); err != nil {
-		return "", err
-	}
+	for {
+		var presetChoice string
+		if choice != "" {
+			presetChoice = choice
+		}
 
-	if choice != wizardCustomValue {
-		return choice, nil
+		selectField := huh.NewSelect[string]().
+			Title(f.Title).
+			Options(opts...).
+			Value(&presetChoice)
+		if f.Description != "" {
+			selectField = selectField.Description(f.Description)
+		}
+
+		if err := tui.RunForm(huh.NewGroup(selectField)); err != nil {
+			return "", err
+		}
+		choice = presetChoice
+
+		if choice != wizardCustomValue {
+			return choice, nil
+		}
+
+		url, back, err := f.collectCustomOptionValue(customURL)
+		if err != nil {
+			return "", err
+		}
+		if back {
+			choice = ""
+			continue
+		}
+		return url, nil
 	}
-	return strings.TrimSpace(customURL), nil
+}
+
+// collectCustomOptionValue prompts for a custom base URL. The flow uses two fields
+// in one group so huh enables Prev from the URL input back to the action select.
+// URL validation runs after submit so Prev is not blocked by empty/invalid input.
+func (f FieldSpec) collectCustomOptionValue(seed string) (url string, back bool, err error) {
+	customURL := strings.TrimSpace(seed)
+	var customAction string = wizardEnterCustomURL
+	validationHint := ""
+
+	for {
+		actionField := huh.NewSelect[string]().
+			Title(f.Title).
+			Options(
+				huh.NewOption("Enter custom URL", wizardEnterCustomURL),
+				huh.NewOption("← Back to region list", wizardBackToPresets),
+			).
+			Value(&customAction)
+
+		desc := "Enter a *.cisco.com AI Defense API endpoint"
+		if validationHint != "" {
+			desc = validationHint + "\n\n" + desc
+		}
+		customInput := huh.NewInput().
+			Title("Custom base URL").
+			Description(desc).
+			Value(&customURL).
+			Placeholder("https://us.api.aidefense.security.cisco.com")
+
+		if err := tui.RunForm(huh.NewGroup(actionField, customInput)); err != nil {
+			return "", false, err
+		}
+		if customAction == wizardBackToPresets {
+			return "", true, nil
+		}
+
+		trimmed := strings.TrimSpace(customURL)
+		if err := validateWizardBaseURL(f.Title, trimmed); err != nil {
+			validationHint = err.Error()
+			customAction = wizardEnterCustomURL
+			continue
+		}
+		return trimmed, false, nil
+	}
+}
+
+func validateWizardBaseURL(title, value string) error {
+	if strings.TrimSpace(value) == "" {
+		return fmt.Errorf("%s is required", title)
+	}
+	return ValidateBaseURLHost(value)
 }
 
 func (f FieldSpec) newInputField(description string, value *string) *huh.Input {

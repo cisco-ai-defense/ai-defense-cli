@@ -41,6 +41,18 @@ func TestRunUnknownFlagIsUsageError(t *testing.T) {
 	}
 }
 
+func TestRunModelScanUnknownSubcommandIsUsageError(t *testing.T) {
+	if code := runWithArgs(t, "model-scan", "definitely-not-a-subcommand"); code != clierror.CodeUsage {
+		t.Fatalf("unknown model-scan subcommand exit code = %d, want %d", code, clierror.CodeUsage)
+	}
+}
+
+func TestRunModelScanRunDeprecatedIsUsageError(t *testing.T) {
+	if code := runWithArgs(t, "model-scan", "run"); code != clierror.CodeUsage {
+		t.Fatalf("deprecated model-scan run exit code = %d, want %d", code, clierror.CodeUsage)
+	}
+}
+
 func TestIsUsageError(t *testing.T) {
 	cases := map[string]bool{
 		"unknown command \"x\"":          true,

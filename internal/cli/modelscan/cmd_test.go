@@ -104,3 +104,31 @@ func TestTriggerCmd_InvalidThreshold(t *testing.T) {
 		t.Fatalf("exit code = %d, want %d", code, clierror.CodeUsage)
 	}
 }
+
+func TestRunCmd_DeprecatedUsageError(t *testing.T) {
+	root := NewCmd(testCLI(t))
+	err := execCmd(t, root, "run")
+	if err == nil {
+		t.Fatal("expected usage error")
+	}
+	if code := clierror.Classify(err).Code; code != clierror.CodeUsage {
+		t.Fatalf("exit code = %d, want %d", code, clierror.CodeUsage)
+	}
+	if !strings.Contains(err.Error(), "deprecated") {
+		t.Fatalf("expected deprecation message, got %q", err.Error())
+	}
+	if !strings.Contains(err.Error(), "trigger") {
+		t.Fatalf("expected trigger hint, got %q", err.Error())
+	}
+}
+
+func TestModelScanCmd_UnknownSubcommand(t *testing.T) {
+	root := NewCmd(testCLI(t))
+	err := execCmd(t, root, "definitely-not-a-subcommand")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "unknown command") {
+		t.Fatalf("expected unknown command error, got %q", err.Error())
+	}
+}

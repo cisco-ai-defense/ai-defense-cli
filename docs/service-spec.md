@@ -27,6 +27,7 @@ Commands:
     profile           List, switch, create, and delete named profiles
   model-scan          Scan AI/ML models for security vulnerabilities
     trigger           Submit a model file or repo URL for cloud scanning
+    run               Deprecated (usage error — use trigger)
     list              List previous scans
     info              Get scan details by ID
 

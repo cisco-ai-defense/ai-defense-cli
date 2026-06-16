@@ -44,8 +44,8 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: make build-go test-cover-check vet
-        run: make build-go test-cover-check vet
+      - name: make build-go test-cover-check vet check-exit-docs
+        run: make build-go test-cover-check vet check-exit-docs
 
       - name: Diff coverage on changed lines (PRs only)
         if: github.event_name == 'pull_request'

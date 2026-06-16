@@ -1,6 +1,6 @@
 # AI Defense CLI — Project Context
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## Purpose
 
@@ -24,7 +24,8 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - [x] CLI output parity (`fix/cli-output-parity`): raw API JSON default; model-scan list/info pass-through
 - [x] **AIFW-24339 (`feature/AIFW-24339`)** — `install` self-update; onboard/config TUI (Typer/Rich theme); `~/.ai-defense/` config home; named profiles (`config profile`, `--profile`); local `make bundle` cache
 - [x] **`model-scan run` deprecation** — usage error (2) directing to `trigger`; unknown `model-scan` subcommands error (2)
-- [x] **Onboard base URL wizard** — back navigation from custom URL step to region presets
+- [x] **Config/onboard wizard esc back-nav** — full step rewind (core fields + capability chain); Ctrl+C still cancels (`RunFormEscBack`)
+- [x] **Exit-code handbook** — `internal/cliexitdoc` registry + `make gen-exit-docs` → `docs/exit-codes-handbook.md`; CI `make check-exit-docs`
 - [x] **Coverage gate (PR #14)** — CI `make test-cover-check` (75% floor on scoped packages); `internal/testutil/apitest`; expanded command HTTP tests. TUI/onboarding packages excluded from gate until unit-tested.
 - [ ] **Diff coverage gate (PR #15, `feature/diff-coverage-gate`)** — PR CI `make test-diff-cover-check` (75% on changed production lines vs merge base); `internal/diffcover`, `cmd/check-diff-coverage`, REQ-09
 - [ ] **CodeQL advanced setup** — `.github/workflows/codeql.yml` (Go + Python); disable repo default setup; **requires org GitHub Code Security license** for SARIF upload on this internal repo
@@ -35,6 +36,7 @@ Public OSS home for `aid-cisco-cli`: model-scan, mcp-scan, ai-bom with determini
 - macOS Developer ID signing + notarization in release CI
 - GitHub Actions SHA pinning (org policy)
 - Unit tests for TUI/onboarding packages currently excluded from coverage gate (`install`, `onboard`, `config`, `internal/tui`, `internal/selfupdate`, `internal/config/spec`)
+- Exit registry phase-2: AST sync / table-driven tests importing `cliexitdoc` rows (ADR 0001)
 - CI `fetch-depth: 0` on all events (needed for PR diff coverage merge-base; minor checkout cost on main pushes)
 
 ## Layout
@@ -45,6 +47,7 @@ api/                      # public HTTP client
 internal/cli/             # Cobra commands
 internal/cmdutil/         # shared CLI context (avoids import cycle)
 internal/clierror/        # exit codes
+internal/cliexitdoc/      # exit-code handbook registry + generator tests
 internal/verdict/         # scan envelope
 internal/config/          # flags > env > TOML; paths, write, redact
 internal/config/spec/     # embedded config.spec.yaml

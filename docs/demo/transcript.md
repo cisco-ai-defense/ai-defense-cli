@@ -112,6 +112,7 @@ This guide walks through two adoption paths: **getting the CLI onto a machine** 
   - [ ] **Profile** — pick default or create a new one (or pass `--profile <name>` to skip the picker)
   - [ ] **Core** — API key and base URL (regional presets available)
   - [ ] **Optional capabilities** — HuggingFace token, AIBOM LLM settings, etc. (Configure or Skip each)
+  - [ ] **Custom base URL** — if you pick Custom…, press **esc** to return to the region list
   **While running, point out:**
   - Progress saves after each step — safe to resume if interrupted
   - Legacy `aidcli` paths (project `.config.toml`, old XDG location) are read for migration when saving to the new layout

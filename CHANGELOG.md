@@ -6,8 +6,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
-### Added
+## [0.1.4] - 2026-06-16
 
+### Added
 - **`internal/cliexitdoc`** + **`make gen-exit-docs`** — machine-readable exit-code
   scenario registry; generates `docs/exit-codes-handbook.md` (see ADR 0001).
 - **`docs/exit-codes-handbook.md`** — per-command exit codes and error scenarios
@@ -19,7 +20,6 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   from `internal/cliexitdoc/registry.go`.
 
 ### Changed
-
 - **Binary renamed** — `aid-cisco-cli` → **`cisco-aid-cli`** (command name, release
   artifacts `cisco-aid-cli-<version>-<os>-<arch>`, install path). Update scripts and
   CI invocations; see [§7.1](getting-started-client.md#71-renamed-from-aid-cisco-cli).

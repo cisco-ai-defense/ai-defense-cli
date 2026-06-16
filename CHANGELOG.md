@@ -12,13 +12,19 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   scenario registry; generates `docs/exit-codes-handbook.md` (see ADR 0001).
 - **`docs/exit-codes-handbook.md`** — per-command exit codes and error scenarios
   (client/operator handbook); linked from service spec and getting-started guide.
+- **Exit contract tests** — `internal/cli/exit_contract_test.go` asserts CLI exit
+  codes against the registry for `model-scan`, `config validate`, `mcp-scan`, and
+  `ai-bom`.
+- **CI** — `make check-exit-docs` in the test job so the handbook cannot drift
+  from `internal/cliexitdoc/registry.go`.
 
 ### Changed
 
 - **`model-scan run`** — removed; exits with usage error (2) directing users to
   `model-scan trigger` (Python `aidcli` migration). Unknown `model-scan`
-  subcommands continue to exit 2.
-- **Onboard/config wizard** — **esc** goes back one step during setup: between core fields, between optional capabilities (AIBOM → HuggingFace → base URL), from custom URL to the region preset list, and from the first core field back to the profile picker. Rewinding clears later capability answers so they are re-prompted.
+  subcommands continue to exit 2. Bare `model-scan` (no subcommand) still shows
+  help and exits 0.
+- **Onboard/config wizard** — **esc** goes back one step during setup: between core fields, between optional capabilities (AIBOM → HuggingFace → base URL), from custom URL to the region preset list, and from the first core field back to the profile picker. Rewinding clears later capability answers so they are re-prompted. **Ctrl+C** still cancels the wizard during esc-back prompts (exit 1, `Cancelled.`).
 
 ## [0.1.3] - 2026-06-15
 

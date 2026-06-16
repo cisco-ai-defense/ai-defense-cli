@@ -138,3 +138,27 @@ func TestExitContract_ModelScanUnknownSubcommand(t *testing.T) {
 		t.Fatalf("unknown subcommand exit = %d, want %d", code, clierror.CodeUsage)
 	}
 }
+
+func TestExitContract_McpScanRegister(t *testing.T) {
+	rows := cliexitdoc.McpScanContract()
+	t.Setenv("AI_DEFENSE_API_KEY", "test-key")
+	t.Setenv("AI_DEFENSE_BASE_URL", "https://test.cisco.com")
+	want, ok := cliexitdoc.ContractCode(rows, "Missing URL")
+	if !ok {
+		t.Fatal("registry missing mcp-scan register usage row")
+	}
+	if code := runWithArgs(t, "mcp-scan", "register", "--name", "srv"); code != want {
+		t.Fatalf("exit = %d, want %d", code, want)
+	}
+}
+
+func TestExitContract_AibomGenerate(t *testing.T) {
+	rows := cliexitdoc.AibomContract()
+	want, ok := cliexitdoc.ContractCode(rows, "Missing")
+	if !ok {
+		t.Fatal("registry missing ai-bom generate usage row")
+	}
+	if code := runWithArgs(t, "ai-bom", "generate"); code != want {
+		t.Fatalf("exit = %d, want %d", code, want)
+	}
+}

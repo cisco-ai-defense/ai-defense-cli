@@ -1,9 +1,8 @@
 package configcmd
 
 import (
-	"errors"
-
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/config/capabilities"
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/clierror"
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/tui"
 )
 
@@ -36,7 +35,7 @@ func wizardBackFrom(ctx *capabilities.WizardContext, saver *draftSaver, fromStep
 		}
 		idx := capabilityIndex(prev)
 		if idx < 0 {
-			return -1, errors.New("unknown capability step: " + prev)
+			return -1, clierror.Unexpected("unknown capability step: "+prev, nil)
 		}
 		return idx, nil
 	}

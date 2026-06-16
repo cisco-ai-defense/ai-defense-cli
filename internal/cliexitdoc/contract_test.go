@@ -52,3 +52,17 @@ func TestModelScanContractIncludesBareParent(t *testing.T) {
 		t.Fatalf("bare model-scan row: (%d, %v)", code, ok)
 	}
 }
+
+func TestMcpScanContractNonEmpty(t *testing.T) {
+	t.Parallel()
+	if len(McpScanContract()) < 5 {
+		t.Fatalf("expected several mcp-scan contract rows, got %d", len(McpScanContract()))
+	}
+}
+
+func TestAibomContractNonEmpty(t *testing.T) {
+	t.Parallel()
+	if len(AibomContract()) < 5 {
+		t.Fatalf("expected several ai-bom contract rows, got %d", len(AibomContract()))
+	}
+}

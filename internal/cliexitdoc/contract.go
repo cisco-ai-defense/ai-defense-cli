@@ -33,8 +33,22 @@ func ConfigValidateContract() []ScenarioRow {
 
 // ModelScanContract returns model-scan rows with a single documented code.
 func ModelScanContract() []ScenarioRow {
+	return multiRowContract(ModelScanRows())
+}
+
+// McpScanContract returns mcp-scan rows with a single documented code.
+func McpScanContract() []ScenarioRow {
+	return multiRowContract(McpScanRows())
+}
+
+// AibomContract returns ai-bom rows with a single documented code.
+func AibomContract() []ScenarioRow {
+	return multiRowContract(AibomRows())
+}
+
+func multiRowContract(rows []MultiRow) []ScenarioRow {
 	var out []ScenarioRow
-	for _, r := range ModelScanRows() {
+	for _, r := range rows {
 		if len(r.Cols) < 3 {
 			continue
 		}

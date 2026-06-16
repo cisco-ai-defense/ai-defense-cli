@@ -31,3 +31,11 @@ func TestNormalizeFormErrPassthrough(t *testing.T) {
 		t.Fatalf("expected passthrough")
 	}
 }
+
+func TestNormalizeFormErrBack(t *testing.T) {
+	t.Parallel()
+	err := NormalizeFormErr(ErrFormBack)
+	if !errors.Is(err, ErrFormBack) {
+		t.Fatalf("expected ErrFormBack passthrough, got %v", err)
+	}
+}

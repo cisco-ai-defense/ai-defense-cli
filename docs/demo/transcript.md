@@ -161,6 +161,10 @@ This guide walks through two adoption paths: **getting the CLI onto a machine** 
     ```bash
     aid-cisco-cli --profile default config show --plain
     ```
+  - [ ] Delete a demo profile (not `default`):
+    ```bash
+    aid-cisco-cli config profile delete demo-staging
+    ```
   Profiles live as separate files under `~/.ai-defense/profiles/`. Select via `--profile`, `AI_DEFENSE_PROFILE`, or `config profile use`.
 - [ ] **Step 5 — Config precedence and CI**
   Resolution order for settings like `api_key` and `base_url`:
@@ -223,6 +227,7 @@ aid-cisco-cli config edit
 aid-cisco-cli config profile list
 aid-cisco-cli config profile create <name>
 aid-cisco-cli config profile use <name>
+aid-cisco-cli config profile delete <name>
 aid-cisco-cli --profile <name> <command>
 ```
 

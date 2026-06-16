@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"errors"
 	"os"
 	"sync"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -36,6 +38,25 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 // RunForm executes a styled form.
 func RunForm(groups ...*huh.Group) error {
 	return Run(NewForm(groups...))
+}
+
+// RunFormEscBack runs a form where esc returns ErrFormBack (previous wizard step).
+// Ctrl+C still cancels the whole wizard via huh.ErrUserAborted.
+func RunFormEscBack(groups ...*huh.Group) error {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "back"),
+	)
+	form := NewForm(groups...).WithKeyMap(km)
+	err := form.Run()
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, huh.ErrUserAborted) {
+		return ErrFormBack
+	}
+	return err
 }
 
 // Run executes a styled form and normalizes cancellation errors.

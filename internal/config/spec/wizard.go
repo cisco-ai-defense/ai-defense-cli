@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,9 +11,7 @@ import (
 )
 
 const (
-	wizardCustomValue    = "__custom__"
-	wizardBackToPresets  = "__back__"
-	wizardEnterCustomURL = "__enter__"
+	wizardCustomValue = "__custom__"
 )
 
 // WizardFieldCallback runs after each field is collected (onboarding draft save).
@@ -208,24 +207,14 @@ func (f FieldSpec) collectWithOptions(current string) (string, error) {
 	}
 }
 
-// collectCustomOptionValue prompts for a custom base URL. The flow uses two fields
-// in one group so huh enables Prev from the URL input back to the action select.
-// URL validation runs after submit so Prev is not blocked by empty/invalid input.
+// collectCustomOptionValue prompts for a custom base URL. Press esc to return to
+// the region preset list; enter submits (validation runs after submit).
 func (f FieldSpec) collectCustomOptionValue(seed string) (url string, back bool, err error) {
 	customURL := strings.TrimSpace(seed)
-	var customAction string = wizardEnterCustomURL
 	validationHint := ""
 
 	for {
-		actionField := huh.NewSelect[string]().
-			Title(f.Title).
-			Options(
-				huh.NewOption("Enter custom URL", wizardEnterCustomURL),
-				huh.NewOption("← Back to region list", wizardBackToPresets),
-			).
-			Value(&customAction)
-
-		desc := "Enter a *.cisco.com AI Defense API endpoint"
+		desc := "Enter a *.cisco.com AI Defense API endpoint. Press esc to go back."
 		if validationHint != "" {
 			desc = validationHint + "\n\n" + desc
 		}
@@ -235,17 +224,17 @@ func (f FieldSpec) collectCustomOptionValue(seed string) (url string, back bool,
 			Value(&customURL).
 			Placeholder("https://us.api.aidefense.security.cisco.com")
 
-		if err := tui.RunForm(huh.NewGroup(actionField, customInput)); err != nil {
-			return "", false, err
-		}
-		if customAction == wizardBackToPresets {
+		err := tui.RunFormEscBack(huh.NewGroup(customInput))
+		if errors.Is(err, tui.ErrFormBack) {
 			return "", true, nil
+		}
+		if err != nil {
+			return "", false, err
 		}
 
 		trimmed := strings.TrimSpace(customURL)
 		if err := validateWizardBaseURL(f.Title, trimmed); err != nil {
 			validationHint = err.Error()
-			customAction = wizardEnterCustomURL
 			continue
 		}
 		return trimmed, false, nil

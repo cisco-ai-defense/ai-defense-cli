@@ -12,7 +12,7 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   `model-scan trigger` (Python `aidcli` migration). Unknown `model-scan`
   subcommands continue to exit 2.
 - **Onboard/config base URL wizard** — custom URL step allows going back to the
-  region preset list (fixes stuck navigation on the custom endpoint page).
+  region preset list with **esc** (fixes stuck navigation on the custom endpoint page).
 
 ## [0.1.3] - 2026-06-15
 

@@ -28,8 +28,8 @@ func newListCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Retrieve a paginated list of AI Bills of Materials.
 
 Examples:
-  aid-cisco-cli ai-bom list
-  aid-cisco-cli ai-bom list --status BOM_STATUS_COMPLETED --limit 20`,
+  cisco-aid-cli ai-bom list
+  cisco-aid-cli ai-bom list --status BOM_STATUS_COMPLETED --limit 20`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

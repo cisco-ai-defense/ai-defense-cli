@@ -22,8 +22,8 @@ func TestPlatformSupported(t *testing.T) {
 }
 
 func TestParseChecksumLine(t *testing.T) {
-	checksums := "abc123  aid-cisco-cli-1.0.0-linux-amd64\n"
-	got, err := parseChecksumLine(checksums, "aid-cisco-cli-1.0.0-linux-amd64")
+	checksums := "abc123  cisco-aid-cli-1.0.0-linux-amd64\n"
+	got, err := parseChecksumLine(checksums, "cisco-aid-cli-1.0.0-linux-amd64")
 	if err != nil {
 		t.Fatal(err)
 	}

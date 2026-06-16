@@ -1,6 +1,6 @@
 # ai-defense-cli
 
-**Cisco AI Defense CLI** (`aid-cisco-cli`) — command-line tool for AI Defense
+**Cisco AI Defense CLI** (`cisco-aid-cli`) — command-line tool for AI Defense
 scanning and inventory: **model-scan**, **mcp-scan**, and **ai-bom**. Deterministic
 exit codes and machine-readable output for CI/CD.
 
@@ -25,20 +25,20 @@ Quick build from source:
 git clone https://github.com/cisco-ai-defense/ai-defense-cli.git
 cd ai-defense-cli
 make build-go
-./bin/aid-cisco-cli --help
+./bin/cisco-aid-cli --help
 ```
 
 ## Quick start
 
 ```bash
 # After install from Releases:
-aid-cisco-cli onboard
+cisco-aid-cli onboard
 
 # Or set credentials manually:
 export AI_DEFENSE_API_KEY="your-api-key"
 export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
 
-aid-cisco-cli model-scan list --limit 5
+cisco-aid-cli model-scan list --limit 5
 ```
 
 See [docs/getting-started-client.md](docs/getting-started-client.md) for the full command

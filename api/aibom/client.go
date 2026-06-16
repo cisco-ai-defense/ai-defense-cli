@@ -58,7 +58,7 @@ func createAnalysisRequestFromReport(report map[string]interface{}) (*CreateAnal
 		analyzerVersion = getStringField(metadata, "tool_version")
 	}
 	if analyzerVersion == "" {
-		analyzerVersion = "aid-cisco-cli"
+		analyzerVersion = "cisco-aid-cli"
 	}
 
 	submittedAt, err := parseSubmittedAt(metadata)

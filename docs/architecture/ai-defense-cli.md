@@ -2,7 +2,7 @@
 
 ## Overview
 
-`aid-cisco-cli` is a standalone Go binary for Cisco AI Defense APIs and local AIBOM analysis.
+`cisco-aid-cli` is a standalone Go binary for Cisco AI Defense APIs and local AIBOM analysis.
 
 ## Components
 
@@ -29,10 +29,10 @@ Further reading: [docs/README.md](../README.md) · [internal/config/README.md](.
 
 | Target | Output |
 |--------|--------|
-| `make build-go` | `bin/aid-cisco-cli` (stub) |
-| `make build-embed` | `bin/aid-cisco-cli` (full embed) |
-| `make build-release-linux` | `dist/aid-cisco-cli-linux-*` (Docker) |
-| `make build-release-darwin` | `dist/aid-cisco-cli-darwin-*` (native) |
+| `make build-go` | `bin/cisco-aid-cli` (stub) |
+| `make build-embed` | `bin/cisco-aid-cli` (full embed) |
+| `make build-release-linux` | `dist/cisco-aid-cli-linux-*` (Docker) |
+| `make build-release-darwin` | `dist/cisco-aid-cli-darwin-*` (native) |
 
 ## Configuration
 

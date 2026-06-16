@@ -19,7 +19,7 @@ import (
 const (
 	defaultOwner = "cisco-ai-defense"
 	defaultRepo  = "ai-defense-cli"
-	binaryName   = "aid-cisco-cli"
+	binaryName   = "cisco-aid-cli"
 )
 
 // Options controls a self-update install.
@@ -194,7 +194,7 @@ func fetchRelease(opts Options, version string) (*ghRelease, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "aid-cisco-cli-install")
+	req.Header.Set("User-Agent", "cisco-aid-cli-install")
 
 	resp, err := opts.httpClient().Do(req)
 	if err != nil {
@@ -238,7 +238,7 @@ func downloadBytes(client *http.Client, rawURL string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "aid-cisco-cli-install")
+	req.Header.Set("User-Agent", "cisco-aid-cli-install")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -305,7 +305,7 @@ func atomicWriteExecutable(dest string, data []byte) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("create install dir: %w", err)
 	}
-	tmp, err := os.CreateTemp(dir, ".aid-cisco-cli-*")
+	tmp, err := os.CreateTemp(dir, ".cisco-aid-cli-*")
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}

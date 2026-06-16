@@ -83,12 +83,12 @@ jobs:
         run: make build-release-linux GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-linux-amd64" VERSION="$VERSION"
+        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-linux-amd64" VERSION="$VERSION"
 
       - uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.test.outputs.version }}-linux-amd64
-          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-linux-amd64
+          name: cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
+          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
           if-no-files-found: error
 
   build-darwin-arm64:
@@ -112,12 +112,12 @@ jobs:
           make build-release-darwin GOARCH=arm64 VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-darwin-arm64" VERSION="$VERSION"
+        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-darwin-arm64" VERSION="$VERSION"
 
       - uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
-          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
+          name: cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
+          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
           if-no-files-found: error
 
   build-darwin-amd64:
@@ -141,12 +141,12 @@ jobs:
           make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
 
       - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/aid-cisco-cli-${VERSION}-darwin-amd64" VERSION="$VERSION"
+        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-darwin-amd64" VERSION="$VERSION"
 
       - uses: actions/upload-artifact@v6
         with:
-          name: aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-amd64
-          path: dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-amd64
+          name: cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
+          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
           if-no-files-found: error
 
   release:
@@ -162,7 +162,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: dist
-          pattern: aid-cisco-cli-*
+          pattern: cisco-aid-cli-*
           merge-multiple: true
 
       - name: Generate checksums.txt and manifest.json
@@ -181,8 +181,8 @@ jobs:
           name: ${{ needs.test.outputs.tag }}
           body_path: release-notes.md
           files: |
-            dist/aid-cisco-cli-${{ needs.test.outputs.version }}-linux-amd64
-            dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-amd64
-            dist/aid-cisco-cli-${{ needs.test.outputs.version }}-darwin-arm64
+            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
+            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
+            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
             dist/checksums.txt
             dist/manifest.json

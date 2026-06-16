@@ -22,8 +22,8 @@ func newDeleteCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Delete a registered MCP server and all its scan data.
 
 Examples:
-  aid-cisco-cli mcp-scan delete --server-id <uuid>
-  aid-cisco-cli mcp-scan delete --server-id <uuid> -y`,
+  cisco-aid-cli mcp-scan delete --server-id <uuid>
+  cisco-aid-cli mcp-scan delete --server-id <uuid> -y`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
 				fmt.Printf("Delete server %s and all its scan data? This cannot be undone [y/N]: ", serverID)

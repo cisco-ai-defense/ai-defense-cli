@@ -1,18 +1,18 @@
 # Install and Upgrade
 
-`aid-cisco-cli` is distributed as **per-platform binaries** with embedded Python for
+`cisco-aid-cli` is distributed as **per-platform binaries** with embedded Python for
 local AIBOM analysis. There is no separate container image or Python install required
 for release builds.
 
 ## Supported platforms
 
-Release binaries are named `aid-cisco-cli-<version>-<os>-<arch>`. For version `0.1.0`:
+Release binaries are named `cisco-aid-cli-<version>-<os>-<arch>`. For version `0.1.0`:
 
 | OS | Architecture | Artifact name |
 |----|--------------|---------------|
-| Linux | amd64 | `aid-cisco-cli-0.1.0-linux-amd64` |
-| macOS | arm64 (Apple Silicon) | `aid-cisco-cli-0.1.0-darwin-arm64` |
-| macOS | amd64 (Intel) | `aid-cisco-cli-0.1.0-darwin-amd64` |
+| Linux | amd64 | `cisco-aid-cli-0.1.0-linux-amd64` |
+| macOS | arm64 (Apple Silicon) | `cisco-aid-cli-0.1.0-darwin-arm64` |
+| macOS | amd64 (Intel) | `cisco-aid-cli-0.1.0-darwin-amd64` |
 
 Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use the
 `linux-amd64` binary in a container (`platform: linux/amd64`), or
@@ -35,7 +35,7 @@ Prepare release pushes the branch; open the PR manually from the workflow summar
 3. Verify the checksum for your binary only:
 
    ```bash
-   grep aid-cisco-cli-0.1.0-linux-amd64 checksums.txt | shasum -a 256 -c
+   grep cisco-aid-cli-0.1.0-linux-amd64 checksums.txt | shasum -a 256 -c
    ```
 
    Replace `0.1.0` and the platform suffix with your release version and OS/arch.
@@ -43,8 +43,8 @@ Prepare release pushes the branch; open the PR manually from the workflow summar
 4. Install on your `PATH` (Linux example):
 
    ```bash
-   chmod +x aid-cisco-cli-0.1.0-linux-amd64
-   sudo mv aid-cisco-cli-0.1.0-linux-amd64 /usr/local/bin/aid-cisco-cli
+   chmod +x cisco-aid-cli-0.1.0-linux-amd64
+   sudo mv cisco-aid-cli-0.1.0-linux-amd64 /usr/local/bin/cisco-aid-cli
    ```
 
    On macOS, follow [macOS install](#macos-install) instead.
@@ -52,8 +52,8 @@ Prepare release pushes the branch; open the PR manually from the workflow summar
 5. Confirm:
 
    ```bash
-   aid-cisco-cli --version
-   aid-cisco-cli --help
+   cisco-aid-cli --version
+   cisco-aid-cli --help
    ```
 
 ## macOS install
@@ -65,9 +65,9 @@ Prepare release pushes the branch; open the PR manually from the workflow summar
 2. Clear Gatekeeper quarantine and install:
 
    ```bash
-   xattr -d com.apple.quarantine ./aid-cisco-cli-0.1.0-darwin-arm64
-   chmod +x ./aid-cisco-cli-0.1.0-darwin-arm64
-   sudo mv ./aid-cisco-cli-0.1.0-darwin-arm64 /usr/local/bin/aid-cisco-cli
+   xattr -d com.apple.quarantine ./cisco-aid-cli-0.1.0-darwin-arm64
+   chmod +x ./cisco-aid-cli-0.1.0-darwin-arm64
+   sudo mv ./cisco-aid-cli-0.1.0-darwin-arm64 /usr/local/bin/cisco-aid-cli
    ```
 
    Replace the filename with your version and architecture (`darwin-amd64` on Intel Macs).
@@ -97,10 +97,10 @@ After the initial install from GitHub Releases, change versions with the built-i
 install command (checksum-verified download from Releases):
 
 ```bash
-aid-cisco-cli install                  # latest release
-aid-cisco-cli install --version 0.1.2  # pin a version
-aid-cisco-cli install --check          # show available update without installing
-aid-cisco-cli install --prefix /usr/local/bin
+cisco-aid-cli install                  # latest release
+cisco-aid-cli install --version 0.1.2  # pin a version
+cisco-aid-cli install --check          # show available update without installing
+cisco-aid-cli install --prefix /usr/local/bin
 ```
 
 Supported platforms for self-update match release binaries: `linux-amd64`,
@@ -109,14 +109,14 @@ Supported platforms for self-update match release binaries: `linux-amd64`,
 By default, `install` replaces the binary in the same directory as the running
 executable (or `--prefix`). On Linux and macOS the file is swapped atomically;
 the running process keeps the old build until you start a new invocation. Run
-`aid-cisco-cli --version` after upgrade to confirm.
+`cisco-aid-cli --version` after upgrade to confirm.
 
 Manual upgrade (download + replace) still works:
 
 1. Download the new release binary for your platform.
 2. Verify the checksum line from `checksums.txt`.
 3. Replace the existing binary on your `PATH`.
-4. Run `aid-cisco-cli --version` to confirm the new build metadata.
+4. Run `cisco-aid-cli --version` to confirm the new build metadata.
 
 To pin a version in CI, download a specific release URL and verify the checksum in your pipeline.
 
@@ -125,7 +125,7 @@ To pin a version in CI, download a specific release URL and verify the checksum 
 After install, run the interactive setup wizard:
 
 ```bash
-aid-cisco-cli onboard
+cisco-aid-cli onboard
 ```
 
 See [config.md](config.md) for paths, resolution order, and manual TOML setup.

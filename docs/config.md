@@ -1,15 +1,15 @@
 # Configuration
 
-How `aid-cisco-cli` stores and resolves settings.
+How `cisco-aid-cli` stores and resolves settings.
 
 ## Quick start
 
 ```bash
-aid-cisco-cli onboard          # interactive setup (recommended)
-aid-cisco-cli config show      # TUI browser on a terminal (secrets redacted)
-aid-cisco-cli config show --plain   # redacted TOML (scripts / CI)
-aid-cisco-cli config validate  # check required fields
-aid-cisco-cli config edit      # section menu to change settings
+cisco-aid-cli onboard          # interactive setup (recommended)
+cisco-aid-cli config show      # TUI browser on a terminal (secrets redacted)
+cisco-aid-cli config show --plain   # redacted TOML (scripts / CI)
+cisco-aid-cli config validate  # check required fields
+cisco-aid-cli config edit      # section menu to change settings
 ```
 
 Non-interactive (CI): set environment variables or write a TOML file manually — see below.
@@ -26,18 +26,18 @@ All settings are stored under **`~/.ai-defense/`** (like `~/.aws` or `~/.ssh`):
 
 Override with `AI_DEFENSE_CONFIG_PATH` (absolute path recommended; a leading `~/` is expanded on macOS and Linux). That bypasses profiles entirely.
 
-Select a profile with `--profile <name>`, `AI_DEFENSE_PROFILE`, or `aid-cisco-cli config profile use <name>`.
+Select a profile with `--profile <name>`, `AI_DEFENSE_PROFILE`, or `cisco-aid-cli config profile use <name>`.
 
 ```bash
-aid-cisco-cli config profile list
-aid-cisco-cli config profile create work    # guided setup for profile "work"
-aid-cisco-cli config profile use work
-aid-cisco-cli --profile staging model-scan list
+cisco-aid-cli config profile list
+cisco-aid-cli config profile create work    # guided setup for profile "work"
+cisco-aid-cli config profile use work
+cisco-aid-cli --profile staging model-scan list
 ```
 
 The CLI resolves the home directory with Go's `os.UserHomeDir()` (typically `$HOME` on macOS and Ubuntu). Tilde (`~`) in docs is shorthand only — file I/O always uses the expanded absolute path.
 
-**Legacy paths** (`./.config.toml` in the working directory, or `~/.config/aid-cisco-cli/config.toml`) are still read for the **default** profile when `~/.ai-defense/config.toml` does not exist. Running `onboard` writes to the active profile under `~/.ai-defense/` and migrates settings on save.
+**Legacy paths** (`./.config.toml` in the working directory, or `~/.config/cisco-aid-cli/config.toml`) are still read for the **default** profile when `~/.ai-defense/config.toml` does not exist. Running `onboard` writes to the active profile under `~/.ai-defense/` and migrates settings on save.
 
 ## Resolution order
 

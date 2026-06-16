@@ -34,7 +34,7 @@ var (
 )
 
 // cacheDirName namespaces the extracted interpreter under the user cache dir.
-const cacheDirName = "aid-cisco-cli"
+const cacheDirName = "cisco-aid-cli"
 
 // Interpreter returns the path to a Python interpreter with cisco-aibom
 // installed. By default it extracts the embedded bundle once per content id;

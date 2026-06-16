@@ -13,7 +13,7 @@
 
 .DEFAULT_GOAL := help
 
-BINARY_NAME   ?= aid-cisco-cli
+BINARY_NAME   ?= cisco-aid-cli
 BIN_DIR       ?= bin
 MODULE        ?= github.com/cisco-ai-defense/ai-defense-cli
 BUILD_MODE    ?= go
@@ -22,7 +22,7 @@ VERSION_FILE  := $(shell test -f VERSION && tr -d '[:space:]' < VERSION)
 VERSION       ?= $(if $(VERSION_FILE),$(VERSION_FILE),$(shell git describe --tags --always --dirty 2>/dev/null || echo dev))
 COMMIT        ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 BUILD_DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-DIST_PREFIX   := aid-cisco-cli-$(VERSION)
+DIST_PREFIX   := cisco-aid-cli-$(VERSION)
 
 GO            ?= go
 GOOS          ?= $(shell $(GO) env GOOS)
@@ -115,11 +115,11 @@ test-diff-cover-check: ## Enforce diff coverage on changed lines (DIFF_BASE=orig
 	@test -f $(COVERPROFILE) || $(MAKE) test-cover
 	$(GO) run ./cmd/check-diff-coverage --profile $(COVERPROFILE) --base $(DIFF_BASE) --min $(DIFF_COVER_MIN)
 
-smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/aid-cisco-cli)
+smoke-test: build-go ## Post-build smoke: --version and --help for all commands (bin/cisco-aid-cli)
 	@$(MAKE) smoke-test-bin BIN="$(BIN_DIR)/$(BINARY_NAME)" VERSION="$(VERSION)"
 
 smoke-test-bin: ## Post-build smoke on BIN= path (SMOKE_RUNNER=direct|docker, optional VERSION=)
-	@test -n "$(BIN)" || (echo "BIN required, e.g. make smoke-test-bin BIN=dist/aid-cisco-cli-..." && exit 1)
+	@test -n "$(BIN)" || (echo "BIN required, e.g. make smoke-test-bin BIN=dist/cisco-aid-cli-..." && exit 1)
 	@test -f scripts/smoke-test-cli.sh || (echo "scripts/smoke-test-cli.sh missing" && exit 1)
 	@chmod +x scripts/smoke-test-cli.sh
 	VERSION="$(VERSION)" SMOKE_RUNNER="$(SMOKE_RUNNER)" ./scripts/smoke-test-cli.sh "$(BIN)"
@@ -183,7 +183,7 @@ build-release-linux: ## Linux release binary via Docker (embed_python) → dist/
 	  --build-arg CLI_VERSION=$(VERSION) \
 	  --build-arg CLI_COMMIT=$(COMMIT) \
 	  --output type=local,dest=$(DIST_DIR)/ .
-	@mv -f $(DIST_DIR)/aid-cisco-cli $(DIST_DIR)/$(DIST_PREFIX)-linux-$(GOARCH)
+	@mv -f $(DIST_DIR)/cisco-aid-cli $(DIST_DIR)/$(DIST_PREFIX)-linux-$(GOARCH)
 	@printf "Built $(DIST_DIR)/$(DIST_PREFIX)-linux-$(GOARCH)\n"
 
 build-release-darwin: bundle-check ## macOS release binary (native embed) → dist/

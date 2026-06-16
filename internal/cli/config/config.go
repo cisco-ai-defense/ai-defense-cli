@@ -10,7 +10,7 @@ import (
 	appconfig "github.com/cisco-ai-defense/ai-defense-cli/internal/config"
 )
 
-const clierrorHintAuth = "Run aid-cisco-cli onboard or set AI_DEFENSE_API_KEY and AI_DEFENSE_BASE_URL."
+const clierrorHintAuth = "Run cisco-aid-cli onboard or set AI_DEFENSE_API_KEY and AI_DEFENSE_BASE_URL."
 
 // NewCmd returns the config command group.
 func NewCmd() *cobra.Command {

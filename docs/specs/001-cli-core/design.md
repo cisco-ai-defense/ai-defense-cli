@@ -2,7 +2,7 @@
 
 ## Binary
 
-- Name: `aid-cisco-cli`
+- Name: `cisco-aid-cli`
 - Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 ## Commands
@@ -46,10 +46,10 @@ Flags > environment variables > TOML config file (`internal/config`).
 
 | Target | Output |
 |--------|--------|
-| `make build-go` | `bin/aid-cisco-cli` |
-| `make build-embed` | `bin/aid-cisco-cli` (after `make bundle`) |
-| `make build-release-linux` | `dist/aid-cisco-cli-<version>-linux-amd64` via Docker |
-| `make build-release-darwin` | `dist/aid-cisco-cli-darwin-{amd64,arm64}` native on macOS |
+| `make build-go` | `bin/cisco-aid-cli` |
+| `make build-embed` | `bin/cisco-aid-cli` (after `make bundle`) |
+| `make build-release-linux` | `dist/cisco-aid-cli-<version>-linux-amd64` via Docker |
+| `make build-release-darwin` | `dist/cisco-aid-cli-darwin-{amd64,arm64}` native on macOS |
 
 Linux release uses Debian bookworm Docker stages and exports a binary (`docker build --target release --output`). macOS release runs `make bundle` + `go build -tags embed_python` on a Darwin host (embedded Python is OS-specific).
 

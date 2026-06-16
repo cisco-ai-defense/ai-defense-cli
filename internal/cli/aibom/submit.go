@@ -21,7 +21,7 @@ func newSubmitCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Upload a previously generated AIBOM JSON report to AI Defense.
 
 Examples:
-  aid-cisco-cli ai-bom submit --file report.json`,
+  cisco-aid-cli ai-bom submit --file report.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

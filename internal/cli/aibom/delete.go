@@ -22,8 +22,8 @@ func newDeleteCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Permanently remove a BOM and all associated component data.
 
 Examples:
-  aid-cisco-cli ai-bom delete --analysis-id <uuid>
-  aid-cisco-cli ai-bom delete --analysis-id <uuid> -y`,
+  cisco-aid-cli ai-bom delete --analysis-id <uuid>
+  cisco-aid-cli ai-bom delete --analysis-id <uuid> -y`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
 				fmt.Printf("Delete BOM %s and all its data? This cannot be undone [y/N]: ", analysisID)

@@ -21,7 +21,7 @@ func NewCmd(currentVersion string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "install",
-		Short: "Download and install a release build of aid-cisco-cli",
+		Short: "Download and install a release build of cisco-aid-cli",
 		Long: `Install or change the running CLI by downloading a verified release
 binary from GitHub Releases. Use after the initial manual bootstrap from the
 Releases page.
@@ -32,9 +32,9 @@ is running; the new file is written atomically and takes effect on the next
 invocation. Close other running instances if your platform locks executables.
 
 Examples:
-  aid-cisco-cli install
-  aid-cisco-cli install --version 0.1.2
-  aid-cisco-cli install --check`,
+  cisco-aid-cli install
+  cisco-aid-cli install --version 0.1.2
+  cisco-aid-cli install --check`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
 				return clierror.Usage("install accepts no positional arguments")
@@ -79,7 +79,7 @@ Examples:
 
 	cmd.Flags().StringVar(&version, "version", "latest", "Release version to install (default: latest)")
 	cmd.Flags().BoolVar(&check, "check", false, "Report available update without installing")
-	cmd.Flags().StringVar(&prefix, "prefix", "", "Directory to install aid-cisco-cli (default: directory of running binary)")
+	cmd.Flags().StringVar(&prefix, "prefix", "", "Directory to install cisco-aid-cli (default: directory of running binary)")
 
 	return cmd
 }

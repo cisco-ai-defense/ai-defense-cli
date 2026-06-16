@@ -35,7 +35,7 @@ func validateAIBOMLLM(values map[string]string) error {
 			"use --llm-api-base for a local endpoint (e.g. Ollama), " +
 			"set --llm-provider bedrock to use the AWS credential chain, " +
 			"or export the provider's native key (e.g. OPENAI_API_KEY)")
-		e.Hint = "Run 'aid-cisco-cli config edit' and enable Local AIBOM analysis"
+		e.Hint = "Run 'cisco-aid-cli config edit' and enable Local AIBOM analysis"
 		return e
 	}
 	return nil

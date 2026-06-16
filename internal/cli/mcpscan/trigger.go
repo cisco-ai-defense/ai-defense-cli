@@ -20,7 +20,7 @@ func newTriggerCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Trigger an on-demand scan for a registered MCP server.
 
 Examples:
-  aid-cisco-cli mcp-scan trigger --server-id <uuid>`,
+  cisco-aid-cli mcp-scan trigger --server-id <uuid>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

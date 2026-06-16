@@ -25,8 +25,8 @@ applies scan exit codes (gating applies to --scan-id only). With --server-id,
 prints the raw server details.
 
 Examples:
-  aid-cisco-cli mcp-scan info --server-id <uuid>
-  aid-cisco-cli mcp-scan info --scan-id <uuid> --fail-on high`,
+  cisco-aid-cli mcp-scan info --server-id <uuid>
+  cisco-aid-cli mcp-scan info --scan-id <uuid> --fail-on high`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if serverID == "" && scanID == "" {
 				return clierror.Usage("provide either --server-id or --scan-id")

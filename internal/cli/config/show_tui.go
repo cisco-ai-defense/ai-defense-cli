@@ -25,7 +25,7 @@ const (
 // RunShowInteractive browses redacted config in the terminal.
 func RunShowInteractive(m *appconfig.Manager) error {
 	if m.ConfigPath() == "" {
-		return clierror.Usage("no config file found; run aid-cisco-cli onboard first")
+		return clierror.Usage("no config file found; run cisco-aid-cli onboard first")
 	}
 	if err := m.LoadError(); err != nil {
 		return clierror.Usage(err.Error())

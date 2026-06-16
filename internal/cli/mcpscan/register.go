@@ -30,8 +30,8 @@ func newRegisterCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Register an MCP server for ongoing security monitoring.
 
 Examples:
-  aid-cisco-cli mcp-scan register --url https://mcp.example.com/sse --name "My Server"
-  aid-cisco-cli mcp-scan register --repository-url https://github.com/org/repo --name "Repo Server"`,
+  cisco-aid-cli mcp-scan register --url https://mcp.example.com/sse --name "My Server"
+  cisco-aid-cli mcp-scan register --repository-url https://github.com/org/repo --name "Repo Server"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if url == "" && repositoryURL == "" {
 				return clierror.Usage("at least one of --url or --repository-url must be provided")

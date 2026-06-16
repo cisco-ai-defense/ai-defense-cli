@@ -24,7 +24,7 @@ When creating a new issue, please be sure to include a **title and clear
 description**, as much relevant information as possible, and, if possible, a
 test case. For CLI bugs, include:
 
-- CLI version (`aid-cisco-cli version`)
+- CLI version (`cisco-aid-cli version`)
 - OS and architecture
 - Command and flags used (redact secrets)
 - Exit code and relevant output
@@ -71,7 +71,7 @@ embed builds to catch breaking changes.
 
 - **Source of truth:** [`VERSION`](VERSION) at repo root (semver, e.g. `0.1.0`).
 - **Local builds:** `make version` prints `VERSION` and `COMMIT`; embedded via `-ldflags`.
-- **Release binaries:** `dist/aid-cisco-cli-<version>-<os>-<arch>`.
+- **Release binaries:** `dist/cisco-aid-cli-<version>-<os>-<arch>`.
 - **Day to day:** feature/fix PRs SHOULD add bullets under `[Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md).
 
 #### Standard release from `main`

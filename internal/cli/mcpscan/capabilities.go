@@ -24,8 +24,8 @@ func newCapabilitiesCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `List tools, prompts, or resources discovered on an MCP server.
 
 Examples:
-  aid-cisco-cli mcp-scan capabilities --server-id <uuid> --type TOOL
-  aid-cisco-cli mcp-scan capabilities --server-id <uuid> --type PROMPT --limit 50`,
+  cisco-aid-cli mcp-scan capabilities --server-id <uuid> --type TOOL
+  cisco-aid-cli mcp-scan capabilities --server-id <uuid> --type PROMPT --limit 50`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

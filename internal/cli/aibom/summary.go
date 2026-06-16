@@ -25,8 +25,8 @@ func newSummaryCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Get summary counts (total BOMs, completed, failed, total assets) across all BOMs.
 
 Examples:
-  aid-cisco-cli ai-bom summary
-  aid-cisco-cli ai-bom summary --status BOM_STATUS_COMPLETED`,
+  cisco-aid-cli ai-bom summary
+  cisco-aid-cli ai-bom summary --status BOM_STATUS_COMPLETED`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

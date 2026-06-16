@@ -35,7 +35,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "aid-cisco-cli",
+	Use:     "cisco-aid-cli",
 	Short:   "Cisco AI Defense CLI",
 	Long:    "Command-line interface for Cisco AI Defense — model scanning, MCP server scanning, and AI Bill of Materials.",
 	Version: version + " (" + commit + ")",

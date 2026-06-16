@@ -24,8 +24,8 @@ func newListCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `List registered MCP servers with optional filters and pagination.
 
 Examples:
-  aid-cisco-cli mcp-scan list
-  aid-cisco-cli mcp-scan list --limit 20 --status COMPLETED`,
+  cisco-aid-cli mcp-scan list
+  cisco-aid-cli mcp-scan list --limit 20 --status COMPLETED`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

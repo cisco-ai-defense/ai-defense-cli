@@ -15,8 +15,8 @@ Gather:
 - Config source (flag, env, TOML)
 
 ```bash
-go build -o aid-cisco-cli .
-./aid-cisco-cli <command> ... ; echo exit=$?
+go build -o cisco-aid-cli .
+./cisco-aid-cli <command> ... ; echo exit=$?
 ```
 
 ## 2. Classify

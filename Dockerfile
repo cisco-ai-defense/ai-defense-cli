@@ -67,8 +67,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     -ldflags="-s -w \
       -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.version=${CLI_VERSION} \
       -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.commit=${CLI_COMMIT}" \
-    -o /out/aid-cisco-cli .
+    -o /out/cisco-aid-cli .
 
 ### Stage 3: export binary only (docker build --target release --output dist/) ###
 FROM scratch AS release
-COPY --from=go-builder /out/aid-cisco-cli /aid-cisco-cli
+COPY --from=go-builder /out/cisco-aid-cli /cisco-aid-cli

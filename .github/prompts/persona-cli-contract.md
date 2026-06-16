@@ -1,6 +1,6 @@
 Role: CLI contract — exit codes, flags, output, backward compatibility
 
-Review the user-facing and CI-facing contract of `aid-cisco-cli`.
+Review the user-facing and CI-facing contract of `cisco-aid-cli`.
 
 ## Hard gates (score 0 if any apply)
 

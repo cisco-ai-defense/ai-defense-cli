@@ -23,7 +23,7 @@ func TestRootCommandVersionFlag(t *testing.T) {
 	}
 
 	got := strings.TrimSpace(out.String())
-	want := "aid-cisco-cli version " + version + " (" + commit + ")"
+	want := "cisco-aid-cli version " + version + " (" + commit + ")"
 	if got != want {
 		t.Fatalf("expected version output %q, got %q", want, got)
 	}

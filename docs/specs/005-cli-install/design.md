@@ -3,7 +3,7 @@
 ## Command tree
 
 ```
-aid-cisco-cli install [--version VERSION] [--check] [--prefix DIR]
+cisco-aid-cli install [--version VERSION] [--check] [--prefix DIR]
 ```
 
 ## Data flow
@@ -14,7 +14,7 @@ flowchart LR
   selfupdate[internal/selfupdate]
   ghReleases[GitHub Releases API]
   checksums[checksums.txt]
-  binary[aid-cisco-cli binary]
+  binary[cisco-aid-cli binary]
 
   installCmd --> selfupdate
   selfupdate --> ghReleases
@@ -38,15 +38,15 @@ Unsupported combinations return usage error (exit 2).
 2. Pinned → `GET /repos/.../releases/tags/vX.Y.Z`
 3. Download `checksums.txt` and platform binary from release assets
 4. Verify checksum line for artifact filename
-5. Write to `<prefix>/aid-cisco-cli` (or `--prefix` + basename)
+5. Write to `<prefix>/cisco-aid-cli` (or `--prefix` + basename)
 
 ## In-place replacement
 
-Default `--prefix` is the directory containing the running executable (`selfupdate.DefaultPrefix`). The install step atomically replaces `<prefix>/aid-cisco-cli` with the downloaded release binary.
+Default `--prefix` is the directory containing the running executable (`selfupdate.DefaultPrefix`). The install step atomically replaces `<prefix>/cisco-aid-cli` with the downloaded release binary.
 
 - **Unix (Linux/macOS):** Replacing the binary while a process is running is supported; the OS keeps the old inode for the running process. The new binary is used on the next launch.
 - **Windows:** Executable files may be locked while running; install may fail until other instances exit.
-- **Recommendation:** After install, run `aid-cisco-cli --version` in a new shell to confirm the updated build.
+- **Recommendation:** After install, run `cisco-aid-cli --version` in a new shell to confirm the updated build.
 
 ## Security
 

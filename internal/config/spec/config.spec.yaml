@@ -1,4 +1,4 @@
-# config.spec.yaml — CLI configuration schema for aid-cisco-cli
+# config.spec.yaml — CLI configuration schema for cisco-aid-cli
 #
 # Fields under [default] in config.toml. Scalar fields map to string keys; kind: group
 # maps to nested tables (e.g. huggingface.token → [default.huggingface]).
@@ -7,7 +7,7 @@
 
 meta:
   schema_version: "1"
-  name: aid-cisco-cli-config
+  name: cisco-aid-cli-config
   description: Configuration schema for Cisco AI Defense CLI
 
 sections:
@@ -44,9 +44,9 @@ sections:
         label: Private HuggingFace model repos
         description: Access gated or private models on huggingface.co
         optional: true
-        missing_hint: Run 'aid-cisco-cli config edit' and enable Private HuggingFace model repos
+        missing_hint: Run 'cisco-aid-cli config edit' and enable Private HuggingFace model repos
         next_steps:
-          - "Scan a private model: aid-cisco-cli model-scan trigger --repo-url https://huggingface.co/org/model"
+          - "Scan a private model: cisco-aid-cli model-scan trigger --repo-url https://huggingface.co/org/model"
         fields:
           - key: token
             title: HuggingFace token
@@ -63,9 +63,9 @@ sections:
         label: Local AIBOM analysis
         description: Generate AI Bills of Materials from source on this machine
         optional: true
-        missing_hint: Run 'aid-cisco-cli config edit' and enable Local AIBOM analysis
+        missing_hint: Run 'cisco-aid-cli config edit' and enable Local AIBOM analysis
         next_steps:
-          - "Generate locally: aid-cisco-cli ai-bom generate --source ."
+          - "Generate locally: cisco-aid-cli ai-bom generate --source ."
         validator: aibom_llm
         fields:
           - key: llm_model

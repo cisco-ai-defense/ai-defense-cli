@@ -19,8 +19,8 @@ from pathlib import Path
 
 dist = Path(os.environ["DIST_DIR"])
 version = os.environ["VERSION"]
-prefix = f"aid-cisco-cli-{version}-"
-pattern = re.compile(r"^aid-cisco-cli-.+-(linux|darwin)-(amd64|arm64)$")
+prefix = f"cisco-aid-cli-{version}-"
+pattern = re.compile(r"^cisco-aid-cli-.+-(linux|darwin)-(amd64|arm64)$")
 
 artifacts = []
 for path in sorted(dist.iterdir()):
@@ -44,7 +44,7 @@ if not artifacts:
     raise SystemExit(f"no release binaries matching {prefix}* in {dist}")
 
 manifest = {
-    "name": "aid-cisco-cli",
+    "name": "cisco-aid-cli",
     "version": version,
     "commit": os.environ["COMMIT"],
     "built_at": os.environ["BUILD_DATE"],

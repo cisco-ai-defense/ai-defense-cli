@@ -34,7 +34,7 @@ func RunEditHub() (*capabilities.WizardContext, error) {
 
 	m := appconfig.NewManager()
 	if m.ConfigPath() == "" {
-		return nil, clierror.Usage("no config file found; run aid-cisco-cli onboard first")
+		return nil, clierror.Usage("no config file found; run cisco-aid-cli onboard first")
 	}
 	if err := m.LoadError(); err != nil {
 		return nil, clierror.Usage(err.Error())

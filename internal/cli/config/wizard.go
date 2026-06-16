@@ -441,7 +441,7 @@ func PrintNextSteps(ctx *capabilities.WizardContext) {
 	if active != "" && ctx.ConfigPath != "" && active != ctx.ConfigPath {
 		fmt.Fprintf(&body, "\n\nNote: commands load config from %s.", appconfig.ShortenHome(active))
 	}
-	body.WriteString("\n\nTry:\n  aid-cisco-cli model-scan list --limit 5")
+	body.WriteString("\n\nTry:\n  cisco-aid-cli model-scan list --limit 5")
 	for _, cap := range capabilities.All() {
 		if ctx.Selected[cap.ID()] {
 			for _, step := range cap.NextSteps() {
@@ -449,7 +449,7 @@ func PrintNextSteps(ctx *capabilities.WizardContext) {
 			}
 		}
 	}
-	body.WriteString("\n  aid-cisco-cli config show")
+	body.WriteString("\n  cisco-aid-cli config show")
 	tui.PrintBanner(os.Stdout, "Complete", body.String())
 	fmt.Fprintf(os.Stdout, "\nUser guide: %s\n", cmdutil.ClientDocsURL)
 }

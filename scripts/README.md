@@ -19,7 +19,7 @@ Linux release builds (`make build-release-linux`) use a root `.dockerignore` so 
 
 | Target | Binary | Use |
 |--------|--------|-----|
-| `make smoke-test` | `bin/aid-cisco-cli` (after `build-go`) | Local / CI: all `--help` paths |
+| `make smoke-test` | `bin/cisco-aid-cli` (after `build-go`) | Local / CI: all `--help` paths |
 | `make smoke-test-bin BIN=dist/…` | Release or embed binary | After `build-release-*` |
 | `SMOKE_RUNNER=docker` | Linux binary on macOS | `make smoke-test-bin BIN=dist/…-linux-amd64 SMOKE_RUNNER=docker` |
 
@@ -42,8 +42,8 @@ make bundle && make build-embed # Full CLI with cisco-aibom
 
 | Target | Output |
 |--------|--------|
-| `make build-release-linux` | `dist/aid-cisco-cli-linux-$(GOARCH)` via Docker |
-| `make build-release-darwin` | `dist/aid-cisco-cli-darwin-$(GOARCH)` native on macOS |
+| `make build-release-linux` | `dist/cisco-aid-cli-linux-$(GOARCH)` via Docker |
+| `make build-release-darwin` | `dist/cisco-aid-cli-darwin-$(GOARCH)` native on macOS |
 | `make checksums` | `dist/checksums.txt` |
 
 ## Release automation

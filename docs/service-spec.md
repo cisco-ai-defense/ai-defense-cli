@@ -1,13 +1,13 @@
-# aid-cisco-cli Service Specification
+# cisco-aid-cli Service Specification
 
 ## Overview
 
-`aid-cisco-cli` is a Go-based CLI for Cisco AI Defense. It wraps the AI Defense Management API and optionally embeds a relocatable CPython interpreter (with `cisco-aibom[all]`) for local AIBOM generation.
+`cisco-aid-cli` is a Go-based CLI for Cisco AI Defense. It wraps the AI Defense Management API and optionally embeds a relocatable CPython interpreter (with `cisco-aibom[all]`) for local AIBOM generation.
 
 ## Command Tree
 
 ```
-aid-cisco-cli [global flags] <command> <subcommand> [flags]
+cisco-aid-cli [global flags] <command> <subcommand> [flags]
 
 Global Flags:
   --api-key string    API key (env: AI_DEFENSE_API_KEY)
@@ -85,7 +85,7 @@ llm_api_version = ""
 ```
 
 Optional sections (`huggingface`, `aibom`) are omitted when not configured via
-`aid-cisco-cli onboard` / `config init`. Wizard progress is stored under `[onboard]` (not read at runtime).
+`cisco-aid-cli onboard` / `config init`. Wizard progress is stored under `[onboard]` (not read at runtime).
 
 ### Config commands (TTY)
 
@@ -168,7 +168,7 @@ The CLI communicates with the AI Defense Management API at:
 
 ## Version Metadata
 
-`aid-cisco-cli --version` prints the binary version and source commit embedded at
+`cisco-aid-cli --version` prints the binary version and source commit embedded at
 build time. Release builds set these values through Go linker flags:
 
 ```bash
@@ -190,13 +190,13 @@ Produces a lightweight binary without the embedded AIBOM analyzer. Model-scan, M
 
 ```bash
 cd ai-defense-cli
-go build -o aid-cisco-cli .
+go build -o cisco-aid-cli .
 ```
 
 Optional version metadata at link time:
 
 ```bash
-go build -o aid-cisco-cli \
+go build -o cisco-aid-cli \
   -ldflags="-X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.version=dev \
             -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.commit=$(git rev-parse --short HEAD)" \
   .
@@ -208,14 +208,14 @@ Build the default (non-embedded) binary, then point it at a local Python that ha
 
 ```bash
 cd ai-defense-cli
-go build -o aid-cisco-cli .
+go build -o cisco-aid-cli .
 
 python3 -m venv .venv && . .venv/bin/activate
 pip install 'cisco-aibom[all]'
 
 # Point the CLI at that interpreter (it runs `python -m aibom analyze ...`)
 export AID_CLI_PYTHON="$PWD/.venv/bin/python"
-./aid-cisco-cli ai-bom generate --source ./my-app --llm-model gpt-5.4
+./cisco-aid-cli ai-bom generate --source ./my-app --llm-model gpt-5.4
 ```
 
 See `scripts/README.md` for the bundle layout and the LLM requirement.
@@ -226,7 +226,7 @@ Exports a release binary to `dist/` (not a container image):
 
 ```bash
 make build-release-linux GOARCH=amd64
-# → dist/aid-cisco-cli-<version>-linux-amd64 (version from VERSION file)
+# → dist/cisco-aid-cli-<version>-linux-amd64 (version from VERSION file)
 ```
 
 Docker stages (`Dockerfile`):
@@ -243,7 +243,7 @@ If you already have `internal/embedded/python/bin/aid-py-bundle.tar.gz` (and `.i
 
 ```bash
 cd ai-defense-cli
-go build -tags embed_python -o aid-cisco-cli \
+go build -tags embed_python -o cisco-aid-cli \
   -ldflags="-X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.version=dev \
             -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.commit=$(git rev-parse --short HEAD)" \
   .

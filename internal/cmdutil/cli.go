@@ -34,7 +34,7 @@ func (c *CLI) APIConfig(baseURL string) *api.Config {
 func (c *CLI) ResolveAuth() (string, string, error) {
 	apiKey, baseURL, err := config.ResolveAPIKeyAndBaseURL(c.FlagAPIKey(), c.FlagBaseURL(), c.ConfigManager())
 	if err != nil {
-		return "", "", clierror.Auth(err.Error(), "Run 'aid-cisco-cli onboard' to configure credentials.", err)
+		return "", "", clierror.Auth(err.Error(), "Run 'cisco-aid-cli onboard' to configure credentials.", err)
 	}
 	return apiKey, baseURL, nil
 }

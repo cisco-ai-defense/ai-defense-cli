@@ -5,7 +5,7 @@ alwaysApply: true
 
 # ai-defense-cli
 
-Public Go CLI (`aid-cisco-cli`) for Cisco AI Defense: `model-scan`, `mcp-scan`, `ai-bom`.
+Public Go CLI (`cisco-aid-cli`) for Cisco AI Defense: `model-scan`, `mcp-scan`, `ai-bom`.
 No UI, database, or backend services in this repo.
 
 ## Stack

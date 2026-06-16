@@ -10,7 +10,7 @@
 - **REQ-01.4** Wizard always writes to `ConfigPathForWrite()` (`AI_DEFENSE_CONFIG_PATH` or default home path). Legacy files are read for resume/migration only.
 - **REQ-01.5** If a config file exists, `onboard` / `config init` prompts continue vs start over (no multi-file picker).
 
-### REQ-02 — `aid-cisco-cli config` command group
+### REQ-02 — `cisco-aid-cli config` command group
 
 | Subcommand | Behavior |
 |------------|----------|
@@ -30,7 +30,7 @@
 - Config write mode `0600`
 - `config show --plain` forces redacted TOML even on a terminal
 
-### REQ-03 — `aid-cisco-cli onboard`
+### REQ-03 — `cisco-aid-cli onboard`
 
 - Wraps `config init` with welcome copy and personalized next steps (public docs URL, not repo-relative paths)
 - Saves **draft progress after each wizard step** (each core field, each capability field)

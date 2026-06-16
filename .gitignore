@@ -1,5 +1,5 @@
 # Binaries
-aid-cisco-cli
+cisco-aid-cli
 /bin/
 /dist/
 *.exe

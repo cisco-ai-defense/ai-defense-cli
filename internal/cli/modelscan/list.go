@@ -17,8 +17,8 @@ func newListCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Retrieve a paginated list of all security scans.
 
 Examples:
-  aid-cisco-cli model-scan list
-  aid-cisco-cli model-scan list --limit 20 --offset 10`,
+  cisco-aid-cli model-scan list
+  cisco-aid-cli model-scan list --limit 20 --offset 10`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

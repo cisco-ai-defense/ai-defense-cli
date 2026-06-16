@@ -85,7 +85,7 @@ func newProfileUseCmd() *cobra.Command {
 			path := appconfig.ProfileConfigPath(name)
 			if !appconfig.FileExists(path) && name != appconfig.DefaultProfileName {
 				fmt.Fprintf(os.Stdout, "Active profile set to %q (not configured yet).\n", name)
-				fmt.Fprintf(os.Stdout, "Run: aid-cisco-cli config profile create %s\n", name)
+				fmt.Fprintf(os.Stdout, "Run: cisco-aid-cli config profile create %s\n", name)
 				return nil
 			}
 			fmt.Fprintf(os.Stdout, "Active profile: %s\nConfig path:   %s\n", name, appconfig.ResolveConfigPath())

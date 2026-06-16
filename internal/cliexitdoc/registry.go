@@ -13,7 +13,7 @@ func GlobalScenarios() []CommandGroup {
 			{When: "Invalid flag or Cobra parse error", Code: clierror.CodeUsage, Notes: "Usage printed", Retry: "No"},
 			{When: "Unknown subcommand / missing required flag", Code: clierror.CodeUsage, Notes: "Usage printed", Retry: "No"},
 			{When: "Client-side validation (`ValidationError`)", Code: clierror.CodeUsage, Notes: "Fix arguments", Retry: "No"},
-			{When: "Missing API key or base URL", Code: clierror.CodeAuth, Notes: "`Run 'aid-cisco-cli onboard'…`", Retry: "No"},
+			{When: "Missing API key or base URL", Code: clierror.CodeAuth, Notes: "`Run 'cisco-aid-cli onboard'…`", Retry: "No"},
 			{When: "Base URL host not `*.cisco.com`", Code: clierror.CodeAuth, Notes: "Use a regional endpoint", Retry: "No"},
 			{When: "HTTP 400 from API", Code: clierror.CodeUsage, Notes: "Check command arguments", Retry: "No"},
 			{When: "HTTP 401 / 403", Code: clierror.CodeAuth, Notes: "Check API key and tenant region", Retry: "No"},

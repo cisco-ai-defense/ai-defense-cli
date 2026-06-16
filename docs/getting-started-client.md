@@ -1,10 +1,10 @@
 # Getting Started — Cisco AI Defense CLI (Users)
 
-This guide gets you from zero to your first scan with `aid-cisco-cli`. It is for
+This guide gets you from zero to your first scan with `cisco-aid-cli`. It is for
 **people running the CLI**. If you want to build or modify the CLI, see the
 [developer guide](getting-started-developer.md).
 
-`aid-cisco-cli` does three things:
+`cisco-aid-cli` does three things:
 
 | Command group | What it does | Needs |
 |---|---|---|
@@ -19,7 +19,7 @@ This guide gets you from zero to your first scan with `aid-cisco-cli`. It is for
 After installing the binary, run the interactive wizard:
 
 ```bash
-aid-cisco-cli onboard
+cisco-aid-cli onboard
 ```
 
 You'll configure:
@@ -29,8 +29,8 @@ You'll configure:
 
 Settings are saved to **`~/.ai-defense/`** — default profile in `config.toml`, or named profiles under `profiles/` (see [config.md](config.md#where-settings-live)).
 
-Add or change settings later with `aid-cisco-cli config edit` (section menu). Inspect with
-`aid-cisco-cli config show` on a terminal, or `config show --plain` for redacted TOML.
+Add or change settings later with `cisco-aid-cli config edit` (section menu). Inspect with
+`cisco-aid-cli config show` on a terminal, or `config show --plain` for redacted TOML.
 
 Non-interactive environments: set `AI_DEFENSE_API_KEY` / `AI_DEFENSE_BASE_URL` or
 create `~/.ai-defense/config.toml` manually (see §2 below).
@@ -50,9 +50,9 @@ page. Artifact names:
 
 | Platform | Binary (example v0.1.0) |
 |----------|-------------------------|
-| Linux x86_64 | `aid-cisco-cli-0.1.0-linux-amd64` |
-| macOS Apple Silicon | `aid-cisco-cli-0.1.0-darwin-arm64` |
-| macOS Intel | `aid-cisco-cli-0.1.0-darwin-amd64` |
+| Linux x86_64 | `cisco-aid-cli-0.1.0-linux-amd64` |
+| macOS Apple Silicon | `cisco-aid-cli-0.1.0-darwin-arm64` |
+| macOS Intel | `cisco-aid-cli-0.1.0-darwin-amd64` |
 
 Verify with `checksums.txt` from the same release. See [install-upgrade.md](install-upgrade.md).
 
@@ -69,15 +69,15 @@ See the [developer guide](getting-started-developer.md). For a full embed binary
 
 ```bash
 make bundle build-embed
-./bin/aid-cisco-cli --help
+./bin/cisco-aid-cli --help
 ```
 
 Verify any binary:
 
 ```bash
-chmod +x ./aid-cisco-cli   # if needed
-./aid-cisco-cli --version
-./aid-cisco-cli --help
+chmod +x ./cisco-aid-cli   # if needed
+./cisco-aid-cli --version
+./cisco-aid-cli --help
 ```
 
 ---
@@ -99,7 +99,7 @@ Provide credentials in any of these ways (highest priority first):
 **1. Flags:**
 
 ```bash
-./aid-cisco-cli --api-key "<key>" --base-url "https://us.api.aidefense.security.cisco.com" model-scan list
+./cisco-aid-cli --api-key "<key>" --base-url "https://us.api.aidefense.security.cisco.com" model-scan list
 ```
 
 **2. Environment variables:**
@@ -107,7 +107,7 @@ Provide credentials in any of these ways (highest priority first):
 ```bash
 export AI_DEFENSE_API_KEY="<key>"
 export AI_DEFENSE_BASE_URL="https://us.api.aidefense.security.cisco.com"
-./aid-cisco-cli model-scan list
+./cisco-aid-cli model-scan list
 ```
 
 **3. TOML config file** (`~/.ai-defense/config.toml`, or set `AI_DEFENSE_CONFIG_PATH`):
@@ -128,14 +128,14 @@ token = "hf_xxx"
 
 ```bash
 # Scan a local model file
-./aid-cisco-cli model-scan trigger -f ./model.pth
+./cisco-aid-cli model-scan trigger -f ./model.pth
 
 # Scan a model repository (private repos need a token)
-./aid-cisco-cli model-scan trigger --repo-url https://huggingface.co/org/model --repo-token hf_xxx
+./cisco-aid-cli model-scan trigger --repo-url https://huggingface.co/org/model --repo-token hf_xxx
 
 # Review results
-./aid-cisco-cli model-scan list --limit 10
-./aid-cisco-cli model-scan info --scan-id <uuid>
+./cisco-aid-cli model-scan list --limit 10
+./cisco-aid-cli model-scan info --scan-id <uuid>
 ```
 
 ---
@@ -144,14 +144,14 @@ token = "hf_xxx"
 
 ```bash
 # One-shot scan (polls to completion)
-./aid-cisco-cli mcp-scan run --url https://mcp.example.com/sse --name "My Server" --transport SSE
+./cisco-aid-cli mcp-scan run --url https://mcp.example.com/sse --name "My Server" --transport SSE
 
 # Or register for ongoing monitoring, then trigger scans
-./aid-cisco-cli mcp-scan register --url https://mcp.example.com/sse --name "My Server"
-./aid-cisco-cli mcp-scan list
-./aid-cisco-cli mcp-scan trigger --server-id <uuid>
-./aid-cisco-cli mcp-scan info --server-id <uuid>
-./aid-cisco-cli mcp-scan capabilities --url https://mcp.example.com/sse
+./cisco-aid-cli mcp-scan register --url https://mcp.example.com/sse --name "My Server"
+./cisco-aid-cli mcp-scan list
+./cisco-aid-cli mcp-scan trigger --server-id <uuid>
+./cisco-aid-cli mcp-scan info --server-id <uuid>
+./cisco-aid-cli mcp-scan capabilities --url https://mcp.example.com/sse
 ```
 
 ---
@@ -164,14 +164,14 @@ and credentials for it.
 
 ```bash
 # Generate locally and print/save the AIBOM (NOT submitted)
-./aid-cisco-cli ai-bom generate \
+./cisco-aid-cli ai-bom generate \
   --source ./my-app \
   --llm-model gpt-5.4 \
   --llm-api-key "$OPENAI_API_KEY" \
   --output-file aibom.json
 
 # Generate AND submit to AI Defense in one step
-./aid-cisco-cli ai-bom run \
+./cisco-aid-cli ai-bom run \
   --source ./my-app \
   --llm-model gpt-5.4 \
   --llm-api-key "$OPENAI_API_KEY"
@@ -182,7 +182,7 @@ You can set the LLM options once via environment variables instead of flags:
 ```bash
 export AIBOM_LLM_MODEL=gpt-5.4
 export AIBOM_LLM_API_KEY="$OPENAI_API_KEY"
-./aid-cisco-cli ai-bom generate --source ./my-app
+./cisco-aid-cli ai-bom generate --source ./my-app
 ```
 
 **Provider credentials:**
@@ -198,12 +198,12 @@ Use `--llm-provider` to force a provider when the model name is ambiguous.
 **Manage submitted BOMs (API only — no LLM needed):**
 
 ```bash
-./aid-cisco-cli ai-bom submit --file ./aibom.json
-./aid-cisco-cli ai-bom list --limit 10 --status COMPLETED
-./aid-cisco-cli ai-bom info --analysis-id <id>
-./aid-cisco-cli ai-bom components --analysis-id <id>
-./aid-cisco-cli ai-bom summary
-./aid-cisco-cli ai-bom delete --analysis-id <id> --yes
+./cisco-aid-cli ai-bom submit --file ./aibom.json
+./cisco-aid-cli ai-bom list --limit 10 --status COMPLETED
+./cisco-aid-cli ai-bom info --analysis-id <id>
+./cisco-aid-cli ai-bom components --analysis-id <id>
+./cisco-aid-cli ai-bom summary
+./cisco-aid-cli ai-bom delete --analysis-id <id> --yes
 ```
 
 ---
@@ -233,17 +233,17 @@ Gating is fail-closed by default and configurable:
 
 ```bash
 # Fail the build only on HIGH+; hard-block on CRITICAL; print human-readable text.
-./aid-cisco-cli model-scan trigger -f ./model.pth \
+./cisco-aid-cli model-scan trigger -f ./model.pth \
   --fail-on high --block-on critical --output text
 
 # Report findings without ever failing the command (exit 0 unless the tool errors):
-./aid-cisco-cli model-scan trigger -f ./model.pth --fail-on none
+./cisco-aid-cli model-scan trigger -f ./model.pth --fail-on none
 ```
 
 Branch on the result:
 
 ```bash
-./aid-cisco-cli model-scan trigger -f ./model.pth --fail-on high
+./cisco-aid-cli model-scan trigger -f ./model.pth --fail-on high
 case $? in
   0)  echo "clean" ;;
   10) echo "threats found";        exit 1 ;;
@@ -265,13 +265,13 @@ prints `Error:` and, where helpful, a `Hint:` line to stderr.
 
 ## 7. Migrating from the Python `aidcli`
 
-`aid-cisco-cli` (Go) replaces the earlier Python `aidcli`. **Your existing
+`cisco-aid-cli` (Go) replaces the earlier Python `aidcli`. **Your existing
 commands keep working** — the subcommands and flags are unchanged
 (`model-scan trigger -f`, `--repo-url`, `--scan-id`, `mcp-scan run --url/--name`,
 the deprecated `scan` alias, `--version`, etc.). Exit-code behavior changed on
 purpose, so review any pipeline that branched on `$?`:
 
-| Behavior | Python `aidcli` | Go `aid-cisco-cli` (default) |
+| Behavior | Python `aidcli` | Go `cisco-aid-cli` (default) |
 |---|---|---|
 | Scan stdout | Raw API response JSON | Raw API response JSON (same default) |
 | Verdict envelope | N/A | Opt in with `--envelope` |
@@ -291,17 +291,34 @@ What this means in practice:
 **Match Python exit behavior** (never fail the step on findings) with:
 
 ```bash
-./aid-cisco-cli model-scan trigger -f ./model.pth --fail-on none --block-on none
+./cisco-aid-cli model-scan trigger -f ./model.pth --fail-on none --block-on none
 ```
 
 **Use the verdict envelope** (unified CI JSON across model-scan and mcp-scan):
 
 ```bash
-./aid-cisco-cli model-scan trigger -f ./model.pth --envelope --fail-on high
+./cisco-aid-cli model-scan trigger -f ./model.pth --envelope --fail-on high
 ```
 
 Operational errors are classified into `3`/`4`/`5` (the old catch-all `1` is no
 longer used for those). Prefer the new exit-code contract for new pipelines.
+
+### 7.1 Renamed from `aid-cisco-cli`
+
+From the release that includes this rename, the installed command is
+**`cisco-aid-cli`** (not `aid-cisco-cli`). Release artifacts use the same prefix:
+`cisco-aid-cli-<version>-<os>-<arch>`.
+
+Update CI scripts, Makefiles, and documentation that invoke the old name. Config
+paths (`~/.ai-defense/`), env vars (`AI_DEFENSE_*`), and subcommands are unchanged.
+
+```bash
+# was: aid-cisco-cli model-scan list
+cisco-aid-cli model-scan list
+```
+
+If you installed to `/usr/local/bin/aid-cisco-cli`, remove the old binary and
+install the new artifact as `cisco-aid-cli` (see [install-upgrade.md](install-upgrade.md)).
 
 ---
 

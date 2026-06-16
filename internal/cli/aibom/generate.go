@@ -25,8 +25,8 @@ An LLM classifies scanner candidates, so --llm-model (or AIBOM_LLM_MODEL) and
 credentials for that model are required.
 
 Examples:
-  aid-cisco-cli ai-bom generate --source ./my-app --llm-model gpt-5.4 --llm-api-key sk-...
-  aid-cisco-cli ai-bom generate --source ./app --source ./lib --output-file report.json --llm-model gpt-5.4 --llm-api-key sk-...`,
+  cisco-aid-cli ai-bom generate --source ./my-app --llm-model gpt-5.4 --llm-api-key sk-...
+  cisco-aid-cli ai-bom generate --source ./app --source ./lib --output-file report.json --llm-model gpt-5.4 --llm-api-key sk-...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resolved := llm.resolve(cli)
 			if err := ValidateLLM(resolved); err != nil {

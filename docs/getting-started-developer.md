@@ -1,6 +1,6 @@
 # Getting Started — Cisco AI Defense CLI (Developers)
 
-Build, run, and extend `aid-cisco-cli` locally. For using released binaries, see [getting-started-client.md](getting-started-client.md).
+Build, run, and extend `cisco-aid-cli` locally. For using released binaries, see [getting-started-client.md](getting-started-client.md).
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ See [docs/adr/0001-package-layout.md](adr/0001-package-layout.md).
 
 ```bash
 make build-go
-./bin/aid-cisco-cli --help
+./bin/cisco-aid-cli --help
 ```
 
 API commands work. `ai-bom generate`/`run` need `AID_CLI_PYTHON` or a full embed build (§3–4).
@@ -54,7 +54,7 @@ pip install 'cisco-aibom[all]'
 export AID_CLI_PYTHON="$PWD/.venv/bin/python"
 
 make build-go
-./bin/aid-cisco-cli ai-bom generate --source ./my-app ...
+./bin/cisco-aid-cli ai-bom generate --source ./my-app ...
 ```
 
 ---
@@ -65,7 +65,7 @@ Bundles relocatable CPython + `cisco-aibom[all]` for your **current OS/arch**:
 
 ```bash
 make bundle build-embed
-./bin/aid-cisco-cli ai-bom generate ...
+./bin/cisco-aid-cli ai-bom generate ...
 ```
 
 On macOS this produces a darwin binary with embedded Python. First `make bundle` downloads python-build-standalone and pip packages (network required). Subsequent runs skip when inputs are unchanged; use `make bundle-force` to rebuild.
@@ -76,7 +76,7 @@ On macOS this produces a darwin binary with embedded Python. First `make bundle`
 
 | Target | Platform | Method |
 |--------|----------|--------|
-| `make build-release-linux GOARCH=amd64` | Linux amd64 | Docker → `dist/aid-cisco-cli-<version>-linux-amd64` |
+| `make build-release-linux GOARCH=amd64` | Linux amd64 | Docker → `dist/cisco-aid-cli-<version>-linux-amd64` |
 | `make build-release-darwin` | macOS | Native `bundle` + `go build -tags embed_python` |
 | `make build-release` | Host OS | Dispatches linux→Docker, darwin→native |
 | `make checksums` | — | `dist/checksums.txt` |

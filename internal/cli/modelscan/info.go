@@ -24,8 +24,8 @@ Prints raw API JSON by default. Use --envelope for the normalized verdict and
 the same exit-code contract as 'trigger' (0 pass, 10 fail, 20 block; 5 if failed).
 
 Examples:
-  aid-cisco-cli model-scan info --scan-id <uuid>
-  aid-cisco-cli model-scan info --scan-id <uuid> --limit 50 --output text`,
+  cisco-aid-cli model-scan info --scan-id <uuid>
+  cisco-aid-cli model-scan info --scan-id <uuid> --limit 50 --output text`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := resultOpts.Validate(); err != nil {
 				return err

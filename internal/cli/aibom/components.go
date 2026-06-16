@@ -25,8 +25,8 @@ func newComponentsCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `List AI/ML components (models, agents, tools, etc.) found in a BOM.
 
 Examples:
-  aid-cisco-cli ai-bom components --analysis-id <uuid>
-  aid-cisco-cli ai-bom components --analysis-id <uuid> --type COMPONENT_CATEGORY_MODEL`,
+  cisco-aid-cli ai-bom components --analysis-id <uuid>
+  cisco-aid-cli ai-bom components --analysis-id <uuid> --type COMPONENT_CATEGORY_MODEL`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

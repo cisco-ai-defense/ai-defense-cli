@@ -9,7 +9,7 @@ import (
 const (
 	homeConfigDirName  = ".ai-defense"
 	configFileName     = "config.toml"
-	legacyAppConfigDir = "aid-cisco-cli"
+	legacyAppConfigDir = "cisco-aid-cli"
 )
 
 // HomeConfigDir returns ~/.ai-defense (CLI state directory, like ~/.aws or ~/.ssh).

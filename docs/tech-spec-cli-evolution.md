@@ -47,7 +47,7 @@
 
 ## 1. Executive Summary
 
-The Cisco AI Defense CLI (`aid-cisco-cli`) is the primary command-line tool for model scanning, MCP server scanning, and AI Bill of Materials (AIBOM) management. The original CLI was written in Python using the Click framework (`aidcli`). Due to distribution, runtime stability, dependency management, and performance challenges, we built a replacement Go CLI (`aid_cli`) using the Cobra framework.
+The Cisco AI Defense CLI (`cisco-aid-cli`) is the primary command-line tool for model scanning, MCP server scanning, and AI Bill of Materials (AIBOM) management. The original CLI was written in Python using the Click framework (`aidcli`). Due to distribution, runtime stability, dependency management, and performance challenges, we built a replacement Go CLI (`aid_cli`) using the Cobra framework.
 
 The Go CLI achieves full command parity with `aidcli`, ships as a single statically-linked binary, eliminates the Python runtime dependency for API-based commands, and selectively embeds Python-based tooling (AIBOM analyzer) as a relocatable CPython interpreter bundle for local analysis workloads that have no Go equivalent. The Go CLI drives the analyzer by invoking its own CLI (`python -m aibom analyze`) as a subprocess, so no Python glue code is shipped.
 
@@ -254,10 +254,10 @@ Dockerfile Stage 1 (py-bundler):
 
 Dockerfile Stage 2 (go-builder):
   COPY --from=py-bundler aid-py-bundle.tar.gz → internal/embedded/python/bin/
-  go build -tags embed_python → /aid-cisco-cli
+  go build -tags embed_python → /cisco-aid-cli
 
 Dockerfile Stage 3 (runner):
-  COPY --from=go-builder /aid-cisco-cli → /app/aid-cisco-cli
+  COPY --from=go-builder /cisco-aid-cli → /app/cisco-aid-cli
 ```
 
 **Runtime extraction + invocation:**
@@ -326,7 +326,7 @@ This uses the same `service_output()` and `service_tags()` functions as all othe
 The Go CLI maintains backward compatibility with the Python CLI:
 
 - **`scan` → `model-scan` alias**: A hidden command registered via `NewDeprecatedScanCmd()` that prints a deprecation warning to stderr and delegates to the `model-scan` command tree. The alias chains the root command's `PersistentPreRun` to ensure config initialization is not skipped.
-- **Same binary name**: `aid-cisco-cli` — drop-in replacement.
+- **Same binary name**: `cisco-aid-cli` — drop-in replacement.
 - **Same config format**: `.config.toml` with identical `[default]` section structure.
 - **Same env vars**: `AI_DEFENSE_API_KEY`, `AI_DEFENSE_BASE_URL`, and scan polling env vars are supported with matching semantics.
 - **Same JSON output**: API responses are printed as JSON to stdout, matching the Python CLI's output format for scripting compatibility.

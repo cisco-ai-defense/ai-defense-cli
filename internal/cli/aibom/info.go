@@ -17,7 +17,7 @@ func newInfoCmd(cli *cmdutil.CLI) *cobra.Command {
 		Long: `Retrieve detailed information about a specific BOM.
 
 Examples:
-  aid-cisco-cli ai-bom info --analysis-id <uuid>`,
+  cisco-aid-cli ai-bom info --analysis-id <uuid>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {

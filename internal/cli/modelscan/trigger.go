@@ -28,9 +28,9 @@ normalized verdict JSON/text. Exit codes follow the scan contract: 0 pass,
 10 fail (>= --fail-on), 20 block (>= --block-on); operational failures use 1-5.
 
 Examples:
-  aid-cisco-cli model-scan trigger -f model.pth
-  aid-cisco-cli model-scan trigger --repo-url huggingface.co/username/model
-  aid-cisco-cli model-scan trigger -f model.pth --fail-on high --output text`,
+  cisco-aid-cli model-scan trigger -f model.pth
+  cisco-aid-cli model-scan trigger --repo-url huggingface.co/username/model
+  cisco-aid-cli model-scan trigger -f model.pth --fail-on high --output text`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if filePath == "" && repoURL == "" {
 				return clierror.Usage("either --file-path or --repo-url must be provided")

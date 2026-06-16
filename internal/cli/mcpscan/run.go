@@ -32,8 +32,8 @@ Note: the scan-status payload may report status only, in which case a completed
 scan reports PASS.
 
 Examples:
-  aid-cisco-cli mcp-scan run --url https://mcp.example.com/sse --name "My Server"
-  aid-cisco-cli mcp-scan run --url https://mcp.example.com/sse --name "Server" --auth-type api-key --auth-header X-API-Key --auth-key sk_xxx`,
+  cisco-aid-cli mcp-scan run --url https://mcp.example.com/sse --name "My Server"
+  cisco-aid-cli mcp-scan run --url https://mcp.example.com/sse --name "Server" --auth-type api-key --auth-header X-API-Key --auth-key sk_xxx`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := resultOpts.Validate(); err != nil {
 				return err

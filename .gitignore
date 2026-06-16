@@ -46,6 +46,3 @@ canvases/
 
 # Cursor — local agent plans (not team-shared)
 .cursor/plans/
-
-# Demo prep (local hands-on guide — not team-shared)
-docs/demo/

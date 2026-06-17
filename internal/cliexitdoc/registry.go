@@ -63,7 +63,7 @@ func installScenarios() CommandGroup {
 
 func onboardScenarios() CommandGroup {
 	return CommandGroup{
-		Title: "`onboard` / `config init` / `config profile create`",
+		Title:   "`onboard` / `config init` / `config profile create`",
 		Columns: []string{"Scenario", "Code", "Notes"},
 		Rows: []Scenario{
 			{When: "Wizard completed", Code: clierror.CodeOK},
@@ -195,17 +195,11 @@ func aibomScenarios() CommandGroup {
 
 func AibomRows() []MultiRow {
 	return []MultiRow{
-		{Cols: []string{"`generate`", "Success", "0", "AIBOM JSON on stdout"}},
-		{Cols: []string{"`generate`", "Missing `--source` or `--llm-model`", "2", ""}},
-		{Cols: []string{"`generate`", "No LLM credential", "2", "`config edit` → Local AIBOM"}},
-		{Cols: []string{"`generate`", "Embedded Python unavailable (dev build)", "1", "Use release binary or `AID_CLI_PYTHON`"}},
-		{Cols: []string{"`generate`", "`aibom analyze` subprocess failed", "5", "Check LLM settings"}},
-		{Cols: []string{"`run`", "Generate + submit success", "0", ""}},
-		{Cols: []string{"`run`", "Analyzer failure", "5", ""}},
-		{Cols: []string{"`run`", "Auth failure on submit", "3", ""}},
-		{Cols: []string{"`submit`", "Missing `--file` or bad JSON", "2 / 1", ""}},
+		{Cols: []string{"`analyze` / `report` / `watch` / `diff` / `benchmark` / `kb` / `cache` / `plugin`", "Embedded Python unavailable (Go-only build)", "1", "Use a release build or set `AID_CLI_PYTHON`"}},
+		{Cols: []string{"`analyze` / `report` / `watch` / `diff` / `benchmark` / `kb` / `cache` / `plugin`", "Analyzer returns an error or usage exit", "passthrough", "The analyzer renders its own help/errors and cisco-aid-cli mirrors its exit code"}},
 		{Cols: []string{"`info` / `delete` / `components`", "Missing required id flag", "2", ""}},
 		{Cols: []string{"`delete`", "User declined confirmation", "0", ""}},
+		{Cols: []string{"`list` / `info` / `components` / `summary` / `delete`", "Missing API key or base URL", "3", "Run `cisco-aid-cli onboard`"}},
 		{Cols: []string{"`list` / `info` / `components` / `summary`", "API success", "0", ""}},
 	}
 }

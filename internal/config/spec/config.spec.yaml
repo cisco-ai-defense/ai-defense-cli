@@ -65,31 +65,33 @@ sections:
         optional: true
         missing_hint: Run 'cisco-aid-cli config edit' and enable Local AIBOM analysis
         next_steps:
-          - "Generate locally: cisco-aid-cli ai-bom generate --source ."
+          - "Analyze locally: cisco-aid-cli ai-bom analyze . --llm-model <model>"
         validator: aibom_llm
         fields:
           - key: llm_model
             title: LLM model
-            description: "Example: gpt-5.4"
-            required: true
+            description: "LLM model name (e.g. gpt-5.4, us.anthropic.claude-sonnet-4-20250514-v1:0). The agent classifies every scanner candidate; the legacy 'provider/model' prefix is still accepted."
             env: AIBOM_LLM_MODEL
             flag: llm-model
           - key: llm_provider
             title: LLM provider
+            description: "LLM provider for LangChain (e.g. bedrock, openai, anthropic, azure_openai, google_genai, ollama). If unset, inferred from the model name or a 'provider/' prefix."
             env: AIBOM_LLM_PROVIDER
             flag: llm-provider
           - key: llm_api_key
             title: LLM API key
+            description: "LLM API key. May be optional for a local LLM or AWS Bedrock."
             kind: secret
             env: AIBOM_LLM_API_KEY
             flag: llm-api-key
           - key: llm_api_base
             title: LLM API base URL
-            description: Azure endpoint or local URL (e.g. http://localhost:11434)
+            description: "LLM API base URL (Azure endpoint or local URL, e.g. http://localhost:11434)."
             env: AIBOM_LLM_API_BASE
             flag: llm-api-base
           - key: llm_api_version
             title: LLM API version
+            description: "LLM API version (for Azure OpenAI). May be optional for other providers."
             env: AIBOM_LLM_API_VERSION
             flag: llm-api-version
         presets:

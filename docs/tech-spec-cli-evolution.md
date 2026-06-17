@@ -196,14 +196,14 @@ The Go CLI implements full command parity with the Python CLI:
 | `mcp-scan info` | `mcp-scan info` | `mcp-scan info` | By server-id or scan-id |
 | `mcp-scan trigger` | `mcp-scan trigger` | `mcp-scan trigger` | On-demand scan for registered server |
 | `mcp-scan capabilities` | `mcp-scan capabilities` | `mcp-scan capabilities` | Tool/prompt/resource listing |
-| `ai-bom generate` | `ai-bom generate` | `ai-bom generate` | Local AIBOM generation (embedded) |
-| `ai-bom submit` | `ai-bom submit` | `ai-bom submit` | Upload existing report |
-| `ai-bom run` | `ai-bom run` | `ai-bom run` | Generate + submit |
-| `ai-bom list` | `ai-bom list` | `ai-bom list` | With filters |
-| `ai-bom info` | `ai-bom info` | `ai-bom info` | By analysis ID |
-| `ai-bom delete` | `ai-bom delete` | `ai-bom delete` | By analysis ID |
-| `ai-bom components` | `ai-bom components` | `ai-bom components` | Component listing |
-| `ai-bom summary` | `ai-bom summary` | `ai-bom summary` | Aggregate statistics |
+| `ai-bom analyze` | `ai-bom generate` | `ai-bom analyze` | Local AIBOM analysis (embedded analyzer passthrough) |
+| `ai-bom report` | `ai-bom submit`/`run` | `ai-bom report upload` | Show/upload a report (analyzer passthrough; URL+key derived from config) |
+| `ai-bom watch`/`diff`/`benchmark`/`kb`/`cache`/`plugin` | — | passthrough | Forwarded verbatim to the embedded analyzer |
+| `ai-bom list` | `ai-bom list` | `ai-bom list` | With filters (AI Defense API) |
+| `ai-bom info` | `ai-bom info` | `ai-bom info` | By analysis ID (AI Defense API) |
+| `ai-bom delete` | `ai-bom delete` | `ai-bom delete` | By analysis ID (AI Defense API) |
+| `ai-bom components` | `ai-bom components` | `ai-bom components` | Component listing (AI Defense API) |
+| `ai-bom summary` | `ai-bom summary` | `ai-bom summary` | Aggregate statistics (AI Defense API) |
 | `scan` (deprecated) | `scan` → `model-scan` | `scan` → `model-scan` | Hidden alias with deprecation warning |
 
 **Not ported**: `model-scan run` (local scanning via modelhawk + ClamAV) — this command has been intentionally removed. Local model scanning is replaced by cloud-only `model-scan trigger`.
@@ -228,7 +228,7 @@ sdk/aidefense/
 │   ├── routes.go      # Endpoint path constants
 │   └── client_test.go
 └── aibom/
-    ├── client.go      # SubmitReportFile, ListReports, GetReport, etc.
+    ├── client.go      # ListBoms, GetBom, DeleteBom, ListBomComponents, GetBomSummary
     ├── models.go      # Report models
     ├── routes.go      # Endpoint path constants
     └── client_test.go
@@ -280,11 +280,11 @@ func Interpreter() (string, error) {
 ```go
 // stub.go (//go:build !embed_python)
 func Interpreter() (string, error) {
-    // AID_CLI_PYTHON if set, else: "embedded Python is not available; use make aid_cli or Docker"
+    // AID_CLI_PYTHON if set, else: "embedded Python is not available; use make build-embed"
 }
 ```
 
-This means a plain `go build` produces a lightweight Go binary where `ai-bom generate` returns a helpful error (unless `AID_CLI_PYTHON` is set), while Docker builds (`make aid_cli`) produce the full-featured binary.
+This means a plain `go build` produces a lightweight Go binary where the analyzer passthroughs (`ai-bom analyze`, `report`, etc.) return a helpful error (unless `AID_CLI_PYTHON` is set), while embedded builds (`make build-embed` / `make build-release`) produce the full-featured binary.
 
 ### 4.5 Configuration and Auth
 

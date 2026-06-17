@@ -152,13 +152,13 @@ func TestExitContract_McpScanRegister(t *testing.T) {
 	}
 }
 
-func TestExitContract_AibomGenerate(t *testing.T) {
+func TestExitContract_AibomInfoMissingID(t *testing.T) {
 	rows := cliexitdoc.AibomContract()
-	want, ok := cliexitdoc.ContractCode(rows, "Missing")
+	want, ok := cliexitdoc.ContractCode(rows, "Missing required id flag")
 	if !ok {
-		t.Fatal("registry missing ai-bom generate usage row")
+		t.Fatal("registry missing ai-bom info usage row")
 	}
-	if code := runWithArgs(t, "ai-bom", "generate"); code != want {
+	if code := runWithArgs(t, "ai-bom", "info"); code != want {
 		t.Fatalf("exit = %d, want %d", code, want)
 	}
 }

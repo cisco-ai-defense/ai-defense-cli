@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
+
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/aibom"
 )
 
 // ANSI styles mirroring Typer/Rich's default help colors (what the embedded
@@ -147,14 +150,37 @@ func panel(color bool, title, body string, total int) string {
 	return b.String()
 }
 
-func commandsBody(color bool, cmd *cobra.Command, content int) string {
-	type row struct{ name, help string }
-	var rows []row
-	nameW := 0
+// orderedSubcommands returns the visible subcommands of cmd, sorted by the
+// optional aibom.HelpOrderAnnotation (a zero-padded index). Commands carrying it
+// come first in that order; the rest keep alphabetical order after them. This
+// lets ai-bom list analyzer passthroughs first (in the analyzer's order) and
+// aid_cli cloud commands last, while every other command stays alphabetical.
+func orderedSubcommands(cmd *cobra.Command) []*cobra.Command {
+	var out []*cobra.Command
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
+		out = append(out, c)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		return helpOrderKey(out[i]) < helpOrderKey(out[j])
+	})
+	return out
+}
+
+func helpOrderKey(c *cobra.Command) string {
+	if v := c.Annotations[aibom.HelpOrderAnnotation]; v != "" {
+		return "0:" + v
+	}
+	return "1:" + c.Name()
+}
+
+func commandsBody(color bool, cmd *cobra.Command, content int) string {
+	type row struct{ name, help string }
+	var rows []row
+	nameW := 0
+	for _, c := range orderedSubcommands(cmd) {
 		rows = append(rows, row{c.Name(), c.Short})
 		nameW = maxi(nameW, len(c.Name()))
 	}

@@ -1,37 +1,67 @@
 package aibom
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cisco-ai-defense/ai-defense-cli/internal/cmdutil"
 )
 
-// NewCmd creates the ai-bom parent command with all subcommands registered.
+// NewCmd creates the ai-bom parent command. Its subcommands are the union of two
+// backends:
+//
+//   - embedded analyzer passthroughs (report, analyze, watch, benchmark, kb,
+//     cache, plugin, diff) forwarded verbatim to the bundled cisco-aibom CLI; and
+//   - AI Defense management commands (list, info, components, summary, delete)
+//     served directly by the Go SDK against the AI Defense API.
+//
+// aid_cli renders only this top-level help (titled panels listing the union);
+// each passthrough subcommand delegates its own --help to the analyzer. The
+// commands are listed in a fixed order (analyzer commands first, mirroring
+// cisco-aibom's order; cloud-management commands grouped at the end) via the
+// HelpOrderAnnotation.
 func NewCmd(cli *cmdutil.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ai-bom",
-		Short: "Manage AI Bills of Materials",
-		Long: `Generate, submit, and manage AI Bills of Materials (AIBOM).
-
-Available commands:
-  generate    Generate an AIBOM locally (embedded analyzer)
-  submit      Submit an existing AIBOM report file
-  run         Generate and submit an AIBOM in one step (embedded analyzer)
-  list        List BOMs with filters and pagination
-  info        Get BOM details by analysis ID
-  delete      Delete a BOM
-  components  List components in a BOM
-  summary     Get aggregate BOM statistics`,
+		Short: "Generate, manage, and explore AI Bills of Materials",
 	}
 
-	cmd.AddCommand(newGenerateCmd(cli))
-	cmd.AddCommand(newSubmitCmd(cli))
-	cmd.AddCommand(newRunCmd(cli))
-	cmd.AddCommand(newListCmd(cli))
-	cmd.AddCommand(newInfoCmd(cli))
-	cmd.AddCommand(newDeleteCmd(cli))
-	cmd.AddCommand(newComponentsCmd(cli))
-	cmd.AddCommand(newSummaryCmd(cli))
+	// Display order: embedded-analyzer passthroughs first (mirroring the
+	// cisco-aibom command order), then aid_cli's AI Defense cloud-management
+	// commands grouped at the end. analyze bridges LLM config; report bridges the
+	// upload target; kb bridges the tenant key; the rest forward verbatim.
+	ordered := []*cobra.Command{
+		newReportCmd(cli),
+		newPassthroughCmd(cli, "analyze [SOURCES...]",
+			"Analyze source paths or images and generate an AIBOM", "analyze", aibomLLMEnv),
+		newPassthroughCmd(cli, "watch [SOURCES...]",
+			"Watch source paths and re-scan on change", "watch", nil),
+		newPassthroughCmd(cli, "benchmark",
+			"Compare scan output against ground-truth YAML", "benchmark", nil),
+		newKBCmd(cli),
+		newPassthroughCmd(cli, "cache",
+			"Manage the analyzer result cache", "cache", nil),
+		newPassthroughCmd(cli, "plugin",
+			"Discover and manage analyzer plugins", "plugin", nil),
+		newPassthroughCmd(cli, "diff",
+			"Compare two AIBOM JSON reports", "diff", nil),
+
+		// AI Defense management API (Go SDK; no analyzer equivalent).
+		newListCmd(cli),
+		newInfoCmd(cli),
+		newComponentsCmd(cli),
+		newSummaryCmd(cli),
+		newDeleteCmd(cli),
+	}
+
+	for i, c := range ordered {
+		if c.Annotations == nil {
+			c.Annotations = map[string]string{}
+		}
+		c.Annotations[HelpOrderAnnotation] = fmt.Sprintf("%02d", i)
+		cmd.AddCommand(c)
+	}
 
 	return cmd
 }

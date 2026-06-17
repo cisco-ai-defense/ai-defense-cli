@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/cisco-ai-defense/ai-defense-cli/internal/cli/aibom"
 )
 
 // SmokeCommandPaths returns CLI command paths exercised by post-build smoke tests
@@ -31,6 +33,12 @@ func smokeIncludeCommand(c *cobra.Command) bool {
 	}
 	// Hidden deprecated alias (scan) remains user-facing; skip cobra help topics.
 	if c.IsAdditionalHelpTopicCommand() {
+		return false
+	}
+	// aibom passthrough commands delegate --help to the embedded analyzer, which
+	// is only present in embedded builds; exclude them from the in-process and
+	// go-only smoke runs.
+	if c.Annotations[aibom.PassthroughAnnotation] == "true" {
 		return false
 	}
 	return c.IsAvailableCommand() || c.Hidden

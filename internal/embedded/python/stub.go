@@ -19,6 +19,7 @@ func Interpreter() (string, error) {
 
 	return "", fmt.Errorf(
 		"embedded Python is not available in this build.\n" +
-			"Build the Docker image (make aid_cli), or set AID_CLI_PYTHON to a " +
-			"python interpreter with cisco-aibom installed for local development")
+			"Build with the embedded analyzer (make bundle && make build-embed, or " +
+			"make build BUILD_MODE=full), or set AID_CLI_PYTHON to a python " +
+			"interpreter with cisco-aibom installed for local development")
 }

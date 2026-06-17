@@ -7,10 +7,6 @@ const (
 	AIBomAnalysis = "aibom/analysis"
 )
 
-func Analysis() string {
-	return AIBomAnalysis
-}
-
 func Boms() string {
 	return AIBoms
 }

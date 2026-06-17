@@ -6,6 +6,38 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+- **`ai-bom` analyzer passthroughs** — `analyze`, `report`, `watch`, `diff`,
+  `benchmark`, `kb`, `cache`, and `plugin` are forwarded verbatim to the embedded
+  `cisco-aibom` analyzer (`DisableFlagParsing`), so their flags and `--help` are
+  the analyzer's own and never drift. The analyzer runs as `cisco-aid-cli ai-bom
+  <cmd>` and its exit code is propagated. `cisco-aid-cli` renders only the
+  top-level `ai-bom` help, listing the full union of analyzer + cloud commands
+  (AIFW-27300).
+- **`ai-bom analyze`** injects `[default.aibom]` LLM settings as `AIBOM_LLM_*`
+  for the analyzer when not already set in the environment; **`ai-bom report
+  upload`** derives `AIBOM_POST_URL` (`…/api/ai-defense/v1/aibom/analysis`) and
+  `AI_DEFENSE_API_KEY` from resolved config when the user hasn't supplied them.
+- **`ai-bom kb` build commands** (`request`/`request-status`/`list-requests`)
+  bridge the tenant key as `CISCO_AI_DEFENSE_API_KEY` from config when the user
+  hasn't supplied it; the kb API base and manifest URL stay native kb flags/env.
+
+### Changed
+- **`ai-bom` command renames** — `generate` → `analyze`, and `submit`/`run` →
+  `report` (`report show` / `report upload`), matching analyzer terminology. The
+  cloud commands (`list`, `info`, `delete`, `components`, `summary`) are
+  unchanged and still call the AI Defense API directly. Because passthrough
+  subcommands disable flag parsing, the global `--api-key` / `--base-url` /
+  `--profile` flags do not apply to them; use environment variables or config.
+- **`[default.aibom]` field help** aligned to the analyzer's own `--help` wording;
+  `llm_model` is no longer wizard-required (it's command-specific — `ai-bom
+  analyze` enforces it at runtime), so non-AIBOM users are never prompted for it.
+
+### Removed
+- **Dead Go-SDK submit path** — `api/aibom` no longer exposes `CreateAnalysis`,
+  `SubmitReportFile`, or `createAnalysisRequestFromReport`; AIBOM uploads now go
+  through the analyzer's `report upload`. Cloud-management methods are unchanged.
+
 ## [0.1.4] - 2026-06-16
 
 ### Added

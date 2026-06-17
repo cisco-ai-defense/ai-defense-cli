@@ -61,7 +61,7 @@ base_url = "https://us.api.aidefense.security.cisco.com"
 [default.huggingface]   # optional — private model repos
 token = "hf_..."
 
-[default.aibom]         # optional — local ai-bom generate/run
+[default.aibom]         # optional — local ai-bom analyze
 llm_model = "gpt-5.4"
 llm_api_key = "..."
 ```

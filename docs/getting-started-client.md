@@ -10,7 +10,7 @@ This guide gets you from zero to your first scan with `cisco-aid-cli`. It is for
 |---|---|---|
 | `model-scan` | Scan AI/ML model files or repos for vulnerabilities | AI Defense API key |
 | `mcp-scan` | Register and scan MCP servers | AI Defense API key |
-| `ai-bom` | Generate and manage AI Bills of Materials | AI Defense API key; **local generation also needs an LLM** |
+| `ai-bom` | Generate, manage, and explore AI Bills of Materials | AI Defense API key; **local analysis also needs an LLM** |
 
 ---
 
@@ -41,7 +41,7 @@ create `~/.ai-defense/config.toml` manually (see §2 below).
 
 Release builds ship a **single self-contained binary** per OS/architecture. The
 AIBOM analyzer (embedded CPython + `cisco-aibom`) is included — no separate
-Python install needed for `ai-bom generate` / `ai-bom run`.
+Python install needed for `ai-bom analyze` and the other analyzer commands.
 
 ### GitHub Release (recommended when available)
 
@@ -156,33 +156,37 @@ token = "hf_xxx"
 
 ---
 
-## 5. Generate an AI Bill of Materials (AIBOM)
+## 5. Generate, manage, and explore AI Bills of Materials (AIBOM)
 
-Local AIBOM generation analyzes your code with the embedded `cisco-aibom`
-analyzer, which uses an **LLM** to classify what it finds. You must supply a model
-and credentials for it.
+`ai-bom` is a single surface over two backends:
+
+- **analyzer passthroughs** (`analyze`, `report`, `watch`, `diff`, `benchmark`,
+  `kb`, `cache`, `plugin`) run the embedded `cisco-aibom` analyzer. Their flags
+  and `--help` come straight from the analyzer.
+- **cloud inventory** (`list`, `info`, `components`, `summary`, `delete`) call the
+  AI Defense API directly.
+
+Local analysis uses an **LLM** to classify what it finds, so you must supply a
+model and credentials for it.
 
 ```bash
-# Generate locally and print/save the AIBOM (NOT submitted)
-./cisco-aid-cli ai-bom generate \
-  --source ./my-app \
+# Analyze locally and write the AIBOM (NOT uploaded)
+./cisco-aid-cli ai-bom analyze ./my-app \
   --llm-model gpt-5.4 \
   --llm-api-key "$OPENAI_API_KEY" \
-  --output-file aibom.json
+  --output-format json --output-file aibom.json
 
-# Generate AND submit to AI Defense in one step
-./cisco-aid-cli ai-bom run \
-  --source ./my-app \
-  --llm-model gpt-5.4 \
-  --llm-api-key "$OPENAI_API_KEY"
+# Upload a generated report to AI Defense (URL + key derived from your config)
+./cisco-aid-cli ai-bom report upload aibom.json
 ```
 
-You can set the LLM options once via environment variables instead of flags:
+You can set the LLM options once via environment variables (or `[default.aibom]`
+in your config) instead of flags:
 
 ```bash
 export AIBOM_LLM_MODEL=gpt-5.4
 export AIBOM_LLM_API_KEY="$OPENAI_API_KEY"
-./cisco-aid-cli ai-bom generate --source ./my-app
+./cisco-aid-cli ai-bom analyze ./my-app --output-format json --output-file aibom.json
 ```
 
 **Provider credentials:**
@@ -195,10 +199,15 @@ export AIBOM_LLM_API_KEY="$OPENAI_API_KEY"
 
 Use `--llm-provider` to force a provider when the model name is ambiguous.
 
-**Manage submitted BOMs (API only — no LLM needed):**
+> Passthrough subcommands forward every flag to the analyzer, so the global
+> `--api-key` / `--base-url` / `--profile` flags do **not** apply to them. Supply
+> credentials via environment variables or your config file; `report upload`
+> derives the AI Defense URL and key from there automatically (an explicit
+> `--post-url` / `--ai-defense-api-key` still wins).
+
+**Manage uploaded BOMs (API only — no LLM needed):**
 
 ```bash
-./cisco-aid-cli ai-bom submit --file ./aibom.json
 ./cisco-aid-cli ai-bom list --limit 10 --status COMPLETED
 ./cisco-aid-cli ai-bom info --analysis-id <id>
 ./cisco-aid-cli ai-bom components --analysis-id <id>
@@ -326,7 +335,7 @@ install the new artifact as `cisco-aid-cli` (see [install-upgrade.md](install-up
 
 | Symptom | Cause / fix |
 |---|---|
-| `--llm-model is required` | `ai-bom generate`/`run` need a model. Pass `--llm-model` or set `AIBOM_LLM_MODEL`. |
+| `--llm-model is required` | `ai-bom analyze` needs a model. Pass `--llm-model` or set `AIBOM_LLM_MODEL`. |
 | `no LLM credential found` | You passed a model without credentials. Add `--llm-api-key` / `AIBOM_LLM_API_KEY`, use `--llm-api-base` (local), `--llm-provider bedrock` (AWS chain), or export the provider's native key. |
 | `The api_key client option must be set ... OPENAI_API_KEY` (in analyzer output) | No LLM credential reached the analyzer. Pass `--llm-api-key` / set `AIBOM_LLM_API_KEY`, or set the provider's native env var. |
 | Base URL rejected | The base URL host must end with `.cisco.com`. Use a regional endpoint from the table above. |

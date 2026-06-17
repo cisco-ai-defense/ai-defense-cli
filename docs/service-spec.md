@@ -40,16 +40,27 @@ Commands:
     trigger           Trigger on-demand scan for registered server
     capabilities      List tools/prompts/resources on a server
 
-  ai-bom              Manage AI Bills of Materials
-    generate          Generate AIBOM locally (embedded analyzer)
-    submit            Submit an existing AIBOM report file
-    run               Generate + submit in one step
-    list              List BOMs with filters
-    info              Get BOM details by analysis ID
-    delete            Delete a BOM
-    components        List components in a BOM
-    summary           Get aggregate BOM statistics
+  ai-bom              Generate, manage, and explore AI Bills of Materials
+    analyze           Analyze sources and generate an AIBOM (analyzer passthrough)
+    report            Show or upload a generated AIBOM report (analyzer passthrough)
+    watch             Watch sources and re-scan on change (analyzer passthrough)
+    diff              Compare two AIBOM reports (analyzer passthrough)
+    benchmark         Compare scan output against ground truth (analyzer passthrough)
+    kb                Manage the analyzer knowledge base (analyzer passthrough)
+    cache             Manage the analyzer result cache (analyzer passthrough)
+    plugin            Discover and manage analyzer plugins (analyzer passthrough)
+    list              List BOMs with filters (AI Defense API)
+    info              Get BOM details by analysis ID (AI Defense API)
+    delete            Delete a BOM (AI Defense API)
+    components        List components in a BOM (AI Defense API)
+    summary           Get aggregate BOM statistics (AI Defense API)
 ```
+
+The `analyze`/`report`/`watch`/`diff`/`benchmark`/`kb`/`cache`/`plugin`
+subcommands are forwarded verbatim to the embedded `cisco-aibom` analyzer
+(`DisableFlagParsing`), so their flags and `--help` are the analyzer's own. The
+global `--api-key` / `--base-url` / `--profile` flags do not apply to them;
+supply configuration via environment variables or the config file instead.
 
 ## Configuration Resolution
 
@@ -113,8 +124,6 @@ The CLI validates that the base URL hostname ends with `.cisco.com`. Other domai
 | 10 | Policy fail (`--fail-on`) |
 | 20 | Policy block (`--block-on`) |
 
-**Per-command scenarios, hints, and CI examples:** [exit-codes-handbook.md](exit-codes-handbook.md).
-
 `install` and `config validate` follow the same mapping (see specs 005 and 006).
 See [architecture/ai-defense-cli.md](architecture/ai-defense-cli.md) and [spec 001](specs/001-cli-core/design.md).
 
@@ -129,28 +138,36 @@ See [architecture/ai-defense-cli.md](architecture/ai-defense-cli.md) and [spec 0
 | `AI_DEFENSE_MCP_WAIT_TIME_SECS` | Seconds between MCP scan polls (default: 10) |
 | `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` | Max poll iterations for model scan (default: 60) |
 | `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` | Seconds between model scan polls (default: 10) |
-| `AIBOM_LLM_MODEL` | Default for `--llm-model` (required for `ai-bom generate`/`run`) |
+| `AIBOM_LLM_MODEL` | Default for `--llm-model` (required for `ai-bom analyze`) |
 | `AIBOM_LLM_PROVIDER` | Default for `--llm-provider` |
 | `AIBOM_LLM_API_KEY` | Default for `--llm-api-key`; passed to the analyzer via the environment |
 | `AIBOM_LLM_API_BASE` | Default for `--llm-api-base` |
 | `AIBOM_LLM_API_VERSION` | Default for `--llm-api-version` |
 | `AID_CLI_PYTHON` | Dev override: path to a local Python with `cisco-aibom` installed (bypasses the embedded bundle) |
 
-### Local AIBOM Generation (LLM Requirement)
+### Local AIBOM Analysis (LLM Requirement)
 
-`ai-bom generate` and `ai-bom run` analyze code locally with the embedded
-`cisco-aibom` analyzer, whose `analyze` command requires an LLM to classify
-scanner candidates. Therefore:
+`ai-bom analyze` runs the embedded `cisco-aibom` analyzer, which requires an LLM
+to classify scanner candidates. Therefore:
 
 - `--llm-model` (or `AIBOM_LLM_MODEL`, or `[default.aibom].llm_model` in config) is **required**
-- A resolvable credential for the model is required, and the CLI fails fast if
-  none is found: `--llm-api-key` / `AIBOM_LLM_API_KEY` (OpenAI, Azure, Anthropic,
-  Google), the provider's native credential chain (e.g. AWS credentials for
-  Bedrock via `--llm-provider bedrock`), a local endpoint (`--llm-api-base`, e.g.
-  Ollama), or an exported native key (e.g. `OPENAI_API_KEY`). The API key is
-  forwarded to the analyzer through the environment, never via argv.
-- The remaining `ai-bom` subcommands (`submit`, `list`, `info`, `delete`,
-  `components`, `summary`) call the AI Defense API and require no LLM.
+- A resolvable credential for the model is required: `--llm-api-key` /
+  `AIBOM_LLM_API_KEY` (OpenAI, Azure, Anthropic, Google), the provider's native
+  credential chain (e.g. AWS credentials for Bedrock via `--llm-provider
+  bedrock`), a local endpoint (`--llm-api-base`, e.g. Ollama), or an exported
+  native key (e.g. `OPENAI_API_KEY`). `[default.aibom]` settings are injected as
+  `AIBOM_LLM_*` only when not already set in the environment; CLI flags pass
+  through verbatim and always win. The analyzer enforces the requirement and
+  reports a clear error when no model/credential is found.
+- `ai-bom report upload <report.json>` uploads a generated report. The AI Defense
+  endpoint (`AIBOM_POST_URL`) and API key (`AI_DEFENSE_API_KEY`) are derived from
+  the resolved config when not supplied via flag or environment.
+- `ai-bom kb request` / `request-status` / `list-requests` call the AI Defense API
+  with the tenant key. aid_cli injects `CISCO_AI_DEFENSE_API_KEY` from config when
+  not user-supplied; the kb API base (`CISCO_AI_DEFENSE_API_BASE`) and manifest URL
+  (`CISCO_AIBOM_MANIFEST_URL`) stay native kb flags/env.
+- The cloud inventory subcommands (`list`, `info`, `delete`, `components`,
+  `summary`) call the AI Defense API and require no LLM.
 
 ## API Endpoints
 
@@ -186,7 +203,7 @@ All commands below assume the working directory is the repository root unless no
 
 ### 1. Go-only build (API commands only)
 
-Produces a lightweight binary without the embedded AIBOM analyzer. Model-scan, MCP-scan, and AIBOM submit/list/info work; `ai-bom generate` and `ai-bom run` return a helpful error.
+Produces a lightweight binary without the embedded AIBOM analyzer. Model-scan, MCP-scan, and the AIBOM cloud commands (`list`/`info`/`components`/`summary`/`delete`) work; the analyzer passthroughs (`ai-bom analyze`, `report`, `watch`, etc.) return a helpful error.
 
 ```bash
 cd ai-defense-cli
@@ -213,9 +230,9 @@ go build -o cisco-aid-cli .
 python3 -m venv .venv && . .venv/bin/activate
 pip install 'cisco-aibom[all]'
 
-# Point the CLI at that interpreter (it runs `python -m aibom analyze ...`)
+# Point the CLI at that interpreter (it runs the embedded aibom analyzer)
 export AID_CLI_PYTHON="$PWD/.venv/bin/python"
-./cisco-aid-cli ai-bom generate --source ./my-app --llm-model gpt-5.4
+./cisco-aid-cli ai-bom analyze ./my-app --llm-model gpt-5.4 --output-format json --output-file aibom.json
 ```
 
 See `scripts/README.md` for the bundle layout and the LLM requirement.

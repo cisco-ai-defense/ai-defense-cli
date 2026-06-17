@@ -64,30 +64,6 @@ type Paging struct {
 	Offset int `json:"offset"`
 }
 
-// SourceInput holds an input source for analysis.
-type SourceInput struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-}
-
-// CreateAnalysisRequest is sent to submit an AIBOM analysis report.
-type CreateAnalysisRequest struct {
-	RunID           string                 `json:"run_id"`
-	AnalyzerVersion string                 `json:"analyzer_version"`
-	SubmittedAt     *time.Time             `json:"submitted_at,omitempty"`
-	SourceKind      SourceKind             `json:"source_kind"`
-	Sources         []SourceInput          `json:"sources"`
-	Env             map[string]interface{} `json:"env,omitempty"`
-	Report          map[string]interface{} `json:"report,omitempty"`
-}
-
-// CreateAnalysisResponse is returned after creating an analysis.
-type CreateAnalysisResponse struct {
-	AnalysisID string `json:"analysis_id"`
-	Status     string `json:"status"`
-	Message    string `json:"message,omitempty"`
-}
-
 // AssetTypeCounts holds counts of different asset types.
 type AssetTypeCounts struct {
 	Models     int `json:"models"`

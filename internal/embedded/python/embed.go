@@ -118,12 +118,27 @@ func ensureExtracted() (string, error) {
 }
 
 // cacheRoot returns the directory under which the interpreter is extracted,
-// falling back to the OS temp dir when no user cache dir is available.
+// falling back to the OS temp dir when the user cache dir is unavailable or
+// not writable.
 func cacheRoot() string {
-	if root, err := os.UserCacheDir(); err == nil && root != "" {
+	if root, err := os.UserCacheDir(); err == nil && root != "" && writableDir(root) {
 		return root
 	}
 	return os.TempDir()
+}
+
+func writableDir(root string) bool {
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		return false
+	}
+	f, err := os.CreateTemp(root, ".writable-*")
+	if err != nil {
+		return false
+	}
+	name := f.Name()
+	_ = f.Close()
+	_ = os.Remove(name)
+	return true
 }
 
 // extractBundle unpacks the embedded gzip-tar bundle into dest, preserving file

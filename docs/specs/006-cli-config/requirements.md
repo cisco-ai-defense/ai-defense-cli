@@ -41,10 +41,10 @@
 
 ### REQ-04 — Modular capability hub
 
-- **REQ-04.1** Core (always): `api_key`, `base_url` (preset or custom). **esc** goes back one step: between core fields, from custom URL to the region preset list, between optional capabilities (e.g. AIBOM → HuggingFace), from the first capability back to `base_url`, and from the first core field back to the profile picker. Rewinding clears answers for the current and later capabilities so they are re-prompted.
+- **REQ-04.1** Core (always): `api_key`, `base_url` (preset or custom)
 - **REQ-04.2** Optional capabilities presented **one at a time** (v1):
   - `huggingface` — private HF repos → `[default.huggingface]`
-  - `aibom` — local `ai-bom generate`/`run` → `[default.aibom]`
+  - `aibom` — local `ai-bom analyze` → `[default.aibom]`
   - Each step: Configure or Skip for now
 - **REQ-04.3** Unselected capabilities omitted from TOML (not empty sections)
 - **REQ-04.4** Extensible `Capability` interface for future modules

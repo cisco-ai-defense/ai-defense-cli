@@ -31,7 +31,7 @@ make build-go
 ./bin/cisco-aid-cli --help
 ```
 
-API commands work. `ai-bom generate`/`run` need `AID_CLI_PYTHON` or a full embed build (§3–4).
+API commands work. Analyzer passthroughs (`ai-bom analyze`, `report`, etc.) need `AID_CLI_PYTHON` or a full embed build (§3–4).
 
 ---
 
@@ -54,7 +54,7 @@ pip install 'cisco-aibom[all]'
 export AID_CLI_PYTHON="$PWD/.venv/bin/python"
 
 make build-go
-./bin/cisco-aid-cli ai-bom generate --source ./my-app ...
+./bin/cisco-aid-cli ai-bom analyze ./my-app --llm-model gpt-5.4 --output-format json --output-file aibom.json
 ```
 
 ---
@@ -65,7 +65,7 @@ Bundles relocatable CPython + `cisco-aibom[all]` for your **current OS/arch**:
 
 ```bash
 make bundle build-embed
-./bin/cisco-aid-cli ai-bom generate ...
+./bin/cisco-aid-cli ai-bom analyze ./my-app --llm-model gpt-5.4 --output-format json --output-file aibom.json
 ```
 
 On macOS this produces a darwin binary with embedded Python. First `make bundle` downloads python-build-standalone and pip packages (network required). Subsequent runs skip when inputs are unchanged; use `make bundle-force` to rebuild.

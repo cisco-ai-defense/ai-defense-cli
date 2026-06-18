@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -85,6 +86,21 @@ func init() {
 	rootCmd.AddCommand(install.NewCmd(version))
 	rootCmd.AddCommand(cliconfig.NewCmd())
 	rootCmd.AddCommand(onboard.NewCmd())
+
+	// Enable "Did you mean 'x'?" suggestions for every command. SuggestionsFor
+	// only honors the Levenshtein path when this is > 0 (it is 0 by default), so
+	// without this only prefix matches would suggest. 2 mirrors cobra's own
+	// default; higher over-suggests on short command names (e.g. info/list/diff).
+	setSuggestionDistance(rootCmd, 2)
+}
+
+// setSuggestionDistance sets SuggestionsMinimumDistance on cmd and all its
+// descendants so near-miss subcommand suggestions work at every level.
+func setSuggestionDistance(cmd *cobra.Command, d int) {
+	cmd.SuggestionsMinimumDistance = d
+	for _, c := range cmd.Commands() {
+		setSuggestionDistance(c, d)
+	}
 }
 
 // VersionString returns the CLI version baked in at build time.
@@ -115,15 +131,25 @@ func Run() int {
 		cliErr = clierror.Usage(err.Error())
 	}
 
+	// Usage errors get the aibom/Typer-style treatment: a red "Error" panel
+	// followed by the command's full usage/help, all rendered straight to stderr
+	// so the color gate sees the real stream (cobra's UsageString() captures into
+	// a non-TTY buffer and would strip ANSI). Other errors keep the plain
+	// "Error:"/"Hint:" lines.
+	if cliErr.Code == clierror.CodeUsage && executed != nil {
+		fmt.Fprint(os.Stderr, renderError(cleanUsageMessage(cliErr.Message, executed), os.Stderr))
+		// renderHelp already starts with a leading newline, so the blank line it
+		// emits separates the error panel from the usage block.
+		fmt.Fprint(os.Stderr, renderHelp(executed, os.Stderr))
+		return cliErr.Code
+	}
+
 	fmt.Fprintf(os.Stderr, "Error: %s\n", cliErr.Message)
 	if cliErr.RequestID != "" {
 		fmt.Fprintf(os.Stderr, "Request ID: %s\n", cliErr.RequestID)
 	}
 	if cliErr.Hint != "" {
 		fmt.Fprintf(os.Stderr, "Hint: %s\n", cliErr.Hint)
-	}
-	if cliErr.Code == clierror.CodeUsage && executed != nil {
-		fmt.Fprint(os.Stderr, "\n", executed.UsageString())
 	}
 	return cliErr.Code
 }
@@ -150,4 +176,49 @@ func isUsageError(err error) bool {
 		}
 	}
 	return false
+}
+
+// unknownCommandRE matches cobra's unknown-command error, capturing the typed
+// name (group 1). Cobra formats it as: unknown command "x" for "parent".
+var unknownCommandRE = regexp.MustCompile(`^unknown command "([^"]+)" for "[^"]+"`)
+
+// didYouMeanRE captures a suggestion cobra appends after the message
+// ("\n\nDid you mean this?\n\t<suggestion>\n"). cobra only adds this for root
+// commands; for subcommands we compute the suggestion ourselves (see below).
+var didYouMeanRE = regexp.MustCompile(`Did you mean this\?\s*\n\s*([^\n]+)`)
+
+// cleanUsageMessage rewrites cobra's verbose usage-error text into a concise,
+// single-line message for the error panel, matching the embedded analyzer's
+// phrasing. Unknown-command errors become "No such command 'x'." plus a "Did
+// you mean 'y'?" when a close subcommand exists; other usage errors are
+// flattened to a single line unchanged. cmd is the command cobra resolved to
+// (the parent of the unknown subcommand), used to compute suggestions because
+// cobra omits them for non-root commands.
+func cleanUsageMessage(msg string, cmd *cobra.Command) string {
+	if m := unknownCommandRE.FindStringSubmatch(msg); m != nil {
+		out := "No such command '" + m[1] + "'."
+		if s := suggestSubcommand(cmd, m[1], msg); s != "" {
+			out += " Did you mean '" + s + "'?"
+		}
+		return out
+	}
+	// Collapse any embedded newlines/tabs so the panel stays tidy.
+	return strings.Join(strings.Fields(msg), " ")
+}
+
+// suggestSubcommand returns the best near-match subcommand name for typed, or ""
+// if none is close. It first honors any suggestion cobra already embedded in the
+// message (root commands), then falls back to the command's own SuggestionsFor
+// (which covers subcommands, where cobra does not add suggestions itself).
+func suggestSubcommand(cmd *cobra.Command, typed, msg string) string {
+	if s := didYouMeanRE.FindStringSubmatch(msg); s != nil {
+		return strings.TrimSpace(s[1])
+	}
+	if cmd == nil {
+		return ""
+	}
+	if sugg := cmd.SuggestionsFor(typed); len(sugg) > 0 {
+		return sugg[0]
+	}
+	return ""
 }

@@ -21,12 +21,17 @@ func aibomSpec() spec.SectionSpec {
 // forwarding args verbatim (including --help). stdio is wired to the real
 // terminal so Rich renders identically and interactive prompts work. extraEnv
 // holds aid_cli-injected credentials (only values the user didn't already set).
+//
+// Abbreviated help flags are normalized to --help first: Typer/Click does not
+// abbreviate long options, so "--h" would otherwise error instead of showing
+// help. This also lets the bootstrap's help-panel framing fire for them.
 func runAibom(aibomCmd string, args, extraEnv []string) error {
 	py, err := embeddedpython.Interpreter()
 	if err != nil {
 		return err
 	}
 
+	args = normalizeHelpFlags(args)
 	cmdArgs := append([]string{"-c", aibomBootstrap, aibomCmd}, args...)
 	c := exec.Command(py, cmdArgs...)
 	c.Stdin = os.Stdin
@@ -122,6 +127,25 @@ func hasFlag(args []string, name string) bool {
 		}
 	}
 	return false
+}
+
+// normalizeHelpFlags rewrites an abbreviated long help flag to the canonical
+// "--help" the analyzer understands. Typer/Click does not abbreviate long
+// options, so "ai-bom analyze --h" would otherwise error; we accept the strict
+// prefixes of "--help" ("--h", "--he", "--hel") as aliases. Other tokens
+// (including "--help" itself, "-h", and unrelated flags like "--host") pass
+// through untouched. A copy is returned so the caller's slice is not mutated.
+func normalizeHelpFlags(args []string) []string {
+	out := make([]string, len(args))
+	for i, a := range args {
+		switch a {
+		case "--h", "--he", "--hel":
+			out[i] = "--help"
+		default:
+			out[i] = a
+		}
+	}
+	return out
 }
 
 // firstNonFlag returns the first positional argument (first token that does not

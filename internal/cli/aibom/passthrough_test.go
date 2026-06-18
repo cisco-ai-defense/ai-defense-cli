@@ -81,6 +81,42 @@ func TestFirstNonFlag(t *testing.T) {
 	}
 }
 
+func TestNormalizeHelpFlags(t *testing.T) {
+	cases := []struct {
+		in   []string
+		want []string
+	}{
+		{[]string{"--h"}, []string{"--help"}},
+		{[]string{"--he"}, []string{"--help"}},
+		{[]string{"--hel"}, []string{"--help"}},
+		{[]string{"--help"}, []string{"--help"}},
+		{[]string{"-h"}, []string{"-h"}},
+		{[]string{".", "--h"}, []string{".", "--help"}},
+		// non-help flags that merely start with "--h" are untouched.
+		{[]string{"--host", "x"}, []string{"--host", "x"}},
+		{nil, []string{}},
+	}
+	for _, tc := range cases {
+		got := normalizeHelpFlags(tc.in)
+		if len(got) != len(tc.want) {
+			t.Fatalf("normalizeHelpFlags(%v) = %v, want %v", tc.in, got, tc.want)
+		}
+		for i := range got {
+			if got[i] != tc.want[i] {
+				t.Fatalf("normalizeHelpFlags(%v) = %v, want %v", tc.in, got, tc.want)
+			}
+		}
+	}
+}
+
+func TestNormalizeHelpFlags_DoesNotMutateInput(t *testing.T) {
+	in := []string{"--h"}
+	_ = normalizeHelpFlags(in)
+	if in[0] != "--h" {
+		t.Fatalf("input mutated: %v", in)
+	}
+}
+
 func TestIsReportUpload(t *testing.T) {
 	cases := map[string]bool{
 		"upload f.json": true,

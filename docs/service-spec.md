@@ -219,7 +219,7 @@ go build -o cisco-aid-cli \
   .
 ```
 
-### 2. Go-only build with a local interpreter (AIBOM generate/run in dev)
+### 2. Go-only build with a local interpreter (AIBOM analyzer passthroughs in dev)
 
 Build the default (non-embedded) binary, then point it at a local Python that has cisco-aibom installed:
 
@@ -252,7 +252,9 @@ Docker stages (`Dockerfile`):
 2. **go-builder** — `go build -tags embed_python`
 3. **release** — scratch stage; `docker build --target release --output dist/`
 
-The CLI extracts the embedded bundle on first use and runs `python3 -m aibom analyze ...`.
+The CLI extracts the embedded bundle on first use and runs the selected analyzer
+subcommand (`analyze`, `report`, `watch`, `diff`, `benchmark`, `kb`, `cache`,
+`plugin`) through the embedded interpreter.
 
 ### 4. Full embedded build (local Go, after building the bundle)
 

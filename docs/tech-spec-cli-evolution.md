@@ -160,7 +160,7 @@ aid_cli/
 │   ├── root.go                  # Root command, global flags, PersistentPreRun
 │   ├── modelscan/               # model-scan {trigger, list, info}
 │   ├── mcpscan/                 # mcp-scan {register, delete, run, list, info, trigger, capabilities}
-│   └── aibom/                   # ai-bom {generate, submit, run, list, info, delete, components, summary}
+│   └── aibom/                   # ai-bom {analyze, report, watch, diff, benchmark, kb, cache, plugin (analyzer passthroughs); list, info, delete, components, summary (cloud API)}
 ├── internal/
 │   ├── cmdutil/                 # Shared CLI struct, auth resolution helpers
 │   ├── config/                  # TOML config + env var resolution (go-toml/v2)

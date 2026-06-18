@@ -162,3 +162,23 @@ func TestExitContract_AibomInfoMissingID(t *testing.T) {
 		t.Fatalf("exit = %d, want %d", code, want)
 	}
 }
+
+func TestRunAibomBareShowsHelpExitOK(t *testing.T) {
+	// Bare `ai-bom` shows help and exits 0 (NoArgs + RunE: Help).
+	if code := runWithArgs(t, "ai-bom"); code != clierror.CodeOK {
+		t.Fatalf("bare ai-bom exit = %d, want %d", code, clierror.CodeOK)
+	}
+}
+
+func TestExitContract_AibomUnknownSubcommand(t *testing.T) {
+	// An unknown subcommand and the removed generate/submit/run commands must be
+	// usage errors (2), not a silent help/exit-0, so typos and stale invocations
+	// do not look successful.
+	for _, sub := range []string{"definitely-not-a-subcommand", "generate", "submit", "run"} {
+		t.Run(sub, func(t *testing.T) {
+			if code := runWithArgs(t, "ai-bom", sub); code != clierror.CodeUsage {
+				t.Fatalf("ai-bom %s exit = %d, want %d", sub, code, clierror.CodeUsage)
+			}
+		})
+	}
+}

@@ -25,6 +25,14 @@ func NewCmd(cli *cmdutil.CLI) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ai-bom",
 		Short: "Generate, manage, and explore AI Bills of Materials",
+		// Bare `ai-bom` shows help and exits 0; an unknown subcommand (a typo or
+		// a stale `generate`/`submit`/`run` invocation) must be a usage error (2)
+		// so it never looks successful. NoArgs makes cobra reject stray positional
+		// args, and the RunE shows help for the bare case (mirrors model-scan).
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return cmd.Help()
+		},
 	}
 
 	// Display order: embedded-analyzer passthroughs first (mirroring the

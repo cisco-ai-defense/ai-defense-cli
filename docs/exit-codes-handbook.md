@@ -202,6 +202,7 @@ No policy gating on any `ai-bom` subcommand.
 
 | Command | Scenario | Code | Notes |
 |----------|----------|----------|----------|
+| `(parent)` | No subcommand — show help | 0 | Unknown subcommand (incl. removed `generate`/`submit`/`run`) exits 2 |
 | `analyze` / `report` / `watch` / `diff` / `benchmark` / `kb` / `cache` / `plugin` | Embedded Python unavailable (Go-only build) | 1 | Use a release build or set `AID_CLI_PYTHON` |
 | `analyze` / `report` / `watch` / `diff` / `benchmark` / `kb` / `cache` / `plugin` | Analyzer returns an error or usage exit | passthrough | The analyzer renders its own help/errors and cisco-aid-cli mirrors its exit code |
 | `info` / `delete` / `components` | Missing required id flag | 2 |  |

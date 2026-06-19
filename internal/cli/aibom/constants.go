@@ -32,9 +32,17 @@ const (
 	envProgName     = "AID_BOM_PROG_NAME"
 )
 
+// showHelpFraming gates the aid_cli-owned preamble/epilogue panels around the
+// passthrough analyzer help. It is OFF: we currently let the analyzer's own
+// --help stand alone, and the parent `ai-bom --help` (rendered by the Go panel
+// renderer) shows no framing either, so this keeps all ai-bom help uniform.
+// Flip to true to re-enable the helpPreamble/helpEpilogue panels below.
+const showHelpFraming = false
+
 // helpPreamble / helpEpilogue are aid_cli-owned context shown around the command
-// help. They intentionally read as native Cisco AI Defense text (no mention of
-// an embedded/third-party analyzer).
+// help when showHelpFraming is enabled. They intentionally read as native Cisco
+// AI Defense text (no mention of an embedded/third-party analyzer). Retained
+// (even while disabled) so the framing can be restored with a one-line flip.
 const helpPreamble = "Cisco AI Defense — generate and inspect an AI Bill of Materials. " +
 	"Credentials and settings are resolved from flags, environment, and config.toml; " +
 	"any flag you pass takes precedence."

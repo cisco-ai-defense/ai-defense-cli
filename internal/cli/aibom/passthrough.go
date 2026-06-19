@@ -37,11 +37,16 @@ func runAibom(aibomCmd string, args, extraEnv []string) error {
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	c.Env = append(os.Environ(),
-		envProgName+"="+progName,
-		envHelpPreamble+"="+helpPreamble,
-		envHelpEpilogue+"="+helpEpilogue,
-	)
+	c.Env = append(os.Environ(), envProgName+"="+progName)
+	// The preamble/epilogue framing is off by default (see showHelpFraming): when
+	// disabled we omit the env vars entirely and the bootstrap renders no panels,
+	// matching the unframed parent `ai-bom --help`.
+	if showHelpFraming {
+		c.Env = append(c.Env,
+			envHelpPreamble+"="+helpPreamble,
+			envHelpEpilogue+"="+helpEpilogue,
+		)
+	}
 	c.Env = append(c.Env, extraEnv...)
 	return c.Run()
 }

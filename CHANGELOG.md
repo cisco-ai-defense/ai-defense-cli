@@ -6,6 +6,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-19
+
 ### Added
 - **`ai-bom` analyzer passthroughs** — `analyze`, `report`, `watch`, `diff`,
   `benchmark`, `kb`, `cache`, and `plugin` are forwarded verbatim to the embedded

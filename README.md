@@ -55,3 +55,7 @@ make build-release-linux GOARCH=amd64   # Linux release via Docker
 
 Details: [docs/getting-started-developer.md](docs/getting-started-developer.md) ·
 [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md)
+
+## License
+
+Distributed under the `Apache 2.0` License. See [LICENSE](https://github.com/cisco-ai-defense/ai-defense-cli/tree/main/LICENSE) for more information.

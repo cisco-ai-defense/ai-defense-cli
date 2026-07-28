@@ -14,7 +14,9 @@ repos:
         args: [ "-v", "-s",
                 "-c", "Cisco Systems, Inc. and its affiliates",
                 "-l", "apache" ]
-        types: [ go ]
+        # Keep source headers in step with the Python SDK's addlicense hook.
+        # `types_or` covers the Go CLI plus the Python and shell release tooling.
+        types_or: [ go, python, shell ]
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:

@@ -1,6 +1,6 @@
 # AI Defense CLI — Project Context
 
-Last updated: 2026-06-16
+Last updated: 2026-07-31
 
 ## Purpose
 
@@ -28,6 +28,10 @@ model-scan, mcp-scan, ai-bom with deterministic exit codes and release binaries.
 - [x] **Config/onboard wizard esc back-nav** — full step rewind (core fields + capability chain); Ctrl+C still cancels (`RunFormEscBack`)
 - [x] **Exit-code handbook** — `internal/cliexitdoc` registry + `make gen-exit-docs` → `docs/exit-codes-handbook.md`; CI `make check-exit-docs`; contract tests for `model-scan`, `config validate`, `mcp-scan`, `ai-bom`
 - [x] **Binary rename (ADR 0002)** — `aid-cisco-cli` → `cisco-aid-cli` (command + release artifacts); `install --version` falls back to legacy artifact names
+- [x] **GoReleaser Pro release pipeline (ADR 0003 / AIFW-30261)** — pinned Pro
+  configuration validation in CI; target-native split builds on Linux amd64,
+  macOS amd64, and macOS arm64; immutable partial merge; GoReleaser-owned raw
+  binaries, checksums, manifest rendering, curated notes, and GitHub publication
 - [x] **Coverage gate (PR #14)** — CI `make test-cover-check` (75% floor on scoped packages); `internal/testutil/apitest`; expanded command HTTP tests. TUI/onboarding packages excluded from gate until unit-tested.
 - [ ] **Diff coverage gate (PR #15, `feature/diff-coverage-gate`)** — PR CI `make test-diff-cover-check` (75% on changed production lines vs merge base); `internal/diffcover`, `cmd/check-diff-coverage`, REQ-09
 - [ ] **CodeQL advanced setup** — `.github/workflows/codeql.yml` (Go + Python); disable repo default setup; **requires org GitHub Code Security license** for SARIF upload on this internal repo
@@ -64,6 +68,10 @@ Makefile                  # build-go, build-embed, build-release-*
 ```
 
 Module: `github.com/cisco-ai-defense/ai-defense-cli`
+
+Tagged releases require an active GoReleaser Pro entitlement in the masked
+repository Actions secret `GORELEASER_KEY`. Release Engineering owns renewal and
+rotation; license validation fails before the platform matrix starts.
 
 ## Build
 

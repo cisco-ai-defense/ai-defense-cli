@@ -2,6 +2,7 @@
 cisco-aid-cli
 /bin/
 /dist/
+/.goreleaser-dist/
 *.exe
 *.dll
 *.so

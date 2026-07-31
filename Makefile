@@ -25,6 +25,7 @@ BUILD_DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 DIST_PREFIX   := cisco-aid-cli-$(VERSION)
 
 GO            ?= go
+GORELEASER    ?= goreleaser
 GOOS          ?= $(shell $(GO) env GOOS)
 GOARCH        ?= $(shell $(GO) env GOARCH)
 CGO_ENABLED   ?= 0
@@ -46,10 +47,20 @@ LDFLAGS := -s -w \
 	-X $(MODULE)/internal/cli.version=$(VERSION) \
 	-X $(MODULE)/internal/cli.commit=$(COMMIT) \
 
-.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check test-diff-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin gen-exit-docs check-exit-docs
+.PHONY: help version build build-go build-embed bundle bundle-force bundle-check test test-cover test-cover-check test-diff-cover-check vet fmt clean build-release build-release-linux build-release-darwin build-release-all checksums manifest clean-dist smoke-test smoke-test-bin gen-exit-docs check-exit-docs goreleaser-check
 
 version: ## Print VERSION and COMMIT (from VERSION file + git)
 	@printf 'VERSION=%s\nCOMMIT=%s\n' "$(VERSION)" "$(COMMIT)"
+
+goreleaser-check: ## Validate .goreleaser.yaml (requires GoReleaser Pro v2.17.1; no key needed)
+	@command -v $(GORELEASER) >/dev/null || \
+		(echo "goreleaser-pro not found — install v2.17.1 from https://goreleaser.com/getting-started/install/pro/" && exit 1)
+	@version_output="$$($(GORELEASER) --version 2>&1)"; \
+		printf '%s\n' "$$version_output" | grep -q 'goreleaser-pro:' || \
+			(echo "GoReleaser Pro is required" && exit 1); \
+		printf '%s\n' "$$version_output" | grep -q 'GitVersion:[[:space:]]*2\.17\.1$$' || \
+			(echo "GoReleaser Pro v2.17.1 is required" && exit 1)
+	$(GORELEASER) check
 
 help: ## Show targets
 	@printf "ai-defense-cli Makefile\n\n"
@@ -218,4 +229,4 @@ manifest: checksums ## Generate dist/manifest.json (version, commit, per-arch sh
 	@printf "Wrote $(DIST_DIR)/manifest.json\n"
 
 clean-dist: ## Remove dist/ release artifacts
-	rm -rf $(DIST_DIR)
+	rm -rf $(DIST_DIR) .goreleaser-dist

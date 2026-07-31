@@ -1,0 +1,21 @@
+{
+  "name": "cisco-aid-cli",
+  "version": "{{ .Version }}",
+  "commit": "{{ .ShortCommit }}",
+  "built_at": "{{ .Env.RELEASE_BUILT_AT }}",
+  "artifacts": [
+    {{- $first := true -}}
+    {{- range .Artifacts -}}
+      {{- if contains .Name (printf "cisco-aid-cli-%s-" $.Version) -}}
+        {{- if not $first }},{{ end }}
+    {
+      "file": "cisco-aid-cli-{{ $.Version }}-{{ .Goos }}-{{ .Goarch }}",
+      "os": "{{ .Goos }}",
+      "arch": "{{ .Goarch }}",
+      "sha256": "{{ sha256 .Path }}"
+    }
+        {{- $first = false -}}
+      {{- end -}}
+    {{- end }}
+  ]
+}

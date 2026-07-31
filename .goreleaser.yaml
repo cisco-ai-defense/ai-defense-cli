@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/goreleaser/goreleaser/v2.17.1/www/docs/static/schema-pro.json
+version: 2
+
+project_name: cisco-aid-cli
+dist: dist
+
+# Each target is built on its native runner and merged without rebuilding.
+partial:
+  by: target
+
+builds:
+  - id: embedded-python
+    main: .
+    binary: cisco-aid-cli
+    targets:
+      - linux_amd64
+      - darwin_amd64
+      - darwin_arm64
+    tags:
+      - embed_python
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.version={{ .Version }}
+      - -X github.com/cisco-ai-defense/ai-defense-cli/internal/cli.commit={{ .ShortCommit }}
+    env:
+      - CGO_ENABLED=0
+
+# Publish raw binaries with the names consumed by install/self-update.
+archives:
+  - id: release-binaries
+    ids:
+      - embedded-python
+    formats:
+      - binary
+    name_template: cisco-aid-cli-{{ .Version }}-{{ .Os }}-{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+  ids:
+    - release-binaries
+
+source:
+  enabled: false
+
+# Curated notes are supplied to every split with --release-notes.
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: cisco-ai-defense
+    name: ai-defense-cli
+  name_template: "{{ .Tag }}"
+  mode: replace
+  make_latest: true
+  replace_existing_artifacts: true
+  include_meta: false
+  # Render only after split artifacts have been merged, so .Artifacts contains
+  # all three targets. The workflow downloads and validates the published file.
+  templated_extra_files:
+    - src: scripts/release-manifest.json.tmpl
+      dst: manifest.json

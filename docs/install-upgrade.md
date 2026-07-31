@@ -28,6 +28,10 @@ Each release also ships `checksums.txt` and `manifest.json` (version, commit, pe
 Releases are published when a **Prepare release** PR (`release/v*`) merges to `main` or a
 `release/*` line — **Release on merge** pushes the `v*` tag and starts the Release workflow.
 Prepare release pushes the branch; open the PR manually from the workflow summary link.
+The Release workflow uses GoReleaser Pro split builds for the three
+embedded-Python binaries on their native platforms. GoReleaser then merges the
+tested partials, generates the checksum and manifest files, and publishes the
+unchanged artifact set to GitHub Releases.
 
 ## Install from GitHub Release
 

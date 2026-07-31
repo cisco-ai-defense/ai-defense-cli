@@ -1,5 +1,5 @@
-# Publish a versioned GitHub Release when a v* tag is pushed.
-# Tag name (e.g. v0.1.0) becomes the release version; keep VERSION file in sync.
+# Build and publish a versioned GitHub Release when a v* tag is pushed.
+# GoReleaser Pro owns target-native compilation, metadata, and publication.
 name: Release
 
 on:
@@ -14,10 +14,7 @@ on:
         type: string
 
 permissions:
-  contents: write
-
-env:
-  DOCKER_BUILDKIT: "1"
+  contents: read
 
 jobs:
   test:
@@ -27,29 +24,69 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       commit: ${{ steps.v.outputs.commit }}
       tag: ${{ steps.v.outputs.tag }}
+      built_at: ${{ steps.v.outputs.built_at }}
     steps:
+      - name: Validate requested tag
+        id: requested-tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TAG: ${{ inputs.tag }}
+          PUSH_TAG: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$DISPATCH_TAG"
+          else
+            tag="$PUSH_TAG"
+          fi
+          if [[ "$tag" == *$'\n'* || "$tag" == *$'\r'* ]]; then
+            echo "::error::Invalid tag: line breaks are not allowed"
+            exit 1
+          fi
+          semver_re='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(\+([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$'
+          if [[ ! "$tag" =~ $semver_re ]]; then
+            echo "::error::Invalid tag: $tag (expected exact SemVer, e.g. v0.1.1)"
+            exit 1
+          fi
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ steps.requested-tag.outputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Resolve version from tag
         id: v
+        env:
+          TAG: ${{ steps.requested-tag.outputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
-          else
-            tag="${GITHUB_REF_NAME}"
-          fi
-          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+'; then
-            echo "::error::Invalid tag: $tag (expected e.g. v0.1.1)"
-            exit 1
-          fi
+          tag="$TAG"
           version="${tag#v}"
           file_version="$(tr -d '[:space:]' < VERSION)"
           if [ "$file_version" != "$version" ]; then
             echo "::warning::VERSION file ($file_version) does not match tag ($version)"
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'commit=%s\n' "$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          printf 'built_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Validate GoReleaser Pro configuration
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser-pro
+          version: v2.17.1
+          args: check
+
+      - name: Validate GoReleaser Pro license
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+        run: |
+          if [ -z "$GORELEASER_KEY" ]; then
+            echo "::error::GORELEASER_KEY repository secret is not configured"
+            exit 1
+          fi
+          goreleaser license-verify >/dev/null
 
       - uses: actions/setup-go@v6
         with:
@@ -62,127 +99,182 @@ jobs:
       - name: Smoke test CLI (help/version)
         run: make smoke-test VERSION="$(tr -d '[:space:]' < VERSION)"
 
-  linux-amd64:
-    name: linux-amd64
+  goreleaser-split:
+    name: ${{ matrix.name }}
     needs: [test]
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.test.outputs.version }}
-      COMMIT: ${{ needs.test.outputs.commit }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-amd64
+            target: linux_amd64
+            goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+          - name: darwin-amd64
+            target: darwin_amd64
+            goos: darwin
+            goarch: amd64
+            runner: macos-15-intel
+          - name: darwin-arm64
+            target: darwin_arm64
+            goos: darwin
+            goarch: arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ needs.test.outputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
 
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: true
 
-      - uses: docker/setup-buildx-action@v4
-
-      - name: Build release binary
-        run: make build-release-linux GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
-
-      - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-linux-amd64" VERSION="$VERSION"
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
-          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
-          if-no-files-found: error
-
-  build-darwin-arm64:
-    name: darwin-arm64
-    needs: [test]
-    runs-on: macos-latest
-    env:
-      VERSION: ${{ needs.test.outputs.version }}
-      COMMIT: ${{ needs.test.outputs.commit }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build release binary
-        run: |
-          make bundle
-          make build-release-darwin GOARCH=arm64 VERSION="$VERSION" COMMIT="$COMMIT"
-
-      - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-darwin-arm64" VERSION="$VERSION"
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
-          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
-          if-no-files-found: error
-
-  build-darwin-amd64:
-    name: darwin-amd64
-    needs: [test]
-    runs-on: macos-15-intel
-    env:
-      VERSION: ${{ needs.test.outputs.version }}
-      COMMIT: ${{ needs.test.outputs.commit }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build release binary
-        run: |
-          make bundle
-          make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
-
-      - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-darwin-amd64" VERSION="$VERSION"
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
-          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
-          if-no-files-found: error
-
-  release:
-    name: release
-    needs: [test, linux-amd64, build-darwin-arm64, build-darwin-amd64]
-    runs-on: ubuntu-latest
-    env:
-      VERSION: ${{ needs.test.outputs.version }}
-      COMMIT: ${{ needs.test.outputs.commit }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/download-artifact@v8
-        with:
-          path: dist
-          pattern: cisco-aid-cli-*
-          merge-multiple: true
-
-      - name: Generate checksums.txt and manifest.json
-        run: make checksums manifest VERSION="$VERSION" COMMIT="$COMMIT"
-
-      - name: Extract release notes from CHANGELOG
+      - name: Extract curated release notes
+        env:
+          VERSION: ${{ needs.test.outputs.version }}
         run: |
           python3 scripts/extract-changelog-section.py \
             --version "$VERSION" \
-            -o release-notes.md
+            -o "$RUNNER_TEMP/release-notes.md"
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+      # Repository and dependency code runs before the license secret is exposed.
+      - name: Stage and verify target-native Python bundle
+        run: |
+          make bundle-force
+          ./scripts/verify-python-bundle-target.sh "${{ matrix.target }}"
+
+      - name: Build tested target with GoReleaser Pro
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
-          tag_name: ${{ needs.test.outputs.tag }}
-          name: ${{ needs.test.outputs.tag }}
-          body_path: release-notes.md
-          files: |
-            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
-            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
-            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
-            dist/checksums.txt
-            dist/manifest.json
+          distribution: goreleaser-pro
+          version: v2.17.1
+          args: release --clean --split --release-notes=${{ runner.temp }}/release-notes.md
+        env:
+          GGOOS: ${{ matrix.goos }}
+          GGOARCH: ${{ matrix.goarch }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          RELEASE_BUILT_AT: ${{ needs.test.outputs.built_at }}
+
+      # The GoReleaser key is scoped to the preceding action step only.
+      - name: Smoke test GoReleaser binary and embedded analyzer
+        env:
+          VERSION: ${{ needs.test.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          binaries="$RUNNER_TEMP/release-binaries.txt"
+          find "dist/$TARGET" -type f -name cisco-aid-cli -print > "$binaries"
+          count="$(wc -l < "$binaries" | tr -d '[:space:]')"
+          if [ "$count" != 1 ]; then
+            echo "::error::Expected one GoReleaser binary for $TARGET, found $count"
+            sed 's/^/found: /' "$binaries"
+            exit 1
+          fi
+          binary="$(sed -n '1p' "$binaries")"
+          make smoke-test-bin BIN="$binary" VERSION="$VERSION"
+          "$binary" ai-bom analyze --help >/dev/null
+
+      - name: Store immutable GoReleaser partial
+        uses: actions/upload-artifact@v6
+        with:
+          name: goreleaser-partial-${{ needs.test.outputs.tag }}-${{ needs.test.outputs.commit }}-${{ matrix.name }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: release
+    needs: [test, goreleaser-split]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ needs.test.outputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Restore tested GoReleaser partials
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          pattern: goreleaser-partial-${{ needs.test.outputs.tag }}-${{ needs.test.outputs.commit }}-*
+          merge-multiple: true
+
+      - name: Merge and publish with GoReleaser Pro
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser-pro
+          version: v2.17.1
+          args: continue --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          RELEASE_BUILT_AT: ${{ needs.test.outputs.built_at }}
+
+  verify-release:
+    name: verify-release
+    needs: [test, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ needs.test.outputs.tag }}
+          persist-credentials: false
+
+      - name: Verify published asset inventory
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.test.outputs.tag }}
+          VERSION: ${{ needs.test.outputs.version }}
+        run: |
+          actual="$(
+            gh release view "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json assets \
+              --jq '.assets[].name' |
+              sort
+          )"
+          expected="$(
+            printf '%s\n' \
+              "cisco-aid-cli-${VERSION}-darwin-amd64" \
+              "cisco-aid-cli-${VERSION}-darwin-arm64" \
+              "cisco-aid-cli-${VERSION}-linux-amd64" \
+              checksums.txt \
+              manifest.json |
+              sort
+          )"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Published release asset inventory does not match the five-asset contract"
+            diff <(printf '%s\n' "$expected") <(printf '%s\n' "$actual") || true
+            exit 1
+          fi
+
+          contract_dir="$RUNNER_TEMP/release-contract"
+          mkdir -p "$contract_dir"
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern checksums.txt \
+            --pattern manifest.json \
+            --dir "$contract_dir"
+
+      - name: Verify published metadata contract
+        env:
+          VERSION: ${{ needs.test.outputs.version }}
+          COMMIT: ${{ needs.test.outputs.commit }}
+        run: |
+          python3 scripts/verify-goreleaser-release.py \
+            --checksums "$RUNNER_TEMP/release-contract/checksums.txt" \
+            --manifest "$RUNNER_TEMP/release-contract/manifest.json" \
+            --version "$VERSION" \
+            --commit "$COMMIT"

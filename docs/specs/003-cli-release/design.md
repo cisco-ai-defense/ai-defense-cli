@@ -5,9 +5,10 @@
 | Workflow | Trigger | Outcome |
 |----------|---------|---------|
 | **Prepare release** | `workflow_dispatch` | Autofill → bump VERSION → finalize CHANGELOG → push `release/vX.Y.Z` |
-| **Release on merge** | `release/v*` PR merged to `main` or `release/**` | Push `vX.Y.Z` tag |
-| **Release** | Push tag `v*` | Embed builds, checksums, manifest, GitHub Release (title = tag; body = `CHANGELOG.md` `[VERSION]` section via `extract-changelog-section.py`) |
-| **Create release tag** | `workflow_dispatch` | Manual/dry-run tag (escape hatch) |
+| **Release on merge** | `release/v*` PR merged to `main` or `release/**` | Push `vX.Y.Z` tag and dispatch a draft Release |
+| **Release** | Push tag `v*` or `workflow_dispatch` | Embed builds, checksums, manifest, and a draft GitHub Release by default (title = tag; body = `CHANGELOG.md` `[VERSION]` section via `extract-changelog-section.py`) |
+| **Promote draft release** | `workflow_dispatch` | Validate a stable-version draft and publish the same tested assets as the latest release |
+| **Create release tag** | `workflow_dispatch` | Manual/dry-run tag (escape hatch); draft by default, with an explicit published-release override |
 
 ```mermaid
 sequenceDiagram
@@ -16,6 +17,8 @@ sequenceDiagram
   participant PR as release_vX_PR
   participant Tag as Release_on_merge
   participant Rel as Release
+  participant QA as Internal_QA
+  participant Promote as Promote_draft_release
 
   M->>Prep: dispatch ref plus bump
   Prep->>Prep: autofill_changelog.py
@@ -23,8 +26,32 @@ sequenceDiagram
   Prep->>Prep: push release/vX.Y.Z
   M->>PR: open PR manually base equals ref
   PR->>Tag: pull_request closed merged
-  Tag->>Rel: push vX.Y.Z
+  Tag->>Rel: push vX.Y.Z and dispatch draft build
+  Rel->>QA: draft release plus final artifacts
+  QA->>QA: verify checksums and test binaries
+  QA->>Promote: approve exact tag and assets
+  Promote->>Rel: publish existing draft as latest
 ```
+
+## Draft-first release and internal QA
+
+The normal release path stages the final `vX.Y.Z` tag as a GitHub draft. The tag is
+public as soon as it is pushed, but GitHub only lists the draft release, notes, and
+assets to authenticated users with push access. GitHub Actions logs for this public
+repository are public and MUST NOT contain confidential release data or credentials.
+
+Internal QA downloads the draft assets while authenticated, verifies
+`checksums.txt`, and records the tested tag, commit, platform, and binary digest. The
+assets are frozen during QA. Any asset replacement invalidates QA approval and
+requires another test pass.
+
+Promotion publishes the existing draft; it does not rebuild or upload assets. A
+read-only job validates the candidate before the `production-release` GitHub
+environment requests human approval. The publishing job revalidates the draft after
+approval, immediately before publishing, and is the only job granted write access.
+Repository administrators MUST configure required reviewers on the environment.
+Promotion accepts only stable `vX.Y.Z` tags, rejects prereleases, and verifies that
+the expected binaries, checksum file, and manifest are present before publication.
 
 ## Scripts
 
@@ -55,4 +82,7 @@ The `test` workflow job runs `make build-go test-cover-check vet`. On pull reque
 
 - **Prepare release:** `contents: write`
 - **Release on merge:** `contents: write`
+- **Release:** `contents: write`
+- **Promote draft release:** validation job `contents: read`; publishing job
+  `contents: write`, plus required reviewers on the `production-release` environment
 - Concurrency group `release-tag` prevents double tag push

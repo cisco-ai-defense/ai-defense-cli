@@ -1,0 +1,135 @@
+# Publish an existing QA-approved draft without rebuilding or replacing assets.
+name: Promote draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Stable draft tag to publish (e.g. v0.2.0)'
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: promote-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: validate-draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate draft and release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a stable release tag such as v0.2.0"
+            exit 1
+          fi
+
+          version="${TAG#v}"
+          release_json="$(gh release view "$TAG" --repo "$REPO" \
+            --json tagName,isDraft,isPrerelease,assets)"
+
+          if [ "$(jq -r '.tagName' <<< "$release_json")" != "$TAG" ]; then
+            echo "::error::Release tag does not match requested tag $TAG"
+            exit 1
+          fi
+          if [ "$(jq -r '.isDraft' <<< "$release_json")" != "true" ]; then
+            echo "::error::$TAG is not a draft release"
+            exit 1
+          fi
+          if [ "$(jq -r '.isPrerelease' <<< "$release_json")" != "false" ]; then
+            echo "::error::$TAG is marked as a prerelease"
+            exit 1
+          fi
+
+          expected_assets=(
+            "cisco-aid-cli-${version}-linux-amd64"
+            "cisco-aid-cli-${version}-darwin-amd64"
+            "cisco-aid-cli-${version}-darwin-arm64"
+            "checksums.txt"
+            "manifest.json"
+          )
+          for asset in "${expected_assets[@]}"; do
+            if ! jq -e --arg name "$asset" \
+              'any(.assets[]; .name == $name and .size > 0)' \
+              <<< "$release_json" >/dev/null; then
+              echo "::error::Draft $TAG is missing non-empty asset: $asset"
+              exit 1
+            fi
+          done
+
+          echo "Validated draft $TAG and all expected assets."
+
+  publish:
+    name: publish-approved-draft
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production-release
+    permissions:
+      contents: write
+    steps:
+      - name: Revalidate and publish existing draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a stable release tag such as v0.2.0"
+            exit 1
+          fi
+
+          version="${TAG#v}"
+          release_json="$(gh release view "$TAG" --repo "$REPO" \
+            --json tagName,isDraft,isPrerelease,assets)"
+
+          if [ "$(jq -r '.tagName' <<< "$release_json")" != "$TAG" ] || \
+             [ "$(jq -r '.isDraft' <<< "$release_json")" != "true" ] || \
+             [ "$(jq -r '.isPrerelease' <<< "$release_json")" != "false" ]; then
+            echo "::error::$TAG is no longer an eligible draft release"
+            exit 1
+          fi
+
+          expected_assets=(
+            "cisco-aid-cli-${version}-linux-amd64"
+            "cisco-aid-cli-${version}-darwin-amd64"
+            "cisco-aid-cli-${version}-darwin-arm64"
+            "checksums.txt"
+            "manifest.json"
+          )
+          for asset in "${expected_assets[@]}"; do
+            if ! jq -e --arg name "$asset" \
+              'any(.assets[]; .name == $name and .size > 0)' \
+              <<< "$release_json" >/dev/null; then
+              echo "::error::Draft $TAG is missing non-empty asset: $asset"
+              exit 1
+            fi
+          done
+
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest
+          echo "Published $TAG as the latest release."
+
+      - name: Promotion summary
+        env:
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "## Published $TAG"
+            echo ""
+            echo "Published the existing QA-approved draft without rebuilding assets."
+            echo ""
+            echo "[Open release](https://github.com/${REPO}/releases/tag/${TAG})"
+          } >> "$GITHUB_STEP_SUMMARY"

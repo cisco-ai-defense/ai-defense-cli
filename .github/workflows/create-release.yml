@@ -19,6 +19,11 @@ on:
         required: false
         type: boolean
         default: false
+      draft:
+        description: 'Create a draft release for internal QA before publication'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -57,9 +62,11 @@ jobs:
 
       - name: Dry run summary
         if: inputs.dry_run
+        env:
+          DRAFT: ${{ inputs.draft }}
         run: |
           echo "Dry run OK — would create tag v${{ inputs.version }} on ${{ steps.target.outputs.sha }}"
-          echo "Pushing the tag would start the Release workflow (build + GitHub Release)."
+          echo "Pushing the tag would start the Release workflow with draft=$DRAFT."
 
       - name: Create and push tag
         if: ${{ !inputs.dry_run }}
@@ -78,6 +85,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v${{ inputs.version }}
+          DRAFT: ${{ inputs.draft }}
         run: |
-          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG"
-          echo "Started Release workflow for $TAG"
+          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG" -f "draft=$DRAFT"
+          echo "Started Release workflow for $TAG with draft=$DRAFT"

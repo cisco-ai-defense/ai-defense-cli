@@ -1,5 +1,5 @@
-# Publish a versioned GitHub Release when a v* tag is pushed.
-# Tag name (e.g. v0.1.0) becomes the release version; keep VERSION file in sync.
+# Build a versioned GitHub Release when a v* tag is pushed. Releases are drafts
+# by default so internal QA can test the final assets before promotion.
 name: Release
 
 on:
@@ -9,9 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build and publish (e.g. v0.1.1). Use when Release did not start automatically.'
+        description: 'Tag to build (e.g. v0.1.1). Use when Release did not start automatically.'
         required: true
         type: string
+      draft:
+        description: 'Keep the release as a draft for internal QA'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -27,19 +32,29 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       commit: ${{ steps.v.outputs.commit }}
       tag: ${{ steps.v.outputs.tag }}
+      draft: ${{ steps.v.outputs.draft }}
     steps:
       - uses: actions/checkout@v6
 
       - name: Resolve version from tag
         id: v
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+          DISPATCH_DRAFT: ${{ inputs.draft }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
+            tag="$DISPATCH_TAG"
+            draft="$DISPATCH_DRAFT"
           else
             tag="${GITHUB_REF_NAME}"
+            draft="true"
           fi
-          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Invalid tag: $tag (expected e.g. v0.1.1)"
+            exit 1
+          fi
+          if [ "$draft" != "true" ] && [ "$draft" != "false" ]; then
+            echo "::error::Invalid draft value: $draft"
             exit 1
           fi
           version="${tag#v}"
@@ -50,6 +65,7 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "draft=$draft" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-go@v6
         with:
@@ -174,9 +190,11 @@ jobs:
             --version "$VERSION" \
             -o release-notes.md
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        id: github-release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          draft: ${{ needs.test.outputs.draft }}
           tag_name: ${{ needs.test.outputs.tag }}
           name: ${{ needs.test.outputs.tag }}
           body_path: release-notes.md
@@ -186,3 +204,21 @@ jobs:
             dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
             dist/checksums.txt
             dist/manifest.json
+
+      - name: Release summary
+        env:
+          TAG: ${{ needs.test.outputs.tag }}
+          DRAFT: ${{ needs.test.outputs.draft }}
+          RELEASE_URL: ${{ steps.github-release.outputs.url }}
+        run: |
+          {
+            echo "## GitHub Release $TAG"
+            echo ""
+            echo "Draft: \`$DRAFT\`"
+            echo ""
+            echo "[Open release]($RELEASE_URL)"
+            if [ "$DRAFT" = "true" ]; then
+              echo ""
+              echo "After internal QA approval, run **Promote draft release** with tag \`$TAG\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

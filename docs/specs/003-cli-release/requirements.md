@@ -59,3 +59,33 @@
 - **REQ-09.2** Default minimum diff coverage (`DIFF_COVER_MIN`) is **75%** of statements on changed production Go lines in scoped packages (same exclusions as REQ-08.3, plus `*_test.go`).
 - **REQ-09.3** `cmd/check-diff-coverage` reads `coverage.out` and the git diff; when no coverable production lines changed, the check MUST pass with a skip message.
 - **REQ-09.4** Checkout in CI MUST use `fetch-depth: 0` so merge-base is available on PRs.
+
+### REQ-10 — Draft-first release QA and promotion
+
+- **REQ-10.1** A release created from a merged `release/v*` PR or a direct `v*` tag
+  push MUST be created as a GitHub draft by default. The final tag remains
+  `v{VERSION}` so promotion publishes the exact tested release without retagging.
+- **REQ-10.2** **Create release tag** MUST expose a `draft` boolean input that defaults
+  to `true` and MUST forward the selected value to **Release**. Choosing a published
+  release is an explicit trusted-maintainer escape hatch.
+- **REQ-10.3** A draft release MUST contain the same three supported binaries,
+  `checksums.txt`, `manifest.json`, and CHANGELOG-derived notes required for a
+  published release.
+- **REQ-10.4** Internal QA MUST authenticate with an account that has repository push
+  access, verify `checksums.txt`, and record the tag, commit, platform, and tested
+  binary digest. Draft assets MUST remain unchanged during QA; replacing an asset
+  invalidates approval.
+- **REQ-10.5** **Promote draft release** MUST be a manual workflow that accepts only an
+  anchored stable tag (`vMAJOR.MINOR.PATCH`), verifies that the release exists, is a
+  draft, is not a prerelease, and contains every expected release artifact before
+  requesting production approval. The publishing job MUST repeat those checks after
+  approval, immediately before publishing the release as latest.
+- **REQ-10.6** Promotion MUST publish the existing draft without rebuilding or
+  re-uploading assets. The validation job MUST use only `contents: read`; only the
+  publishing job may use `contents: write`.
+- **REQ-10.7** The promotion job MUST target the `production-release` GitHub
+  environment. Repository administrators MUST configure required reviewers on that
+  environment before using draft promotion as the production approval gate.
+- **REQ-10.8** Documentation MUST state that, in a public repository, the tag and
+  Actions logs are public while GitHub restricts draft release listings and assets to
+  authenticated users with push access.

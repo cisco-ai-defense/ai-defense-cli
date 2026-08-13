@@ -1,4 +1,4 @@
-# Auto-tag when a release/v* prepare PR merges to main or a release/* line.
+# Auto-tag when a release/v* prepare PR merges, then stage a draft for QA.
 name: Release on merge
 
 on:
@@ -69,5 +69,5 @@ jobs:
           TAG: v${{ steps.meta.outputs.version }}
         run: |
           # Tag pushes from GITHUB_TOKEN do not trigger other workflows; dispatch explicitly.
-          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG"
-          echo "Started Release workflow for $TAG"
+          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG" -f "draft=true"
+          echo "Started draft Release workflow for $TAG"

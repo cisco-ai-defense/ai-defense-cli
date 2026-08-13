@@ -25,9 +25,50 @@ Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use th
 
 Each release also ships `checksums.txt` and `manifest.json` (version, commit, per-arch SHA-256).
 
-Releases are published when a **Prepare release** PR (`release/v*`) merges to `main` or a
-`release/*` line — **Release on merge** pushes the `v*` tag and starts the Release workflow.
+Releases are staged as drafts when a **Prepare release** PR (`release/v*`) merges to
+`main` or a `release/*` line — **Release on merge** pushes the final `v*` tag and starts
+the Release workflow. Internal QA tests those exact draft assets, then an approved
+**Promote draft release** run publishes the existing draft as the latest release.
 Prepare release pushes the branch; open the PR manually from the workflow summary link.
+
+## Internal QA of a draft release
+
+Draft releases are visible to authenticated repository members with push access
+(including Write access). In this public repository the `v*` tag and Actions logs are
+public, but the draft release notes and assets are not listed for the general public.
+Never place credentials or confidential information in release assets or workflow logs.
+
+QA can use the signed-in GitHub Releases page or GitHub CLI:
+
+```bash
+gh auth status
+gh release view v0.2.0 --repo cisco-ai-defense/ai-defense-cli
+mkdir qa-v0.2.0
+gh release download v0.2.0 \
+  --repo cisco-ai-defense/ai-defense-cli \
+  --dir qa-v0.2.0
+```
+
+From the download directory, verify the appropriate binary and run smoke tests:
+
+```bash
+cd qa-v0.2.0
+grep cisco-aid-cli-0.2.0-darwin-arm64 checksums.txt | shasum -a 256 -c
+chmod +x cisco-aid-cli-0.2.0-darwin-arm64
+./cisco-aid-cli-0.2.0-darwin-arm64 --version
+./cisco-aid-cli-0.2.0-darwin-arm64 --help
+```
+
+Record the tag, commit from `manifest.json`, platform, binary digest, and test result.
+Do not replace draft assets during QA; any replacement requires the checks and approval
+to be repeated.
+
+After QA approval, a maintainer runs **Promote draft release** with the same stable tag
+(for example `v0.2.0`). A read-only job validates the draft and expected assets before
+the configured `production-release` environment requests approval. After approval, the
+publishing job revalidates the draft and publishes it without a rebuild. Repository
+administrators must configure required reviewers for that GitHub environment before
+relying on it as the publication gate.
 
 ## Install from GitHub Release
 

@@ -54,7 +54,6 @@ jobs:
 
           expected_assets=(
             "cisco-aid-cli-${version}-linux-amd64"
-            "cisco-aid-cli-${version}-darwin-amd64"
             "cisco-aid-cli-${version}-darwin-arm64"
             "checksums.txt"
             "manifest.json"
@@ -104,7 +103,6 @@ jobs:
 
           expected_assets=(
             "cisco-aid-cli-${version}-linux-amd64"
-            "cisco-aid-cli-${version}-darwin-amd64"
             "cisco-aid-cli-${version}-darwin-arm64"
             "checksums.txt"
             "manifest.json"

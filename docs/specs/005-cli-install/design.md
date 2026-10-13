@@ -28,9 +28,9 @@ flowchart LR
 |-------------|-----------------|
 | linux/amd64 | linux-amd64 |
 | darwin/arm64 | darwin-arm64 |
-| darwin/amd64 | darwin-amd64 |
 
-Unsupported combinations return usage error (exit 2).
+Unsupported combinations, including Intel macOS (`darwin/amd64`), return usage
+error (exit 2).
 
 ## Release resolution
 

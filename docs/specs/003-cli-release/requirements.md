@@ -68,7 +68,8 @@
 - **REQ-10.2** **Create release tag** MUST expose a `prerelease` boolean input that
   defaults to `true` and MUST forward the selected value to **Release**. Choosing a
   stable release is an explicit trusted-maintainer escape hatch.
-- **REQ-10.3** A prerelease MUST contain the same three supported binaries,
+- **REQ-10.3** A prerelease MUST contain the two supported binaries
+  (`linux-amd64` and `darwin-arm64`),
   `checksums.txt`, `manifest.json`, and CHANGELOG-derived notes required for a
   stable release.
 - **REQ-10.4** Internal QA MUST verify `checksums.txt` and record the tag, commit,

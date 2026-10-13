@@ -13,11 +13,14 @@ the rename used `aid-cisco-cli-<version>-<os>-<arch>`). For version `0.1.0`:
 |----|--------------|---------------|
 | Linux | amd64 | `cisco-aid-cli-0.1.0-linux-amd64` |
 | macOS | arm64 (Apple Silicon) | `cisco-aid-cli-0.1.0-darwin-arm64` |
-| macOS | amd64 (Intel) | `cisco-aid-cli-0.1.0-darwin-amd64` |
 
 Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use the
 `linux-amd64` binary in a container (`platform: linux/amd64`), or
 [build from source](getting-started-developer.md) on the ARM host.
+
+Intel macOS (`darwin-amd64`) is not supported by current releases or self-update.
+Older releases may retain their historical Intel assets, but no new Intel macOS
+binary is published.
 
 > **macOS:** Release binaries are **unsigned and not notarized** (no Apple Developer ID).
 > Gatekeeper blocks the first run until you clear quarantine or approve the binary — see
@@ -123,7 +126,7 @@ gh release edit v0.2.0 \
    sudo mv ./cisco-aid-cli-0.1.0-darwin-arm64 /usr/local/bin/cisco-aid-cli
    ```
 
-   Replace the filename with your version and architecture (`darwin-amd64` on Intel Macs).
+   Replace `0.1.0` with your release version.
 
 3. If Gatekeeper still blocks the first run ("cannot verify … is free of malware"), use
    **System Settings → Privacy & Security → Open Anyway**, then re-run the command.
@@ -156,8 +159,8 @@ cisco-aid-cli install --check          # show available update without installin
 cisco-aid-cli install --prefix /usr/local/bin
 ```
 
-Supported platforms for self-update match release binaries: `linux-amd64`,
-`darwin-amd64`, `darwin-arm64`.
+Supported platforms for self-update match release binaries: `linux-amd64` and
+`darwin-arm64`.
 
 By default, `install` replaces the binary in the same directory as the running
 executable (or `--prefix`). On Linux and macOS the file is swapped atomically;

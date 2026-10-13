@@ -136,38 +136,9 @@ jobs:
           path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
           if-no-files-found: error
 
-  build-darwin-amd64:
-    name: darwin-amd64
-    needs: [test]
-    runs-on: macos-15-intel
-    env:
-      VERSION: ${{ needs.test.outputs.version }}
-      COMMIT: ${{ needs.test.outputs.commit }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Build release binary
-        run: |
-          make bundle
-          make build-release-darwin GOARCH=amd64 VERSION="$VERSION" COMMIT="$COMMIT"
-
-      - name: Smoke test release binary
-        run: make smoke-test-bin BIN="dist/cisco-aid-cli-${VERSION}-darwin-amd64" VERSION="$VERSION"
-
-      - uses: actions/upload-artifact@v6
-        with:
-          name: cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
-          path: dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
-          if-no-files-found: error
-
   release:
     name: release
-    needs: [test, linux-amd64, build-darwin-arm64, build-darwin-amd64]
+    needs: [test, linux-amd64, build-darwin-arm64]
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.test.outputs.version }}
@@ -202,7 +173,6 @@ jobs:
           body_path: release-notes.md
           files: |
             dist/cisco-aid-cli-${{ needs.test.outputs.version }}-linux-amd64
-            dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-amd64
             dist/cisco-aid-cli-${{ needs.test.outputs.version }}-darwin-arm64
             dist/checksums.txt
             dist/manifest.json

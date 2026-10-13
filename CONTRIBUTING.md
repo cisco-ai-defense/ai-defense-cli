@@ -52,13 +52,13 @@ Pull requests must pass all **required** CI checks before merge:
 | `Analyze (go)` | CodeQL static analysis (Go) |
 | `Analyze (python)` | CodeQL static analysis (Python scripts) |
 | `linux-amd64` | Full embed release binary (Docker) + smoke test (`--version`, all `--help`) |
-| `darwin-arm64` / `darwin-amd64` | Full embed release binary (macOS) + smoke test |
+| `darwin-arm64` | Full embed release binary (Apple Silicon macOS) + smoke test |
 
 The `checksums` job runs only on **push to `main` or `release/*`** (when artifacts are
 published). It does not run on pull requests.
 
-**Branch protection (repo admins):** Required PR checks are the six jobs above (`test`,
-`Analyze (go)`, `Analyze (python)`, and three platform embed builds). Do **not** require
+**Branch protection (repo admins):** Required PR checks are the five jobs above (`test`,
+`Analyze (go)`, `Analyze (python)`, and two platform embed builds). Do **not** require
 `meta` (removed), `linux-arm64` (not published), `checksums` (main/release push only),
 or duplicate **Code Quality / dynamic** CodeQL checks — disable default setup under
 **Settings → Code security** and keep only `.github/workflows/codeql.yml`.

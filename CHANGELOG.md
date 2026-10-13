@@ -10,6 +10,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 - **Release QA staging uses public prereleases** — replaces draft releases so
   EMU accounts can download and test release assets. Promotion clears prerelease
   status and marks the same tag and assets as latest without rebuilding.
+- **Release platform matrix** — future releases publish `linux-amd64` and
+  `darwin-arm64` only. Intel macOS (`darwin-amd64`) is no longer supported by
+  release builds or self-update; historical assets remain on older releases.
 
 ## [0.2.0] - 2026-10-13
 

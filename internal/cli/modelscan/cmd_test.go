@@ -18,8 +18,11 @@ package modelscan
 
 import (
 	"bytes"
+	"io"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -105,6 +108,148 @@ func TestListCmd_HTTP(t *testing.T) {
 	})
 	if !strings.Contains(out, "s1") {
 		t.Fatalf("expected list JSON, got %q", out)
+	}
+}
+
+func TestTriggerCmd_InvalidUploadConcurrency(t *testing.T) {
+	want, ok := cliexitdoc.ContractCode(cliexitdoc.ModelScanContract(), "Invalid `--upload-concurrency`")
+	if !ok {
+		t.Fatal("registry missing --upload-concurrency row")
+	}
+	for _, n := range []string{"0", "33", "-4"} {
+		t.Run(n, func(t *testing.T) {
+			called := false
+			cli := apitest.NewTestCLI(t, func(w http.ResponseWriter, r *http.Request) { called = true })
+			err := execCmd(t, NewCmd(cli), "trigger", "--file-path", "model.pth", "--upload-concurrency", n)
+			if code := clierror.Classify(err).Code; code != want {
+				t.Fatalf("exit code = %d, want %d (err %v)", code, want, err)
+			}
+			if called {
+				t.Fatal("no API call expected before flag validation passes")
+			}
+		})
+	}
+}
+
+func TestTriggerCmd_UploadConcurrencyIgnoredOutsideMultipart(t *testing.T) {
+	t.Setenv("AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK", "0")
+	filePath := t.TempDir() + "/model.bin"
+	if err := os.WriteFile(filePath, []byte("0123456789abcdef"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"repository scan", []string{"--repo-url", "https://huggingface.co/org/model"}},
+		{"single-PUT file scan", []string{"--file-path", filePath, "--no-multipart"}},
+	}
+	for _, tt := range tests {
+		for _, n := range []string{"0", "33", "-4"} {
+			t.Run(tt.name+"/"+n, func(t *testing.T) {
+				var mu sync.Mutex
+				var triggered bool
+				cli := apitest.NewTestCLI(t, func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
+					defer mu.Unlock()
+					p := r.URL.Path
+					switch {
+					case strings.HasSuffix(p, "/scans/register"):
+						w.Write([]byte(`{"scan_id":"scan-1"}`))
+					case strings.HasSuffix(p, "/scans/scan-1/validate_url"):
+						w.Write([]byte(`{"is_accessible":true}`))
+					case strings.HasSuffix(p, "/scans/scan-1/objects"):
+						w.Write([]byte(`{"object_id":"obj-1","upload_url":"https://uploads.example.com/single"}`))
+					case r.Method == http.MethodPut && p == "/single":
+					case strings.HasSuffix(p, "/scans/scan-1/run"):
+						triggered = true
+					case r.Method == http.MethodGet && strings.HasSuffix(p, "/scans/scan-1"):
+						w.Write([]byte(`{"scan_status_info":{"scan_id":"scan-1","status":"COMPLETED"}}`))
+					default:
+						t.Errorf("unexpected %s %s", r.Method, p)
+					}
+				})
+
+				args := append([]string{"trigger", "--fail-on", "none", "--upload-concurrency", n}, tt.args...)
+				captureStdout(t, func() {
+					if err := execCmd(t, NewCmd(cli), args...); err != nil {
+						t.Fatalf("trigger: %v (exit %d)", err, clierror.Classify(err).Code)
+					}
+				})
+				if !triggered {
+					t.Fatal("expected the scan to run")
+				}
+			})
+		}
+	}
+}
+
+func TestTriggerCmd_UploadModes(t *testing.T) {
+	tests := []struct {
+		name          string
+		args          []string
+		wantMultipart bool
+	}{
+		{name: "multipart default", wantMultipart: true},
+		{name: "no-multipart flag", args: []string{"--no-multipart"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK", "0")
+			filePath := t.TempDir() + "/model.bin"
+			if err := os.WriteFile(filePath, []byte("0123456789abcdef"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			var mu sync.Mutex
+			var sawMultipartReq, completed, singlePut bool
+			cli := apitest.NewTestCLI(t, func(w http.ResponseWriter, r *http.Request) {
+				mu.Lock()
+				defer mu.Unlock()
+				p := r.URL.Path
+				switch {
+				case strings.HasSuffix(p, "/scans/register"):
+					w.Write([]byte(`{"scan_id":"scan-1"}`))
+				case strings.HasSuffix(p, "/scans/scan-1/objects"):
+					body, _ := io.ReadAll(r.Body)
+					if strings.Contains(string(body), `"use_multipart_upload":true`) {
+						sawMultipartReq = true
+						w.Write([]byte(`{"object_id":"obj-1","multipart_upload":{"upload_id":"u-1","part_size_bytes":"8"}}`))
+						return
+					}
+					w.Write([]byte(`{"object_id":"obj-1","upload_url":"https://uploads.example.com/single"}`))
+				case strings.HasSuffix(p, "/multipart/part-urls"):
+					w.Write([]byte(`{"parts":[{"part_number":1,"upload_url":"https://model-bucket.s3.us-west-2.amazonaws.com/p1"},{"part_number":2,"upload_url":"https://model-bucket.s3.us-west-2.amazonaws.com/p2"}]}`))
+				case r.Method == http.MethodPut && (p == "/p1" || p == "/p2"):
+					w.Header().Set("ETag", `"`+p+`"`)
+				case r.Method == http.MethodPut && p == "/single":
+					singlePut = true
+				case strings.HasSuffix(p, "/multipart/complete"):
+					completed = true
+				case strings.HasSuffix(p, "/scans/scan-1/run"):
+				case r.Method == http.MethodGet && strings.HasSuffix(p, "/scans/scan-1"):
+					w.Write([]byte(`{"scan_status_info":{"scan_id":"scan-1","status":"COMPLETED"}}`))
+				default:
+					t.Errorf("unexpected %s %s", r.Method, p)
+				}
+			})
+
+			args := append([]string{"trigger", "--file-path", filePath, "--fail-on", "none"}, tt.args...)
+			out := captureStdout(t, func() {
+				if err := execCmd(t, NewCmd(cli), args...); err != nil {
+					t.Fatalf("trigger: %v", err)
+				}
+			})
+			if !strings.Contains(out, "scan-1") {
+				t.Fatalf("expected scan JSON on stdout, got %q", out)
+			}
+			if strings.Contains(out, "Uploading") {
+				t.Fatalf("progress must never go to stdout: %q", out)
+			}
+			if sawMultipartReq != tt.wantMultipart || completed != tt.wantMultipart || singlePut == tt.wantMultipart {
+				t.Fatalf("multipart req=%v complete=%v single=%v, want multipart=%v", sawMultipartReq, completed, singlePut, tt.wantMultipart)
+			}
+		})
 	}
 }
 

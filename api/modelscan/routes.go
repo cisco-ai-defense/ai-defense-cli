@@ -30,3 +30,15 @@ func ScanByID(scanID string) string {
 func ObjectByID(scanID, objectID string) string {
 	return fmt.Sprintf("%s/%s/%s", ScanByID(scanID), ScanObjects, objectID)
 }
+
+func MultipartPartURLs(scanID, objectID string) string {
+	return ObjectByID(scanID, objectID) + "/multipart/part-urls"
+}
+
+func MultipartComplete(scanID, objectID string) string {
+	return ObjectByID(scanID, objectID) + "/multipart/complete"
+}
+
+func MultipartAbort(scanID, objectID string) string {
+	return ObjectByID(scanID, objectID) + "/multipart/abort"
+}

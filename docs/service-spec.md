@@ -136,8 +136,8 @@ See [architecture/ai-defense-cli.md](architecture/ai-defense-cli.md) and [spec 0
 | `AI_DEFENSE_CONFIG_PATH` | Path to TOML config file |
 | `AI_DEFENSE_MCP_RETRY_COUNT` | Max poll iterations for MCP scan (default: 60) |
 | `AI_DEFENSE_MCP_WAIT_TIME_SECS` | Seconds between MCP scan polls (default: 10) |
-| `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` | Max poll iterations for model scan (default: 60) |
-| `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` | Seconds between model scan polls (default: 10) |
+| `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` | Max poll iterations for model scan. Unset (with the wait variable also unset): 1,500 polls at 10 s, a 15,000 s budget. Set: this count (default 60 when only the wait variable is set) |
+| `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` | Seconds between model scan polls (default: 10). Setting either model-scan variable replaces the 15,000 s default with retry count × wait time |
 | `AIBOM_LLM_MODEL` | Default for `--llm-model` (required for `ai-bom analyze`) |
 | `AIBOM_LLM_PROVIDER` | Default for `--llm-provider` |
 | `AIBOM_LLM_API_KEY` | Default for `--llm-api-key`; passed to the analyzer via the environment |

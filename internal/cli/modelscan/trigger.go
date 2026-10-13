@@ -32,6 +32,8 @@ func newTriggerCmd(cli *cmdutil.CLI) *cobra.Command {
 	var filePath string
 	var repoURL string
 	var repoToken string
+	var noMultipart bool
+	var uploadConcurrency int
 	var resultOpts *cmdutil.ScanResultOptions
 
 	cmd := &cobra.Command{
@@ -43,8 +45,12 @@ Prints raw API JSON by default (Python CLI parity). Use --envelope for the
 normalized verdict JSON/text. Exit codes follow the scan contract: 0 pass,
 10 fail (>= --fail-on), 20 block (>= --block-on); operational failures use 1-5.
 
+Files are uploaded with S3 multipart upload (parallel parts, per-part retries).
+Use --no-multipart to upload the whole file in a single request instead.
+
 Examples:
   cisco-aid-cli model-scan trigger -f model.pth
+  cisco-aid-cli model-scan trigger -f model.safetensors --upload-concurrency 4
   cisco-aid-cli model-scan trigger --repo-url huggingface.co/username/model
   cisco-aid-cli model-scan trigger -f model.pth --fail-on high --output text`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -57,6 +63,11 @@ Examples:
 			if err := resultOpts.Validate(); err != nil {
 				return err
 			}
+			if filePath != "" && !noMultipart {
+				if err := modelscansdk.ValidateUploadConcurrency(uploadConcurrency); err != nil {
+					return clierror.Usage(err.Error())
+				}
+			}
 
 			apiKey, baseURL, err := cli.ResolveAuth()
 			if err != nil {
@@ -66,10 +77,23 @@ Examples:
 			config := cli.APIConfig(baseURL)
 			client := modelscansdk.NewClient(apiKey, config)
 
+			spinnerText := repoSpinnerText
+			if filePath != "" {
+				spinnerText = fileSpinnerText
+			}
+			spinner := newStatusSpinner(spinnerText)
+			client.SetEvents(modelscansdk.ScanEvents{PollingStarted: spinner.start})
 			var raw json.RawMessage
 			if filePath != "" {
 				fmt.Fprintln(os.Stderr, "Scanning file (uploading and processing)...")
-				raw, err = client.ScanFile(filePath)
+				progress := newUploadProgress()
+				opts := modelscansdk.UploadOptions{
+					DisableMultipart: noMultipart,
+					Concurrency:      uploadConcurrency,
+					Progress:         progress.report,
+				}
+				raw, err = client.ScanFileWithOptions(filePath, opts)
+				progress.close()
 			} else {
 				fmt.Fprintln(os.Stderr, "Scanning repository (processing)...")
 				repoConfig := &modelscansdk.ModelRepoConfig{
@@ -87,6 +111,7 @@ Examples:
 				}
 				raw, err = client.ScanRepo(repoConfig)
 			}
+			spinner.close()
 			if err != nil {
 				return err
 			}
@@ -102,6 +127,9 @@ Examples:
 	cmd.Flags().StringVarP(&filePath, "file-path", "f", "", "Local path to the model file")
 	cmd.Flags().StringVar(&repoURL, "repo-url", "", "URL of the model repository")
 	cmd.Flags().StringVar(&repoToken, "repo-token", "", "HuggingFace token for private repos")
+	cmd.Flags().BoolVar(&noMultipart, "no-multipart", false, "Upload --file-path in a single request instead of multipart parts")
+	cmd.Flags().IntVar(&uploadConcurrency, "upload-concurrency", modelscansdk.DefaultUploadConcurrency,
+		fmt.Sprintf("Parallel multipart part uploads for --file-path (1-%d)", modelscansdk.MaxUploadConcurrency))
 	resultOpts = cmdutil.AddScanResultFlags(cmd)
 
 	return cmd

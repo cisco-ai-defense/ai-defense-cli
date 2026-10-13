@@ -30,15 +30,36 @@ import (
 const (
 	defaultRetryCount = 60
 	defaultWaitSecs   = 10
+
+	envRetryCount = "AI_DEFENSE_RETRY_COUNT_FOR_SCANNING"
+	envWaitSecs   = "AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK"
+
+	// scan-manager allows a scan up to 4 h after trigger; waiting slightly
+	// longer returns its final status instead of a client-side timeout.
+	// Matches DEFAULT_SCAN_RESULT_TIMEOUT_SECONDS in cisco-aidefense-sdk.
+	scanResultTimeoutSecs = 15000
+
+	// DefaultUploadTimeoutSecs bounds each presigned upload request (a whole
+	// file or one multipart part) when the config does not set UploadTimeout.
+	DefaultUploadTimeoutSecs = 300
 )
 
 // Client provides access to the AI Defense Model Scan API.
 type Client struct {
-	base *api.BaseClient
+	base   *api.BaseClient
+	events ScanEvents
 }
 
 // NewClient creates a new model scan client.
 func NewClient(apiKey string, config *api.Config) *Client {
+	if config == nil {
+		config = api.NewConfig("")
+	}
+	if config.UploadTimeout <= 0 {
+		withUpload := *config
+		withUpload.UploadTimeout = DefaultUploadTimeoutSecs
+		config = &withUpload
+	}
 	return &Client{base: api.NewBaseClient(apiKey, config)}
 }
 
@@ -57,15 +78,23 @@ func (c *Client) RegisterScan() (*RegisterScanResponse, error) {
 
 // CreateScanObject creates a scan object and returns (objectID, uploadURL).
 func (c *Client) CreateScanObject(scanID string, req *CreateScanObjectRequest) (string, string, error) {
-	resp, err := c.base.Post(ScanByID(scanID)+"/"+ScanObjects, req)
+	result, err := c.createScanObject(scanID, req)
 	if err != nil {
 		return "", "", err
 	}
+	return result.ObjectID, result.UploadURL, nil
+}
+
+func (c *Client) createScanObject(scanID string, req *CreateScanObjectRequest) (*CreateScanObjectResponse, error) {
+	resp, err := c.base.Post(ScanByID(scanID)+"/"+ScanObjects, req)
+	if err != nil {
+		return nil, err
+	}
 	var result CreateScanObjectResponse
 	if err := json.Unmarshal(resp, &result); err != nil {
-		return "", "", fmt.Errorf("failed to parse create scan object response: %w", err)
+		return nil, fmt.Errorf("failed to parse create scan object response: %w", err)
 	}
-	return result.ObjectID, result.UploadURL, nil
+	return &result, nil
 }
 
 // UploadFile uploads a file to the presigned URL.
@@ -209,11 +238,23 @@ func (c *Client) CleanupScanData(scanID string) {
 	_ = c.DeleteScan(scanID)
 }
 
-// ScanFile performs a cloud-based file scan: register, upload, trigger, and poll.
+// ScanFile performs a cloud-based file scan with default upload options.
 func (c *Client) ScanFile(filePath string) (json.RawMessage, error) {
+	return c.ScanFileWithOptions(filePath, UploadOptions{})
+}
+
+// ScanFileWithOptions performs a cloud-based file scan: register, upload,
+// trigger, and poll.
+func (c *Client) ScanFileWithOptions(filePath string, opts UploadOptions) (json.RawMessage, error) {
+	if _, err := opts.concurrency(); err != nil {
+		return nil, err
+	}
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to stat file %s: %w", filePath, err)
+	}
+	if info.Size() == 0 {
+		return nil, errEmptyFile
 	}
 
 	reg, err := c.RegisterScan()
@@ -227,17 +268,7 @@ func (c *Client) ScanFile(filePath string) (json.RawMessage, error) {
 		return nil, err
 	}
 
-	req := &CreateScanObjectRequest{
-		FileName: info.Name(),
-		Size:     info.Size(),
-	}
-	_, uploadURL, err := c.CreateScanObject(scanID, req)
-	if err != nil {
-		c.CleanupScanData(scanID)
-		return nil, fmt.Errorf("failed to create scan object: %w", err)
-	}
-
-	if err := c.UploadFile(uploadURL, filePath); err != nil {
+	if err := c.UploadFileWithOptions(scanID, filePath, opts); err != nil {
 		c.CleanupScanData(scanID)
 		return nil, fmt.Errorf("failed to upload file: %w", err)
 	}
@@ -276,14 +307,26 @@ func (c *Client) ScanRepo(repoConfig *ModelRepoConfig) (json.RawMessage, error) 
 	return c.pollScanCompletion(scanID)
 }
 
+// pollPlan returns the poll interval and count. Either env var replaces the
+// 15,000 s default with retry count × wait time.
+func pollPlan() (waitSecs, retryCount int) {
+	if os.Getenv(envRetryCount) != "" || os.Getenv(envWaitSecs) != "" {
+		return envIntOrDefault(envWaitSecs, defaultWaitSecs), envIntOrDefault(envRetryCount, defaultRetryCount)
+	}
+	return defaultWaitSecs, scanResultTimeoutSecs / defaultWaitSecs
+}
+
 func (c *Client) pollScanCompletion(scanID string) (json.RawMessage, error) {
-	retryCount := envIntOrDefault("AI_DEFENSE_RETRY_COUNT_FOR_SCANNING", defaultRetryCount)
-	waitSecs := envIntOrDefault("AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK", defaultWaitSecs)
+	waitSecs, retryCount := pollPlan()
 
 	terminalStatuses := map[ScanStatus]bool{
 		ScanStatusCompleted: true,
 		ScanStatusFailed:    true,
 		ScanStatusCanceled:  true,
+	}
+
+	if c.events.PollingStarted != nil {
+		c.events.PollingStarted()
 	}
 
 	for i := 0; i < retryCount; i++ {
@@ -303,7 +346,12 @@ func (c *Client) pollScanCompletion(scanID string) (json.RawMessage, error) {
 		}
 	}
 
-	return nil, &api.PollTimeoutError{ScanID: scanID, BudgetSecs: retryCount * waitSecs}
+	return nil, &api.PollTimeoutError{
+		ScanID:        scanID,
+		BudgetSecs:    retryCount * waitSecs,
+		StatusCommand: "cisco-aid-cli model-scan info --scan-id " + scanID,
+		BudgetEnvVars: []string{envRetryCount, envWaitSecs},
+	}
 }
 
 func envIntOrDefault(key string, defaultVal int) int {

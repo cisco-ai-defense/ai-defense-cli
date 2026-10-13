@@ -18,12 +18,16 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -146,30 +150,101 @@ func (c *BaseClient) DoRequest(method, path string, params url.Values, body inte
 
 // DoRawPUT performs a raw PUT to a presigned upload URL returned by the API.
 func (c *BaseClient) DoRawPUT(uploadURL string, body io.Reader, contentLength int64) error {
+	_, err := c.DoRawPUTWithHeaders(context.Background(), uploadURL, body, contentLength)
+	return err
+}
+
+// DoRawPUTWithHeaders performs a raw PUT to a presigned upload URL and returns
+// the response headers (e.g. the S3 ETag of a multipart part).
+func (c *BaseClient) DoRawPUTWithHeaders(ctx context.Context, uploadURL string, body io.Reader, contentLength int64) (http.Header, error) {
+	return c.doRawPUT(ctx, c.uploadHTTPClient(), uploadURL, body, contentLength)
+}
+
+// DoRawPUTNoRedirect is DoRawPUTWithHeaders without following redirects; a
+// 3xx response is returned as an ApiError.
+func (c *BaseClient) DoRawPUTNoRedirect(ctx context.Context, uploadURL string, body io.Reader, contentLength int64) (http.Header, error) {
+	client := *c.uploadHTTPClient()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	return c.doRawPUT(ctx, &client, uploadURL, body, contentLength)
+}
+
+func (c *BaseClient) doRawPUT(ctx context.Context, client *http.Client, uploadURL string, body io.Reader, contentLength int64) (http.Header, error) {
 	if err := validateUploadURL(uploadURL); err != nil {
-		return err
+		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, uploadURL, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadURL, body)
 	if err != nil {
-		return fmt.Errorf("failed to create upload request: %w", err)
+		return nil, fmt.Errorf("failed to create upload request: %w", err)
 	}
 	req.ContentLength = contentLength
 
-	resp, err := c.uploadHTTPClient().Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
-		return &TransportError{Method: http.MethodPut, URL: uploadURL, Cause: err}
+		return nil, &TransportError{Method: http.MethodPut, URL: uploadURL, Cause: withoutURL(err)}
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return &ApiError{
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, maxUploadErrorBody))
+		return nil, &ApiError{
 			StatusCode: resp.StatusCode,
-			Message:    string(respBody),
+			Message:    uploadErrorMessage(respBody),
 		}
 	}
-	return nil
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxUploadErrorBody))
+	return resp.Header, nil
+}
+
+const (
+	// maxUploadErrorBody caps how much of an upload error body is read into memory.
+	maxUploadErrorBody = 64 << 10
+	// maxUploadErrorField caps the S3 Code and Message echoed to the user.
+	maxUploadErrorField = 512
+)
+
+// presignedQueryValue matches presigned-URL credential parameters and their
+// values (SigV4 X-Amz-*, SigV2 AWSAccessKeyId/Signature, security tokens).
+var presignedQueryValue = regexp.MustCompile(`(?i)(x-amz-[a-z-]+|awsaccesskeyid|signature|credential|security-token)=[^&\s"'<>]*`)
+
+// uploadErrorMessage reduces an object-store error body to its S3 code and
+// message. Full S3 error documents can echo the access key ID and the string
+// to sign, and other bodies (proxy or WAF pages) can reflect the presigned
+// URL, so nothing else from the body reaches the terminal or CI logs.
+func uploadErrorMessage(body []byte) string {
+	var s3Err struct {
+		Code    string `xml:"Code"`
+		Message string `xml:"Message"`
+	}
+	if xml.Unmarshal(body, &s3Err) != nil || s3Err.Code == "" {
+		if len(body) == 0 {
+			return ""
+		}
+		return fmt.Sprintf("unexpected response from object store (%d bytes, not shown)", len(body))
+	}
+	msg := redactUploadErrorField(s3Err.Code)
+	if m := redactUploadErrorField(s3Err.Message); m != "" {
+		msg += ": " + m
+	}
+	return msg
+}
+
+func redactUploadErrorField(s string) string {
+	s = presignedQueryValue.ReplaceAllString(strings.TrimSpace(s), "$1=REDACTED")
+	if len(s) > maxUploadErrorField {
+		s = s[:maxUploadErrorField] + "…"
+	}
+	return s
+}
+
+// withoutURL drops the *url.Error wrapper, whose message embeds the full
+// presigned URL (including its signature), keeping only the underlying cause.
+func withoutURL(err error) error {
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) && urlErr.Err != nil {
+		return urlErr.Err
+	}
+	return err
 }
 
 // Get performs a GET request.
@@ -213,9 +288,16 @@ func (c *BaseClient) uploadHTTPClient() *http.Client {
 	return c.uploadFallback
 }
 
+// uploadMaxIdleConnsPerHost keeps one reusable connection per parallel
+// multipart part (Go's default of 2 forces a new TLS handshake per part).
+const uploadMaxIdleConnsPerHost = 32
+
 func newUploadHTTPClient(uploadSecs int) *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConnsPerHost = uploadMaxIdleConnsPerHost
 	return &http.Client{
 		Timeout:       time.Duration(uploadSecs) * time.Second,
+		Transport:     transport,
 		CheckRedirect: uploadCheckRedirect,
 	}
 }

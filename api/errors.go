@@ -49,13 +49,61 @@ func (e *ValidationError) Error() string {
 
 // PollTimeoutError indicates a scan did not reach a terminal status within the
 // polling budget. Commands map this to exit code 4 (connectivity/timeout).
+// The scan keeps running server-side, so StatusCommand (how to check it) and
+// BudgetEnvVars (how to wait longer next time) drive the remediation hint.
 type PollTimeoutError struct {
-	ScanID     string
-	BudgetSecs int
+	ScanID        string
+	BudgetSecs    int
+	StatusCommand string
+	BudgetEnvVars []string
 }
 
 func (e *PollTimeoutError) Error() string {
 	return fmt.Sprintf("scan %s did not complete within %ds", e.ScanID, e.BudgetSecs)
+}
+
+// UploadError is a failed presigned upload to the object store: one multipart
+// part, or the whole file when Part is 0. Its cause (an ApiError or
+// TransportError from S3) is not an AI Defense API failure, so commands must
+// classify UploadError before looking for those types in the chain.
+type UploadError struct {
+	Part int
+	// Transient reports that the last failure was a network error, throttling,
+	// a server error, or an expired presigned URL.
+	Transient bool
+	Cause     error
+}
+
+// Error omits the cause (parity with the Python SDK); Detail describes it.
+func (e *UploadError) Error() string {
+	if e.Part > 0 {
+		return fmt.Sprintf("multipart upload part %d failed", e.Part)
+	}
+	return "file upload failed"
+}
+
+func (e *UploadError) Unwrap() error { return e.Cause }
+
+// Detail describes the object store's response without the presigned URL.
+func (e *UploadError) Detail() string {
+	var apiErr *ApiError
+	if errors.As(e.Cause, &apiErr) {
+		if apiErr.Message == "" {
+			return fmt.Sprintf("object store returned status %d", apiErr.StatusCode)
+		}
+		return fmt.Sprintf("object store returned status %d: %s", apiErr.StatusCode, apiErr.Message)
+	}
+	var transportErr *TransportError
+	if errors.As(e.Cause, &transportErr) {
+		if isTimeout(transportErr.Cause) {
+			return "request to the object store timed out"
+		}
+		return fmt.Sprintf("request to the object store failed: %v", transportErr.Cause)
+	}
+	if e.Cause != nil {
+		return e.Cause.Error()
+	}
+	return ""
 }
 
 // TransportError wraps HTTP client failures (timeout, DNS, TLS, connection refused).

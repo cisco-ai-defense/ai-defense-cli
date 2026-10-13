@@ -76,6 +76,12 @@ These apply to any command that calls the AI Defense API or shares auth resoluti
 | Model scan | `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING`, `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` |
 | MCP scan | `AI_DEFENSE_MCP_RETRY_COUNT`, `AI_DEFENSE_MCP_WAIT_TIME_SECS` |
 
+A model-scan poll timeout does not cancel the scan. Check its result with
+`model-scan info --scan-id <id>`; running the scan command again
+registers a new scan (and re-uploads the file).
+`model-scan trigger` waits up to 15,000 s by default; if either model-scan
+variable above is set, the budget is retry count × wait time (defaults 60 and 10 s).
+
 ---
 
 ## Policy gating (`--fail-on` / `--block-on`)
@@ -169,8 +175,10 @@ Report findings without failing the step: `--fail-on none --block-on none`.
 | `trigger` | Success, policy pass | 0 | Raw API JSON on stdout |
 | `trigger` | Missing `file-path` / `repo-url` / both set | 2 |  |
 | `trigger` | Invalid `--fail-on`, `--block-on`, `--output` | 2 |  |
+| `trigger` | Invalid `--upload-concurrency` (outside 1-32) | 2 | File scans in multipart mode only; checked before any API call |
+| `trigger` | Upload to object store failed (multipart part or single PUT) | 1 / 4 | 4 if transient (network, 429, 5xx, expired URL), else 1; scan is deleted |
 | `trigger` | Auth failure | 3 |  |
-| `trigger` | File missing or unsupported type | 1 |  |
+| `trigger` | File missing, empty, or unsupported type | 1 |  |
 | `trigger` | Repo not accessible (API validation) | 2 |  |
 | `trigger` | Poll timeout | 4 |  |
 | `trigger` | Scan FAILED / CANCELED | 5 |  |

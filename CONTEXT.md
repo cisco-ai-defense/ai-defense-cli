@@ -30,6 +30,7 @@ model-scan, mcp-scan, ai-bom with deterministic exit codes and release binaries.
 - [x] **Binary rename (ADR 0002)** — `aid-cisco-cli` → `cisco-aid-cli` (command + release artifacts); `install --version` falls back to legacy artifact names
 - [x] **Coverage gate (PR #14)** — CI `make test-cover-check` (75% floor on scoped packages); `internal/testutil/apitest`; expanded command HTTP tests. TUI/onboarding packages excluded from gate until unit-tested.
 - [ ] **Diff coverage gate (PR #15, `feature/diff-coverage-gate`)** — PR CI `make test-diff-cover-check` (75% on changed production lines vs merge base); `internal/diffcover`, `cmd/check-diff-coverage`, REQ-09
+- [ ] **Model-scan multipart upload** — SDK 2.2.0 parity for `model-scan trigger -f` (parallel S3 multipart, retries, `--no-multipart`, `--upload-concurrency`, upload progress bar and waiting spinner, 300 s upload timeout)
 - [ ] **CodeQL advanced setup** — `.github/workflows/codeql.yml` (Go + Python); disable repo default setup; **requires org GitHub Code Security license** for SARIF upload on this internal repo
 - [ ] Merge PR #3 after CI green (includes README evergreen + doc skill updates)
 

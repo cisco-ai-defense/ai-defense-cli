@@ -6,6 +6,64 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Added
+- **`model-scan trigger` multipart upload** — local files upload through S3
+  multipart (parity with `cisco-aidefense-sdk` 2.2.0): parallel parts, part URL
+  batches of 32 with two batches pipelined, up to 3 attempts per part on
+  network errors, 429/5xx, or an expired presigned URL, and abort + scan
+  cleanup on failure. Parallel parts reuse connections. New flags:
+  `--no-multipart` and `--upload-concurrency` (1–32, default 10)
+  ([spec 008](docs/specs/008-model-scan-multipart/), AIFW-35569).
+- **`model-scan trigger` upload progress and waiting spinner** — after the
+  existing `Scanning file (uploading and processing)...` line, stderr shows
+  the `cisco-aidefense-sdk` 2.2.0 upload bar
+  (`Uploading [###---] 37.5% (1536.0/4096.0 MiB)`), updated as bytes are sent,
+  then the SDK spinner (`| Upload complete. Waiting for scan status...`) while
+  waiting for results. Repository scans show the spinner as
+  `| Waiting for scan status...`, since nothing is uploaded. Stdout still
+  carries only the result.
+
+### Changed
+- **Longer default wait for results** — `model-scan trigger` (file and
+  repository scans) now waits up to 15,000 s (about 4 h 10 min) instead of
+  600 s, matching `cisco-aidefense-sdk`. The service allows a scan up to 4 h
+  after it is triggered, so very large models are no longer reported as timed
+  out while still downloading or scanning. Polling stops as soon as the scan
+  finishes. If `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` or
+  `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` is set, the budget is
+  their product instead (defaults 60 and 10 s) (AIFW-35569).
+- **Model-scan poll timeout hint** — says the scan is still running and was
+  not cancelled, and prints the `model-scan info --scan-id` command instead of
+  telling you to re-run, which would start a new scan and upload the file
+  again.
+- **Upload timeout** — presigned uploads (each multipart part, or the whole
+  file with `--no-multipart`) now time out after 300 s instead of the 30 s API
+  request timeout.
+- **Empty model files are rejected** before any API call (`file must not be
+  empty`, exit 1), matching the SDK.
+- **No silent single-PUT fallback** — if the service does not offer multipart,
+  the default upload fails; pass `--no-multipart` for such servers.
+- **Upload failures are reported as upload failures** — a failed multipart
+  part reports `multipart upload part N failed` (SDK wording), and a failed
+  `--no-multipart` upload reports `file upload failed`, each followed by the
+  object store's status and S3 error code. They exit 4 when the object store
+  kept failing transiently (network, throttling, server errors) and 1
+  otherwise, instead of being mistaken for AI Defense API errors (for example
+  an S3 403 exiting 3 with API-key advice).
+- `--upload-concurrency` is only checked for file scans in multipart mode; it
+  is ignored (not rejected) with `--repo-url` or `--no-multipart`.
+
+### Security
+- Presigned upload errors no longer echo the URL signature or the raw S3 error
+  document (which can include the access key ID and string to sign); only the
+  S3 error code and message are shown, with any presigned-URL parameter values
+  redacted. Other error bodies (for example a proxy page that reflects the
+  request URL) are not shown at all.
+- When several multipart part URLs expire together, fresh URLs are requested
+  one at a time, as in the SDK, instead of in a burst.
+- Multipart part URLs must be HTTPS on `*.amazonaws.com` /
+  `*.amazonaws.com.cn`, and part uploads do not follow redirects.
+
 ## [0.1.5] - 2026-06-19
 
 ### Added

@@ -127,8 +127,12 @@ token = "hf_xxx"
 ## 3. Scan a model
 
 ```bash
-# Scan a local model file
+# Scan a local model file (multipart upload, 10 parallel parts by default)
 ./cisco-aid-cli model-scan trigger -f ./model.pth
+
+# Tune or disable multipart upload for constrained networks
+./cisco-aid-cli model-scan trigger -f ./model.safetensors --upload-concurrency 4
+./cisco-aid-cli model-scan trigger -f ./model.pth --no-multipart
 
 # Scan a model repository (private repos need a token)
 ./cisco-aid-cli model-scan trigger --repo-url https://huggingface.co/org/model --repo-token hf_xxx
@@ -137,6 +141,12 @@ token = "hf_xxx"
 ./cisco-aid-cli model-scan list --limit 10
 ./cisco-aid-cli model-scan info --scan-id <uuid>
 ```
+
+Local files are uploaded in parallel parts with per-part retries, so large
+models upload reliably. An upload progress bar and then a "waiting for scan
+status" spinner are shown on stderr; stdout always carries only the scan JSON. Empty files are rejected, and if
+your AI Defense deployment does not support multipart upload yet, use
+`--no-multipart`.
 
 ---
 
@@ -342,7 +352,7 @@ install the new artifact as `cisco-aid-cli` (see [install-upgrade.md](install-up
 | `embedded Python is not available in this build` | You're running a Go-only build. Use the full release binary/image, or (for dev) set `AID_CLI_PYTHON` — see the [developer guide](getting-started-developer.md). |
 | Auth/`401` errors | Check `AI_DEFENSE_API_KEY` and that the base URL matches your tenant's region. |
 | Command exits `10`/`20` | Not an error — the scan found threats at/above `--fail-on`/`--block-on`. Inspect the verdict envelope; raise the thresholds (e.g. `--fail-on high`) or use `--fail-on none` to report without gating. |
-| Command exits `4` on a slow scan | Polling timed out. Increase `AI_DEFENSE_MCP_RETRY_COUNT` / `AI_DEFENSE_MCP_WAIT_TIME_SECS` (MCP) or `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` (model), then re-run. |
+| Command exits `4` on a slow scan | Polling timed out. Increase `AI_DEFENSE_MCP_RETRY_COUNT` / `AI_DEFENSE_MCP_WAIT_TIME_SECS` (MCP) or `AI_DEFENSE_RETRY_COUNT_FOR_SCANNING` / `AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK` (model; default wait is 15,000 s, and setting either variable makes the wait retry count × wait time), then re-run. For `model-scan trigger`, the scan is still running: check it with `model-scan info --scan-id <id>` instead of re-running (which starts a new scan and re-uploads the file). |
 | `invalid --fail-on`/`--output` | Use a severity (`none\|low\|medium\|high\|critical`) and `--output json\|text`. |
 
 For the full command and configuration reference, see the

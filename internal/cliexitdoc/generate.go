@@ -105,6 +105,12 @@ func writeGlobal(b *bytes.Buffer) {
 | Model scan | ` + "`AI_DEFENSE_RETRY_COUNT_FOR_SCANNING`" + `, ` + "`AI_DEFENSE_WAIT_TIME_SECS_SUCCESSIVE_SCAN_INFO_CHECK`" + ` |
 | MCP scan | ` + "`AI_DEFENSE_MCP_RETRY_COUNT`" + `, ` + "`AI_DEFENSE_MCP_WAIT_TIME_SECS`" + ` |
 
+A model-scan poll timeout does not cancel the scan. Check its result with
+` + "`model-scan info --scan-id <id>`" + `; running the scan command again
+registers a new scan (and re-uploads the file).
+` + "`model-scan trigger`" + ` waits up to 15,000 s by default; if either model-scan
+variable above is set, the budget is retry count × wait time (defaults 60 and 10 s).
+
 ---
 
 `)

@@ -186,23 +186,26 @@ type ScanObject struct {
 
 // CreateScanObjectRequest is sent to create a scan object and get a presigned URL.
 type CreateScanObjectRequest struct {
-	FileName   string      `json:"file_name"`
-	Size       int64       `json:"size,omitempty"`
-	ScanObject *ScanObject `json:"scan_object,omitempty"`
+	FileName           string      `json:"file_name"`
+	Size               int64       `json:"size,omitempty"`
+	ScanObject         *ScanObject `json:"scan_object,omitempty"`
+	UseMultipartUpload bool        `json:"use_multipart_upload,omitempty"`
 }
 
 // CreateScanObjectResponse is returned after creating a scan object.
 type CreateScanObjectResponse struct {
-	ObjectID  string `json:"object_id"`
-	UploadURL string `json:"upload_url,omitempty"`
+	ObjectID        string           `json:"object_id"`
+	UploadURL       string           `json:"upload_url,omitempty"`
+	MultipartUpload *MultipartUpload `json:"multipart_upload,omitempty"`
 }
 
 func (r *CreateScanObjectResponse) UnmarshalJSON(data []byte) error {
 	type alias CreateScanObjectResponse
 	var aux struct {
 		alias
-		ObjectIDCamel  string `json:"objectId"`
-		UploadURLCamel string `json:"uploadUrl"`
+		ObjectIDCamel        string           `json:"objectId"`
+		UploadURLCamel       string           `json:"uploadUrl"`
+		MultipartUploadCamel *MultipartUpload `json:"multipartUpload"`
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
@@ -214,7 +217,90 @@ func (r *CreateScanObjectResponse) UnmarshalJSON(data []byte) error {
 	if r.UploadURL == "" {
 		r.UploadURL = aux.UploadURLCamel
 	}
+	if r.MultipartUpload == nil {
+		r.MultipartUpload = aux.MultipartUploadCamel
+	}
 	return nil
+}
+
+// MultipartUpload holds the server-created S3 multipart upload for a scan object.
+type MultipartUpload struct {
+	UploadID      string    `json:"upload_id"`
+	PartSizeBytes FlexInt64 `json:"part_size_bytes"`
+}
+
+func (m *MultipartUpload) UnmarshalJSON(data []byte) error {
+	type alias MultipartUpload
+	var aux struct {
+		alias
+		UploadIDCamel      string    `json:"uploadId"`
+		PartSizeBytesCamel FlexInt64 `json:"partSizeBytes"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*m = MultipartUpload(aux.alias)
+	if m.UploadID == "" {
+		m.UploadID = aux.UploadIDCamel
+	}
+	if m.PartSizeBytes == 0 {
+		m.PartSizeBytes = aux.PartSizeBytesCamel
+	}
+	return nil
+}
+
+// GetMultipartUploadPartURLsRequest requests presigned URLs for a batch of parts.
+type GetMultipartUploadPartURLsRequest struct {
+	UploadID    string `json:"upload_id"`
+	PartNumbers []int  `json:"part_numbers"`
+}
+
+// MultipartUploadPartURL is the presigned URL for one part.
+type MultipartUploadPartURL struct {
+	PartNumber int    `json:"part_number"`
+	UploadURL  string `json:"upload_url"`
+}
+
+func (p *MultipartUploadPartURL) UnmarshalJSON(data []byte) error {
+	type alias MultipartUploadPartURL
+	var aux struct {
+		alias
+		PartNumberCamel int    `json:"partNumber"`
+		UploadURLCamel  string `json:"uploadUrl"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*p = MultipartUploadPartURL(aux.alias)
+	if p.PartNumber == 0 {
+		p.PartNumber = aux.PartNumberCamel
+	}
+	if p.UploadURL == "" {
+		p.UploadURL = aux.UploadURLCamel
+	}
+	return nil
+}
+
+// GetMultipartUploadPartURLsResponse lists presigned URLs for the requested parts.
+type GetMultipartUploadPartURLsResponse struct {
+	Parts []MultipartUploadPartURL `json:"parts"`
+}
+
+// CompletedMultipartUploadPart pairs an uploaded part number with its ETag.
+type CompletedMultipartUploadPart struct {
+	PartNumber int    `json:"part_number"`
+	ETag       string `json:"etag"`
+}
+
+// CompleteMultipartUploadRequest finalizes a multipart upload.
+type CompleteMultipartUploadRequest struct {
+	UploadID string                         `json:"upload_id"`
+	Parts    []CompletedMultipartUploadPart `json:"parts"`
+}
+
+// AbortMultipartUploadRequest releases an incomplete multipart upload.
+type AbortMultipartUploadRequest struct {
+	UploadID string `json:"upload_id"`
 }
 
 // ModelRepoConfig holds configuration for validating a repository URL.

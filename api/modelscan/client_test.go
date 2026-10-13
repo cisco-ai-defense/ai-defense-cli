@@ -511,4 +511,44 @@ func TestPollScanCompletion_Timeout(t *testing.T) {
 	if pollErr.ScanID != "scan-1" {
 		t.Errorf("expected scan-1, got %q", pollErr.ScanID)
 	}
+	if pollErr.StatusCommand != "cisco-aid-cli model-scan info --scan-id scan-1" {
+		t.Errorf("StatusCommand = %q", pollErr.StatusCommand)
+	}
+	if strings.Join(pollErr.BudgetEnvVars, ",") != envRetryCount+","+envWaitSecs {
+		t.Errorf("BudgetEnvVars = %v", pollErr.BudgetEnvVars)
+	}
+}
+
+func TestPollPlan(t *testing.T) {
+	tests := []struct {
+		name      string
+		retryEnv  string
+		waitEnv   string
+		wantWait  int
+		wantPolls int
+	}{
+		{"default waits 15,000 s", "", "", 10, 1500},
+		{"retry count only", "240", "", 10, 240},
+		{"wait time only", "", "5", 5, defaultRetryCount},
+		{"both set", "30", "20", 20, 30},
+		{"invalid retry count uses its default", "abc", "", 10, defaultRetryCount},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(envRetryCount, tt.retryEnv)
+			t.Setenv(envWaitSecs, tt.waitEnv)
+			wait, polls := pollPlan()
+			if wait != tt.wantWait || polls != tt.wantPolls {
+				t.Errorf("pollPlan() = (%d, %d), want (%d, %d)", wait, polls, tt.wantWait, tt.wantPolls)
+			}
+		})
+	}
+	t.Run("default budget outlasts the 4 h server window", func(t *testing.T) {
+		t.Setenv(envRetryCount, "")
+		t.Setenv(envWaitSecs, "")
+		wait, polls := pollPlan()
+		if budget := wait * polls; budget != 15000 || budget <= 4*60*60 {
+			t.Errorf("default budget = %d s, want 15000", budget)
+		}
+	})
 }

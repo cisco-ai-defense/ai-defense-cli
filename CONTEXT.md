@@ -1,6 +1,6 @@
 # AI Defense CLI — Project Context
 
-Last updated: 2026-08-13
+Last updated: 2026-10-13
 
 ## Purpose
 
@@ -22,8 +22,10 @@ model-scan, mcp-scan, ai-bom with deterministic exit codes and release binaries.
 - [x] Upload redirect SSRF hardening, verdict `envelope_version`, mcp-scan `PollTimeoutError`
 - [x] CI: fold `meta` into `test`; `checksums` job only on main/release push
 - [x] Release workflow: dispatch Release after GITHUB_TOKEN tag push (#6)
-- [x] Draft-first releases: final-tag draft assets for internal QA plus an
-  approval-gated, no-rebuild promotion workflow (`production-release` environment)
+- [x] Prerelease-first releases: public final-tag assets for QA (including EMU
+  accounts) plus an approval-gated, no-rebuild promotion workflow that marks the
+  same release stable/latest (`production-release` environment); supported release
+  platforms are `linux-amd64` and `darwin-arm64`
 - [x] CLI output parity (`fix/cli-output-parity`): raw API JSON default; model-scan list/info pass-through
 - [x] **AIFW-24339 (`feature/AIFW-24339`)** — `install` self-update; onboard/config TUI (Typer/Rich theme); `~/.ai-defense/` config home; named profiles (`config profile`, `--profile`); local `make bundle` cache
 - [x] **`model-scan run` deprecation** — usage error (2) directing to `trigger`; unknown `model-scan` subcommands error (2)
@@ -84,7 +86,7 @@ Module: `github.com/cisco-ai-defense/ai-defense-cli`
 
 ## Merge gate
 
-PRs require: `test`, `Analyze (go)`, `Analyze (python)`, `linux-amd64`, `darwin-amd64`, `darwin-arm64`.
+PRs require: `test`, `Analyze (go)`, `Analyze (python)`, `linux-amd64`, `darwin-arm64`.
 
 Do not require `meta` (folded into `test`) or `checksums` (main/release push only).
 Disable CodeQL **default setup** to avoid duplicate scans alongside `.github/workflows/codeql.yml`.

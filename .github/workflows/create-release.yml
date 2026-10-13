@@ -19,8 +19,8 @@ on:
         required: false
         type: boolean
         default: false
-      draft:
-        description: 'Create a draft release for internal QA before publication'
+      prerelease:
+        description: 'Publish a prerelease for QA before stable promotion'
         required: false
         type: boolean
         default: true
@@ -63,10 +63,10 @@ jobs:
       - name: Dry run summary
         if: inputs.dry_run
         env:
-          DRAFT: ${{ inputs.draft }}
+          PRERELEASE: ${{ inputs.prerelease }}
         run: |
           echo "Dry run OK — would create tag v${{ inputs.version }} on ${{ steps.target.outputs.sha }}"
-          echo "Pushing the tag would start the Release workflow with draft=$DRAFT."
+          echo "Pushing the tag would start the Release workflow with prerelease=$PRERELEASE."
 
       - name: Create and push tag
         if: ${{ !inputs.dry_run }}
@@ -85,7 +85,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: v${{ inputs.version }}
-          DRAFT: ${{ inputs.draft }}
+          PRERELEASE: ${{ inputs.prerelease }}
         run: |
-          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG" -f "draft=$DRAFT"
-          echo "Started Release workflow for $TAG with draft=$DRAFT"
+          gh workflow run release.yml --ref "$TAG" -f "tag=$TAG" -f "prerelease=$PRERELEASE"
+          echo "Started Release workflow for $TAG with prerelease=$PRERELEASE"

@@ -11,7 +11,7 @@ Review Makefile, Dockerfile, and `.github/workflows/` for reliable releases.
 
 ## Focus
 
-- Multi-platform builds (linux-amd64, darwin amd64/arm64)
+- Supported platform builds (linux-amd64, darwin-arm64); Intel macOS is intentionally unsupported
 - `checksums.txt` and `manifest.json` generation
 - Pinned action versions (SHA preferred)
 - Install/upgrade doc matches actual artifact URLs and layout

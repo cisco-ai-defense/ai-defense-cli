@@ -37,6 +37,36 @@ func TestPlatformSupported(t *testing.T) {
 	}
 }
 
+func TestPlatformFor(t *testing.T) {
+	tests := []struct {
+		name       string
+		osName     string
+		arch       string
+		wantSuffix string
+		wantErr    bool
+	}{
+		{name: "Linux amd64", osName: "linux", arch: "amd64", wantSuffix: "linux-amd64"},
+		{name: "Apple Silicon", osName: "darwin", arch: "arm64", wantSuffix: "darwin-arm64"},
+		{name: "Intel macOS", osName: "darwin", arch: "amd64", wantErr: true},
+		{name: "Linux arm64", osName: "linux", arch: "arm64", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOS, gotArch, gotSuffix, err := platformFor(tt.osName, tt.arch)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("platformFor() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if gotOS != tt.osName || gotArch != tt.arch {
+				t.Fatalf("platformFor() platform = %s/%s, want %s/%s", gotOS, gotArch, tt.osName, tt.arch)
+			}
+			if gotSuffix != tt.wantSuffix {
+				t.Fatalf("platformFor() suffix = %q, want %q", gotSuffix, tt.wantSuffix)
+			}
+		})
+	}
+}
+
 func TestParseChecksumLine(t *testing.T) {
 	checksums := "abc123  cisco-aid-cli-1.0.0-linux-amd64\n"
 	got, err := parseChecksumLine(checksums, "cisco-aid-cli-1.0.0-linux-amd64")

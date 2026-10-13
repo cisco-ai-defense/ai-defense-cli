@@ -69,17 +69,17 @@ type ghRelease struct {
 
 // Platform returns os-arch suffix for release artifacts or an error if unsupported.
 func Platform() (osName, arch, suffix string, err error) {
-	osName = runtime.GOOS
-	arch = runtime.GOARCH
+	return platformFor(runtime.GOOS, runtime.GOARCH)
+}
+
+func platformFor(osName, arch string) (string, string, string, error) {
 	switch {
 	case osName == "linux" && arch == "amd64":
 		return osName, arch, "linux-amd64", nil
 	case osName == "darwin" && arch == "arm64":
 		return osName, arch, "darwin-arm64", nil
-	case osName == "darwin" && arch == "amd64":
-		return osName, arch, "darwin-amd64", nil
 	default:
-		return osName, arch, "", fmt.Errorf("unsupported platform %s/%s (release binaries: linux-amd64, darwin-amd64, darwin-arm64)", osName, arch)
+		return osName, arch, "", fmt.Errorf("unsupported platform %s/%s (release binaries: linux-amd64, darwin-arm64)", osName, arch)
 	}
 }
 

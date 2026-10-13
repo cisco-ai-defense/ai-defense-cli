@@ -52,7 +52,9 @@ page. Artifact names:
 |----------|-------------------------|
 | Linux x86_64 | `cisco-aid-cli-0.1.0-linux-amd64` |
 | macOS Apple Silicon | `cisco-aid-cli-0.1.0-darwin-arm64` |
-| macOS Intel | `cisco-aid-cli-0.1.0-darwin-amd64` |
+
+Intel macOS is not supported by current releases. Older releases may retain their
+historical Intel artifacts, but no new `darwin-amd64` binary is published.
 
 Verify with `checksums.txt` from the same release. See [install-upgrade.md](install-upgrade.md).
 

@@ -20,7 +20,10 @@
 
 ### REQ-03 — Self-update implementation
 
-- **REQ-03.1** Package `internal/selfupdate` detects platform (`linux-amd64`, `darwin-amd64`, `darwin-arm64`) and maps to release artifact names `cisco-aid-cli-<version>-<os>-<arch>`.
+- **REQ-03.1** Package `internal/selfupdate` detects supported platforms
+  (`linux-amd64`, `darwin-arm64`) and maps them to release artifact names
+  `cisco-aid-cli-<version>-<os>-<arch>`. Intel macOS (`darwin-amd64`) is
+  unsupported and MUST return a usage error.
 - **REQ-03.2** Resolve release assets from `https://github.com/cisco-ai-defense/ai-defense-cli/releases` (latest or pinned tag).
 - **REQ-03.3** Mandatory SHA-256 verification using `checksums.txt` from the same release before replacing the binary.
 - **REQ-03.4** Atomic replace: download to temp file in target directory, chmod executable, rename over `cisco-aid-cli`.

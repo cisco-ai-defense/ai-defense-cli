@@ -22,6 +22,9 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   waiting for results. Repository scans show the spinner as
   `| Waiting for scan status...`, since nothing is uploaded. Stdout still
   carries only the result.
+- **Draft release promotion** — an approval-gated manual workflow validates and
+  publishes an existing stable-version draft as the latest GitHub Release without
+  rebuilding or replacing the QA-tested assets.
 
 ### Changed
 - **Longer default wait for results** — `model-scan trigger` (file and
@@ -52,6 +55,10 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
   an S3 403 exiting 3 with API-key advice).
 - `--upload-concurrency` is only checked for file scans in multipart mode; it
   is ignored (not rejected) with `--repo-url` or `--no-multipart`.
+- **Release automation is draft-first** — merged release PRs and direct `v*` tag
+  pushes now stage final-tag releases as drafts for authenticated internal QA;
+  the manual tag escape hatch defaults to draft creation with an explicit published
+  override.
 
 ### Security
 - Presigned upload errors no longer echo the URL signature or the raw S3 error

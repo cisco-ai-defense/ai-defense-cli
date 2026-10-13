@@ -113,6 +113,6 @@ jobs:
             echo ""
             echo "[Create pull request](${pr_url})"
             echo ""
-            echo "After merge, **Release on merge** pushes \`v${NEW}\` and starts the Release workflow."
+            echo "After merge, **Release on merge** pushes \`v${NEW}\` and stages a draft release for internal QA."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "Open PR: ${pr_url}"

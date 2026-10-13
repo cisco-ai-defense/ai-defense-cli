@@ -6,6 +6,8 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
 ### Added
 - **`model-scan trigger` multipart upload** — local files upload through S3
   multipart (parity with `cisco-aidefense-sdk` 2.2.0): parallel parts, part URL

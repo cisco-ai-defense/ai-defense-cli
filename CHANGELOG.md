@@ -6,6 +6,11 @@ to [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 
 ## [Unreleased]
 
+### Changed
+- **Release QA staging uses public prereleases** — replaces draft releases so
+  EMU accounts can download and test release assets. Promotion clears prerelease
+  status and marks the same tag and assets as latest without rebuilding.
+
 ## [0.2.0] - 2026-10-13
 
 ### Added

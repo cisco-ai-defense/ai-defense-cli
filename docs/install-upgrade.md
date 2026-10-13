@@ -25,18 +25,18 @@ Linux **arm64** (e.g. AWS Graviton) is not published as a release binary. Use th
 
 Each release also ships `checksums.txt` and `manifest.json` (version, commit, per-arch SHA-256).
 
-Releases are staged as drafts when a **Prepare release** PR (`release/v*`) merges to
+Releases are staged as public prereleases when a **Prepare release** PR (`release/v*`) merges to
 `main` or a `release/*` line — **Release on merge** pushes the final `v*` tag and starts
-the Release workflow. Internal QA tests those exact draft assets, then an approved
-**Promote draft release** run publishes the existing draft as the latest release.
+the Release workflow. Internal QA tests those exact prerelease assets, then an approved
+**Promote prerelease** run promotes the existing release to stable and latest.
 Prepare release pushes the branch; open the PR manually from the workflow summary link.
 
-## Internal QA of a draft release
+## Internal QA of a prerelease
 
-Draft releases are visible to authenticated repository members with push access
-(including Write access). In this public repository the `v*` tag and Actions logs are
-public, but the draft release notes and assets are not listed for the general public.
-Never place credentials or confidential information in release assets or workflow logs.
+Prereleases in this public repository are visible to everyone, including Enterprise
+Managed User (EMU) accounts without repository write access. The release notes, assets,
+`v*` tag, and Actions logs are public. Never place credentials or confidential
+information in release assets or workflow logs.
 
 QA can use the signed-in GitHub Releases page or GitHub CLI:
 
@@ -60,15 +60,26 @@ chmod +x cisco-aid-cli-0.2.0-darwin-arm64
 ```
 
 Record the tag, commit from `manifest.json`, platform, binary digest, and test result.
-Do not replace draft assets during QA; any replacement requires the checks and approval
+Do not replace prerelease assets during QA; any replacement requires the checks and approval
 to be repeated.
 
-After QA approval, a maintainer runs **Promote draft release** with the same stable tag
-(for example `v0.2.0`). A read-only job validates the draft and expected assets before
+After QA approval, a maintainer runs **Promote prerelease** with the same stable tag
+(for example `v0.2.0`). A read-only job validates the prerelease and expected assets before
 the configured `production-release` environment requests approval. After approval, the
-publishing job revalidates the draft and publishes it without a rebuild. Repository
+publishing job revalidates it, clears prerelease status, and marks the same release as
+latest without a rebuild or asset replacement. Repository
 administrators must configure required reviewers for that GitHub environment before
 relying on it as the publication gate.
+
+If the old workflow already created a draft for the tag, convert it once before QA:
+
+```bash
+gh release edit v0.2.0 \
+  --repo cisco-ai-defense/ai-defense-cli \
+  --draft=false \
+  --prerelease=true \
+  --latest=false
+```
 
 ## Install from GitHub Release
 

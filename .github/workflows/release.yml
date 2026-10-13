@@ -1,5 +1,5 @@
-# Build a versioned GitHub Release when a v* tag is pushed. Releases are drafts
-# by default so internal QA can test the final assets before promotion.
+# Build a versioned GitHub Release when a v* tag is pushed. Releases are public
+# prereleases by default so QA, including EMU users, can test the final assets.
 name: Release
 
 on:
@@ -12,8 +12,8 @@ on:
         description: 'Tag to build (e.g. v0.1.1). Use when Release did not start automatically.'
         required: true
         type: string
-      draft:
-        description: 'Keep the release as a draft for internal QA'
+      prerelease:
+        description: 'Publish as a prerelease for QA before stable promotion'
         required: false
         type: boolean
         default: true
@@ -32,7 +32,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       commit: ${{ steps.v.outputs.commit }}
       tag: ${{ steps.v.outputs.tag }}
-      draft: ${{ steps.v.outputs.draft }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v6
 
@@ -40,21 +40,21 @@ jobs:
         id: v
         env:
           DISPATCH_TAG: ${{ inputs.tag }}
-          DISPATCH_DRAFT: ${{ inputs.draft }}
+          DISPATCH_PRERELEASE: ${{ inputs.prerelease }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             tag="$DISPATCH_TAG"
-            draft="$DISPATCH_DRAFT"
+            prerelease="$DISPATCH_PRERELEASE"
           else
             tag="${GITHUB_REF_NAME}"
-            draft="true"
+            prerelease="true"
           fi
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Invalid tag: $tag (expected e.g. v0.1.1)"
             exit 1
           fi
-          if [ "$draft" != "true" ] && [ "$draft" != "false" ]; then
-            echo "::error::Invalid draft value: $draft"
+          if [ "$prerelease" != "true" ] && [ "$prerelease" != "false" ]; then
+            echo "::error::Invalid prerelease value: $prerelease"
             exit 1
           fi
           version="${tag#v}"
@@ -65,7 +65,7 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-          echo "draft=$draft" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-go@v6
         with:
@@ -194,7 +194,9 @@ jobs:
         id: github-release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
-          draft: ${{ needs.test.outputs.draft }}
+          draft: false
+          prerelease: ${{ needs.test.outputs.prerelease }}
+          make_latest: ${{ needs.test.outputs.prerelease == 'true' && 'false' || 'true' }}
           tag_name: ${{ needs.test.outputs.tag }}
           name: ${{ needs.test.outputs.tag }}
           body_path: release-notes.md
@@ -208,17 +210,17 @@ jobs:
       - name: Release summary
         env:
           TAG: ${{ needs.test.outputs.tag }}
-          DRAFT: ${{ needs.test.outputs.draft }}
+          PRERELEASE: ${{ needs.test.outputs.prerelease }}
           RELEASE_URL: ${{ steps.github-release.outputs.url }}
         run: |
           {
             echo "## GitHub Release $TAG"
             echo ""
-            echo "Draft: \`$DRAFT\`"
+            echo "Prerelease: \`$PRERELEASE\`"
             echo ""
             echo "[Open release]($RELEASE_URL)"
-            if [ "$DRAFT" = "true" ]; then
+            if [ "$PRERELEASE" = "true" ]; then
               echo ""
-              echo "After internal QA approval, run **Promote draft release** with tag \`$TAG\`."
+              echo "After QA approval, run **Promote prerelease** with tag \`$TAG\`."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
